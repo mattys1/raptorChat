@@ -1,0 +1,8 @@
+{
+	"appId": "com.raptorChat.app",
+	"files": ["dist-electron", "dist-react"],
+
+	"linux": {
+		"target": "AppImage"
+	},
+}
