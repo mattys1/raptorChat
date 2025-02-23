@@ -39,6 +39,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if(messageType == websocket.MessageText && string(messageContents) == "button-pressed") {
+			coolCounter++
 			conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
 			fmt.Println("Button pressed!")
 		}
@@ -46,7 +47,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Message type:", messageType)
 		fmt.Println("Message contents:", string(messageContents))
 
-		fmt.Println("Cool counter: ", coolCounter); coolCounter++
+		fmt.Println("Cool counter: ", coolCounter);
 	}
 
 	// Clean close
