@@ -1,3 +1,3 @@
 #! /bin/bash
 
-go build -o out/main ./src
+docker build -t raptorchat-backend . && docker run raptorchat-backend

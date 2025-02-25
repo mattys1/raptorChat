@@ -55,6 +55,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	fmt.Print("Starting...")
 	http.HandleFunc("/ws", wsHandler)
 
 	log.Println("Starting server on :8080")
