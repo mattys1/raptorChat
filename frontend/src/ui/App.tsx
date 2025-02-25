@@ -10,7 +10,7 @@ function App() {
 
 	useEffect(() => {
 		// Create WebSocket connection only once
-		const server = new WebSocket('ws://localhost:8080/ws')
+		const server = new WebSocket('ws://0.0.0.0:8080/ws')
 		serverRef.current = server
 
 		server.onopen = () => {

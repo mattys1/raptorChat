@@ -2,8 +2,6 @@ import {app, BrowserWindow} from "electron";
 import path from "path";
 import { isDev } from "./isDev.js";
 
-type test = string
-
 app.on("ready", () => {
 	const mainWindow = new BrowserWindow({})
 
