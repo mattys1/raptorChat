@@ -43,3 +43,9 @@ to {
 .read-the-docs {
 	color: #888;
 }
+
+.message-column {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}

@@ -1,10 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react'
-import reactLogo from './assets/react.svg'
+// import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 import styles from './App.module.css'
 
 interface Socketable {
 	server: WebSocket
+}
+
+interface Message {
+	senderAddress: string
+	content: string
+}
+
+const Messages: React.FC<{messages: Message[]}> = ({messages}) => {
+	return (
+		messages.map((message) => {
+			return (
+				<div>
+					<p >Sender: {message.senderAddress}</p>
+					<p >{message.content}</p>
+				</div> 
+			)
+		})
+	) 
 }
 
 const TextSender: React.FC<Socketable> = ({server}) => {
@@ -26,7 +44,9 @@ const TextSender: React.FC<Socketable> = ({server}) => {
 }
 
 function App() {
-	const [count, setCount] = useState(0)
+	const [count] = useState(0)
+	const [messages, setMessages] = useState<Message[]>([])
+
 	var [connectionStatus, setConnectionStatus] = useState('')
 	const serverRef = useRef<WebSocket>(null)
 
@@ -45,8 +65,15 @@ function App() {
 		}
 
 		server.onmessage = (event) => {
-			const currentVal = parseInt(event.data.toString())
-			setCount(currentVal)
+			const message = JSON.parse(event.data)
+			console.log('Message received: ', message.content)
+
+			setMessages(prev => [...prev, {
+				senderAddress: JSON.stringify(message.sender.ip),
+				content: JSON.stringify(message.content)
+			}])
+
+			// console.log(messages.length)
 		}
 
 		return () => {
@@ -56,6 +83,7 @@ function App() {
 
 	var site = (
 		<>
+			<Messages messages={messages} />
 			<div className={styles.card}>
 				<button onClick={() => serverRef?.current?.send("button-pressed")}>
 					count is {count}
