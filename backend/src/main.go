@@ -13,6 +13,8 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 )
 
+var CLIENTS []*Client = []*Client{}
+
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -28,8 +30,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	client := &Client {
 		Id: 0,
 		IP: r.RemoteAddr, 
+		Connection: conn,
 	}
 	log.Println("Client connected! IP:", client.IP)
+
+	CLIENTS = append(CLIENTS, client)
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Hour)
 	defer cancel()
@@ -64,9 +69,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			)
 			assert.That(err == nil, "Failed to encode message")
 
-			conn.Write(ctx, websocket.MessageText, encoded)
-			
+			for _, client := range CLIENTS {
+				client.Connection.Write(ctx, websocket.MessageText, encoded)
+			}
+
 			log.Println("Sent:", string(encoded))
+			
 		}
 
 		fmt.Println("Cool counter: ", coolCounter);
