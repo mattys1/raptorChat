@@ -5,6 +5,7 @@ COPY . .
 RUN go mod download
 RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -tags debug -o backend . 
+# RUN CGO_ENABLED=0 GOOS=linux go build -o backend . 
 
 # Runtime stage
 FROM alpine:latest
