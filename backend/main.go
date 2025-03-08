@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/mattys1/raptorChat/pkg/assert"
 )
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +39,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
+		if(messageType != websocket.MessageText) {
+			assert.Panic(false, "Not implemented")
+		}
+
 		if(messageType == websocket.MessageText && string(messageContents) == "button-pressed") {
 			coolCounter++
 			conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
@@ -50,7 +55,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Cool counter: ", coolCounter);
 	}
 
-	// Clean close
 	conn.Close(websocket.StatusNormalClosure, "")
 }
 
