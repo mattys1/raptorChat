@@ -1,0 +1,81 @@
+import React, { useState } from "react";
+import "./Login.css";
+
+interface LoginViewProps {
+  onLoginSuccess: () => void;
+}
+
+const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8080/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        onLoginSuccess();
+      } else {
+        alert("Login failed. Server responded with an error.");
+      }
+    } catch (error) {
+      console.error("Login request failed:", error);
+      alert("Login request failed. Please ensure the server is running.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="login-container">
+      <div className="login-card">
+        <div className="avatar-container">
+          {}
+          <img src="avatar.png" alt="Avatar" className="avatar" />
+        </div>
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label htmlFor="userEmail">Email lub nick</label>
+          <input
+            type="text"
+            id="userEmail"
+            name="userEmail"
+            placeholder="Wpisz email lub nick"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <label htmlFor="userPassword">Hasło</label>
+          <input
+            type="password"
+            id="userPassword"
+            name="userPassword"
+            placeholder="Wpisz hasło"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <div className="button-group">
+            <button type="submit" className="primary-btn" disabled={loading}>
+              {loading ? "Logowanie..." : "Zaloguj się"}
+            </button>
+            <button type="button" className="secondary-btn">
+              Załóż konto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default LoginView;
