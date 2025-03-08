@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/mattys1/raptorChat/pkg/assert"
+	"github.com/mattys1/raptorChat/src/pkg/assert"
 )
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +25,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close(websocket.StatusInternalError, "Connection closing")
 
 	log.Println("Client connected!")
+	log.Println("Http header:", r.Header)
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Hour)
 	defer cancel()
@@ -39,18 +40,18 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		if(messageType != websocket.MessageText) {
-			assert.Panic(false, "Not implemented")
-		}
+		assert.That(messageType == websocket.MessageText, "Not implemented, probably shouldn't even be handled")
 
-		if(messageType == websocket.MessageText && string(messageContents) == "button-pressed") {
-			coolCounter++
-			conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
-			fmt.Println("Button pressed")
-		}
+		message := string(messageContents)
+		switch message {
+			case "button-pressed":
+				coolCounter++
+				conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
+				fmt.Println("Button pressed")
 
-		fmt.Println("Message type:", messageType)
-		fmt.Println("Message contents:", string(messageContents))
+			default:
+				log.Default().Println("New message:", message)
+		}
 
 		fmt.Println("Cool counter: ", coolCounter);
 	}
