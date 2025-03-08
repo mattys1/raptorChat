@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"encoding/json"
 
 	"github.com/coder/websocket"
 	"github.com/mattys1/raptorChat/src/pkg/assert"
@@ -24,8 +25,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer conn.Close(websocket.StatusInternalError, "Connection closing")
 
-	log.Println("Client connected!")
-	log.Println("Http header:", r.Header)
+	client := &Client {
+		Id: 0,
+		IP: r.RemoteAddr, 
+	}
+	log.Println("Client connected! IP:", client.IP)
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Hour)
 	defer cancel()
@@ -44,13 +48,25 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		message := string(messageContents)
 		switch message {
-			case "button-pressed":
-				coolCounter++
-				conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
-				fmt.Println("Button pressed")
+		case "button-pressed":
+			coolCounter++
+			conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
+			fmt.Println("Button pressed")
 
-			default:
-				log.Default().Println("New message:", message)
+		default: 
+			log.Default().Println("New message:", message)
+
+			encoded, err := json.Marshal(
+				Message {
+					Sender: client,
+					Content: message,
+				},
+			)
+			assert.That(err == nil, "Failed to encode message")
+
+			conn.Write(ctx, websocket.MessageText, encoded)
+			
+			log.Println("Sent:", string(encoded))
 		}
 
 		fmt.Println("Cool counter: ", coolCounter);

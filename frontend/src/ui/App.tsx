@@ -1,7 +1,29 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 import styles from './App.module.css'
+
+interface Socketable {
+	server: WebSocket
+}
+
+const TextSender: React.FC<Socketable> = ({server}) => {
+	const [text, setText] = useState('')
+
+	return (
+		<div>
+			<input onChange = {
+				(x) => setText(x.target.value)
+			} />
+
+			<br/>
+			<button onClick={() => server.send(text)}>
+				Submit
+			</button>
+		</div>
+
+	)
+}
 
 function App() {
 	const [count, setCount] = useState(0)
@@ -9,7 +31,6 @@ function App() {
 	const serverRef = useRef<WebSocket>(null)
 
 	useEffect(() => {
-		// Create WebSocket connection only once
 		const server = new WebSocket('ws://0.0.0.0:8080/ws')
 		serverRef.current = server
 
@@ -28,35 +49,23 @@ function App() {
 			setCount(currentVal)
 		}
 
-		// Cleanup function to close connection
 		return () => {
 			server.close()
 		}
-	}, []) // Empty dependency array ensures this runs only once
+	}, []) 
 
 	var site = (
 		<>
-			<div>
-				<a href="https://react.dev" target="_blank">
-					<img src={reactLogo} className={`${styles.logo} ${styles.react}`} alt="React logo" />
-				</a>
-			</div>
-
-			<h1>Vite + React</h1>
 			<div className={styles.card}>
 				<button onClick={() => serverRef?.current?.send("button-pressed")}>
 					count is {count}
 				</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
 			</div>
-			<p className={styles.readTheDocs}>
-				Click on the Vite and React logos to learn more
-			</p>
 
 			{connectionStatus === 'connected' && <p style={{ color: 'green' }}>Connected</p>}
 			{connectionStatus === 'error' && <p style={{ color: 'red' }}>Error connecting</p>}
+
+			{serverRef?.current && <TextSender server={serverRef.current} /> }
 		</>
 	)
 
