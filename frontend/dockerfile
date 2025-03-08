@@ -1,0 +1,18 @@
+FROM electronuserland/builder AS build
+RUN apt-get update && apt-get install -y ca-certificates
+
+ENV ELECTRON_BUILDER_CACHE=/root/.cache/electron-builder
+ENV ELECTRON_CACHE=/root/.cache/electron-builder
+RUN mkdir -p ${ELECTRON_BUILDER_CACHE} && chmod -R 777 ${ELECTRON_BUILDER_CACHE}
+RUN mkdir -p ${ELECTRON_CACHE} && chmod -R 777 ${ELECTRON_CACHE}
+
+WORKDIR /app
+COPY package*.json .
+
+RUN npm install
+
+COPY . .
+RUN --mount=type=cache,target=/root/.cache npm run dist:linux
+
+FROM scratch AS export
+COPY --from=build /app/dist/frontend-*.AppImage /dist/
