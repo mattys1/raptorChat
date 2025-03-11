@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
-import styles from './App.module.css'
+// import styles from './App.module.css'
 
 interface Socketable {
 	server: WebSocket
@@ -44,7 +44,7 @@ const TextSender: React.FC<Socketable> = ({server}) => {
 }
 
 function App() {
-	const [count] = useState(0)
+	// const [count] = useState(0)
 	const [messages, setMessages] = useState<Message[]>([])
 
 	var [connectionStatus, setConnectionStatus] = useState('')
@@ -84,12 +84,6 @@ function App() {
 	var site = (
 		<>
 			<Messages messages={messages} />
-			<div className={styles.card}>
-				<button onClick={() => serverRef?.current?.send("button-pressed")}>
-					count is {count}
-				</button>
-			</div>
-
 			{connectionStatus === 'connected' && <p style={{ color: 'green' }}>Connected</p>}
 			{connectionStatus === 'error' && <p style={{ color: 'red' }}>Error connecting</p>}
 
