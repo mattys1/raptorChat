@@ -1,6 +1,5 @@
-// Sidebar.tsx
 import React from "react";
-import "./Start.css"; // Reusing Start.css for sidebar styling
+import "./Start.css";
 
 interface SidebarProps {
   onSettingsClick: () => void;

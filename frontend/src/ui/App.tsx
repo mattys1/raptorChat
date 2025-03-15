@@ -1,12 +1,13 @@
-// App.tsx
 import React, { useState } from "react";
 import LoginView from "./views/LoginView";
+import RegistrationView from "./views/RegistratiovView";
 import Layout from "./Layout";
 import StartMain from "./views/StartMain";
 import SettingsMain from "./views/SettingsMain";
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showRegistration, setShowRegistration] = useState(false);
   const [currentView, setCurrentView] = useState<"start" | "settings">("start");
 
   const handleLoginSuccess = () => {
@@ -16,12 +17,6 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    setCurrentView("start");
-  };
-
-  // This callback is passed to the Sidebar via Layout
-  const handleSettingsClick = () => {
-    setCurrentView("settings");
   };
 
   const renderMainContent = () => {
@@ -40,9 +35,16 @@ const App: React.FC = () => {
   return (
     <>
       {!isLoggedIn ? (
-        <LoginView onLoginSuccess={handleLoginSuccess} />
+        showRegistration ? (
+          <RegistrationView
+            onRegistrationSuccess={() => setShowRegistration(false)}
+            onToggleToLogin={() => setShowRegistration(false)}
+          />
+        ) : (
+          <LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => setShowRegistration(true)} />
+        )
       ) : (
-        <Layout onSettingsClick={handleSettingsClick}>
+        <Layout onSettingsClick={() => setCurrentView("settings")}>
           {renderMainContent()}
         </Layout>
       )}

@@ -1,6 +1,5 @@
-// StartMain.tsx
 import React from "react";
-import "./Start.css"; // Reuse styling from Start.css
+import "./Start.css";
 
 const StartMain: React.FC = () => {
   return (

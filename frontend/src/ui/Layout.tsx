@@ -1,7 +1,6 @@
-// Layout.tsx
 import React from "react";
 import Sidebar from "./views/Sidebar";
-import "./views/Start.css"; // Reuse your Start.css for layout styling
+import "./views/Start.css";
 
 interface LayoutProps {
   children: React.ReactNode;

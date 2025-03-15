@@ -1,12 +1,12 @@
-// LoginView.tsx
 import React, { useState } from "react";
 import "./Login.css";
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
+  onToggleToRegistration: () => void;
 }
 
-const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
+const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onToggleToRegistration }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -66,7 +66,11 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <button type="submit" className="primary-btn" disabled={loading}>
               {loading ? "Logging in..." : "Log In"}
             </button>
-            <button type="button" className="secondary-btn">
+            <button 
+              type="button" 
+              className="secondary-btn" 
+              onClick={onToggleToRegistration}
+            >
               Create Account
             </button>
           </div>

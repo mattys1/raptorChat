@@ -1,6 +1,5 @@
-// SettingsMain.tsx
 import React from "react";
-import "./Start.css"; // Reuse styling, or create a separate CSS if desired
+import "./Start.css";
 
 interface SettingsMainProps {
   onReturn: () => void;
@@ -15,7 +14,6 @@ const SettingsMain: React.FC<SettingsMainProps> = ({ onReturn, onLogout }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newUsername: "dummy" }),
       });
-      // Process response if needed
     } catch (error) {
       console.error("Error changing username", error);
     }
@@ -28,7 +26,6 @@ const SettingsMain: React.FC<SettingsMainProps> = ({ onReturn, onLogout }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newPassword: "dummy" }),
       });
-      // Process response if needed
     } catch (error) {
       console.error("Error changing password", error);
     }
