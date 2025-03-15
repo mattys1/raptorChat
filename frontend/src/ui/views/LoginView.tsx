@@ -1,3 +1,4 @@
+// LoginView.tsx
 import React, { useState } from "react";
 import "./Login.css";
 
@@ -38,38 +39,35 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     <div className="login-container">
       <div className="login-card">
         <div className="avatar-container">
-          {}
           <img src="avatar.png" alt="Avatar" className="avatar" />
         </div>
         <form className="login-form" onSubmit={handleSubmit}>
-          <label htmlFor="userEmail">Email lub nick</label>
+          <label htmlFor="userEmail">Email or Nickname</label>
           <input
             type="text"
             id="userEmail"
             name="userEmail"
-            placeholder="Wpisz email lub nick"
+            placeholder="Enter email or nickname"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-
-          <label htmlFor="userPassword">Hasło</label>
+          <label htmlFor="userPassword">Password</label>
           <input
             type="password"
             id="userPassword"
             name="userPassword"
-            placeholder="Wpisz hasło"
+            placeholder="Enter password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-
           <div className="button-group">
             <button type="submit" className="primary-btn" disabled={loading}>
-              {loading ? "Logowanie..." : "Zaloguj się"}
+              {loading ? "Logging in..." : "Log In"}
             </button>
             <button type="button" className="secondary-btn">
-              Załóż konto
+              Create Account
             </button>
           </div>
         </form>
