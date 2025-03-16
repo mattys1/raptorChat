@@ -20,7 +20,7 @@ services:
       - db-migrate
 
   mysql:
-    image: mysql:8.4.4
+    image: mariadb:lts
     networks:
       - app-network
     ports:
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./backend/db/mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 5
