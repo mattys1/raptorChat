@@ -2,9 +2,6 @@ services:
   backend:
     build:
       context: ./backend
-      args:
-        GOOSE_DRIVER: mysql
-        GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3307)/${DB_NAME}
     command: ./backend
     ports:
       - "8080:8080"
@@ -19,6 +16,7 @@ services:
       DB_NAME: ${DB_NAME}
     depends_on:
       - mysql
+      - db-migrate
 
   mysql:
     image: mysql:8.4.4
@@ -45,6 +43,20 @@ services:
       - ./backend:/backend
     working_dir: /backend
     command: ["generate"]
+
+  db-migrate:
+    image: gomicro/goose
+    networks:
+      - app-network
+    depends_on: 
+      mysql:
+        condition: service_healthy
+    environment:
+      GOOSE_DRIVER: mysql
+      GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3306)/${DB_NAME}
+    volumes:
+      - ./backend/db/migrations:/migrations
+    command: ["goose", "up", "--dir", "/migrations"]
 
   frontend-build:
     build: 
