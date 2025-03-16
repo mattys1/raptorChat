@@ -34,7 +34,7 @@ services:
       - ./backend/db/mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 0.5s
+      interval: 5s
       timeout: 5s
       retries: 5
 
