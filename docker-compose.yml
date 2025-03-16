@@ -42,7 +42,7 @@ services:
     volumes:
       - ./backend:/backend
     working_dir: /backend
-    command: ["generate"]
+    command: ["sh", "-c", "umask 0002 && sqlc generate"]
 
   db-migrate:
     image: gomicro/goose
