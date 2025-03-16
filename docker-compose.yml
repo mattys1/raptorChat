@@ -1,6 +1,11 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        GOOSE_DRIVER: mysql
+        GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3307)/${DB_NAME}
+    command: ./backend
     ports:
       - "8080:8080"
     networks:
@@ -19,18 +24,27 @@ services:
     image: mysql:8.4.4
     networks:
       - app-network
+    ports:
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./backend/mysql-data:/var/lib/mysql
+      - ./backend/db/mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  sqlc:
+    image: sqlc/sqlc
+    volumes:
+      - ./backend:/backend
+    working_dir: /backend
+    command: ["generate"]
 
   frontend-build:
     build: 
