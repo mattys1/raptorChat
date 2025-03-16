@@ -1,3 +1,3 @@
 out/
-mysql-data/
+db/mysql-data/
 .git
