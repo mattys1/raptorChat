@@ -2,15 +2,21 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	_ "database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-	"encoding/json"
 
 	"github.com/coder/websocket"
+	"github.com/go-sql-driver/mysql"
+	"os"
+
 	"github.com/mattys1/raptorChat/src/pkg/assert"
+	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
 var CLIENTS []*Client = []*Client{}
@@ -87,8 +93,31 @@ func main() {
 	fmt.Print("Starting...")
 	http.HandleFunc("/ws", wsHandler)
 
+	ctx := context.Background()
+
+	cfg := mysql.NewConfig()
+	cfg.User = "root"
+	cfg.Passwd = os.Getenv("DB_ROOT_PASSWORD")
+	cfg.Net = "tcp"
+	cfg.DBName = os.Getenv("DB_NAME")
+	cfg.Addr = "mysql:3306"
+	cfg.Params = map[string]string{
+		"parseTime": "true",
+		// "ssl-verify-server-cert": "false",
+	}
+
+	rdb, err := sql.Open("mysql", cfg.FormatDSN())
+	assert.That(err == nil, "Failed to connect to database")
+	defer rdb.Close()
+
+	repo := db.New(rdb)
+
+	users, err := repo.GetAllUsers(ctx)
+	assert.That(err == nil, "Failed to get users")
+	log.Println("Users:", users)
+
 	log.Println("Starting server on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 
 	if err != nil {
 		log.Fatal("Server failed to start:", err)
