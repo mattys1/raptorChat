@@ -1,14 +1,9 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
+ALTER TABLE users ADD COLUMN password VARCHAR(255) NOT NULL AFTER email;
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS users;
+ALTER TABLE users DROP COLUMN password;
 -- +goose StatementEnd
