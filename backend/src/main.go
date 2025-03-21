@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	_ "database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -12,49 +11,13 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/go-sql-driver/mysql"
-	"os"
 
 	"github.com/mattys1/raptorChat/src/pkg/assert"
+	"github.com/mattys1/raptorChat/src/pkg/auth"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
 var CLIENTS []*Client = []*Client{}
-func enableCors(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-}
-
-type LoginCredentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	enableCors(w)
-
-	if r.Method == http.MethodOptions {
-		return
-	}
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var creds LoginCredentials
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-
-	time.Sleep(1 * time.Second)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status": "success"}`))
-}
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -123,31 +86,18 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	fmt.Print("Starting...")
-	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/login", auth.LoginHandler)
 	http.HandleFunc("/ws", wsHandler)
 
 	ctx := context.Background()
 
-	cfg := mysql.NewConfig()
-	cfg.User = "root"
-	cfg.Passwd = os.Getenv("DB_ROOT_PASSWORD")
-	cfg.Net = "tcp"
-	cfg.DBName = os.Getenv("DB_NAME")
-	cfg.Addr = "mysql:3306"
-	cfg.Params = map[string]string{
-		"parseTime": "true",
-		// "ssl-verify-server-cert": "false",
-	}
+	dao := db.GetDao()
 
-	rdb, err := sql.Open("mysql", cfg.FormatDSN())
-	assert.That(err == nil, "Failed to connect to database")
-	defer rdb.Close()
-
-	repo := db.New(rdb)
-
-	users, err := repo.GetAllUsers(ctx)
+	users, err := dao.GetAllUsers(ctx)
 	assert.That(err == nil, "Failed to get users")
 	log.Println("Users:", users)
+
+	// assert.That(false, "")
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
