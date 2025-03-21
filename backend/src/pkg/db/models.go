@@ -9,8 +9,8 @@ import (
 )
 
 type User struct {
-	ID        uint64
-	Username  string
-	Email     string
-	CreatedAt time.Time
+	ID        uint64    `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
 }

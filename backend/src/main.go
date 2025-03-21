@@ -18,6 +18,7 @@ import (
 )
 
 var CLIENTS []*Client = []*Client{}
+var HUB *Hub = newHub()
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -27,16 +28,20 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("WebSocket connection failed: %v", err)
 		return
 	}
-	defer conn.Close(websocket.StatusInternalError, "Connection closing")
+	defer func() {
+		HUB.unregister <- CLIENTS[len(CLIENTS) - 1]
+		conn.Close(websocket.StatusInternalError, "Connection closing")
+	}()
 
 	client := &Client {
-		Id: 0,
 		IP: r.RemoteAddr, 
 		Connection: conn,
 	}
 	log.Println("Client connected! IP:", client.IP)
 
 	CLIENTS = append(CLIENTS, client)
+
+	HUB.register <- client	
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Hour)
 	defer cancel()
@@ -98,6 +103,8 @@ func main() {
 	log.Println("Users:", users)
 
 	// assert.That(false, "")
+
+	go HUB.run()	
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
