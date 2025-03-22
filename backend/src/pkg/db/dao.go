@@ -34,7 +34,7 @@ func GetDao() *Queries {
 		cfg := makeConfig()
 
 		rdb, err := sql.Open("mysql", cfg.FormatDSN())
-		assert.That(err == nil, "Failed to connect to database")
+		assert.That(err == nil, "Failed to connect to database", err)
 		// defer rdb.Close()
 
 		instance = New(rdb)
