@@ -1,0 +1,60 @@
+package messaging
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+
+	"github.com/coder/websocket"
+
+	"github.com/mattys1/raptorChat/src/pkg/assert"
+)
+
+type MessageRouter struct {
+	subscribers map[MessageEvent][]*websocket.Conn // TODO: this should probably be changed to Clients, like most of the code
+}
+
+func NewMessageRouter() *MessageRouter {
+	return &MessageRouter{
+		subscribers: make(map[MessageEvent][]*websocket.Conn),
+	}
+}
+
+func (router *MessageRouter) Subscribe(event MessageEvent, conn *websocket.Conn) {
+	router.subscribers[event] = append(router.subscribers[event], conn)
+	log.Println("Connection subscribed to", event)
+}
+
+func (router *MessageRouter) Unsubscribe(event MessageEvent, conn *websocket.Conn) {
+	subs := router.subscribers[event]
+	for i, c := range subs {
+		if c == conn {
+			router.subscribers[event] = append(subs[:i], subs[i+1:]...)
+			break
+		}
+	}
+}
+
+func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
+	for event, subs := range router.subscribers {
+		for i, c := range subs {
+			if c == conn {
+				router.subscribers[event] = append(subs[:i], subs[i+1:]...)
+				break
+			}
+		}
+	}
+}
+
+func (router *MessageRouter) Publish(event MessageEvent, message Message) {
+	marshalled, err := json.Marshal(message)
+	assert.That(err == nil, "Failed to marshal published message", err)
+
+	for _, conn := range router.subscribers[event] {
+		conn.Write(
+			context.TODO(),
+			websocket.MessageType(websocket.MessageText),
+			marshalled,
+		)
+	}
+}
