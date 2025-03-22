@@ -5,12 +5,31 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 )
+
+type Message struct {
+	ID        uint64    `json:"id"`
+	SenderID  uint64    `json:"sender_id"`
+	RoomID    uint64    `json:"room_id"`
+	Contents  string    `json:"contents"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Room struct {
+	ID   uint64         `json:"id"`
+	Name sql.NullString `json:"name"`
+}
 
 type User struct {
 	ID        uint64    `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type UsersRoom struct {
+	UserID uint64 `json:"user_id"`
+	RoomID uint64 `json:"room_id"`
 }
