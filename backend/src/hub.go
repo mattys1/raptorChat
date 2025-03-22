@@ -46,7 +46,7 @@ func (hub *Hub) run() {
 
 			hub.clients[client] = true
 
-			log.Println("Client registered", conn)
+			log.Println("Client registered", client)
 
 		case conn := <-hub.Unregister:
 			clientWithConn := func(c *websocket.Conn) *Client {
@@ -61,7 +61,7 @@ func (hub *Hub) run() {
 			assert.That(clientWithConn != nil, "Attempting to unregister a nonexistent client")
 
 			if _, ok := hub.clients[clientWithConn]; ok {
-				log.Println("Client unregistered", conn)
+				log.Println("Client unregistered", clientWithConn)
 				delete(hub.clients, clientWithConn)
 				conn.Close(websocket.StatusNormalClosure, "Connection closing")
 			}
