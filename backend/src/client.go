@@ -20,10 +20,18 @@ type Client struct {
 
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
 func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
-	defer conn.Close(websocket.StatusNormalClosure, "Connection closing")
+	defer func() {
+		GetHub().Unregister <- conn
+		conn.Close(websocket.StatusNormalClosure, "Connection closing")
+	}()
 
 	for {
 		mType, contents, err := conn.Read(context.Background())
+		if err != nil {
+			log.Println("Connection closed: ", err)
+			break
+		}
+
 		log.Println("Message received: ", string(contents))
 		assert.That(mType == websocket.MessageText, "Message arrived that's not text", nil)
 
@@ -44,11 +52,6 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 			}
 		default:
 			log.Println("Unknown message type: ", message.Type)
-		}
-
-		if err != nil {
-			log.Println("Connection closed: ", err)
-			break
 		}
 	}
 }
