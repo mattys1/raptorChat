@@ -26,19 +26,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	hub.Register <- conn
 
-	defer func() {
-		hub.Unregister <- conn
-		conn.Close(websocket.StatusNormalClosure, "Connection closing")
-	}()
-
 	// Listen for messages until the connection is closed
-	for {
-		_, _, err := conn.Read(context.Background())
-		if err != nil {
-			log.Printf("Connection closed: %v", err)
-			break
-		}
-	}
+	// for {
+	// 	_, _, err := conn.Read(context.Background())
+	// 	if err != nil {
+	// 		log.Printf("Connection closed: %v", err)
+	// 		break
+	// 	}
+	// }
 }
 
 func main() {
@@ -51,7 +46,7 @@ func main() {
 	dao := db.GetDao()
 
 	users, err := dao.GetAllUsers(ctx)
-	assert.That(err == nil, "Failed to get users")
+	assert.That(err == nil, "Failed to get users", err)
 	log.Println("Users:", users)
 
 	// assert.That(false, "")
