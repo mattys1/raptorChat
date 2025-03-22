@@ -11,7 +11,7 @@ import (
 )
 
 type Hub struct {
-	clients map[*Client]bool
+	clients map[*db.User]*websocket.Conn
 	Register chan *websocket.Conn
 	Unregister chan *websocket.Conn
 	ctx context.Context
@@ -21,7 +21,7 @@ func newHub() *Hub {
 	return &Hub{
 		Register:   make(chan *websocket.Conn),
 		Unregister: make(chan *websocket.Conn),
-		clients:    make(map[*Client]bool),
+		clients:    make(map[*db.User]*websocket.Conn),
 		ctx:        context.Background(),
 	}
 }
@@ -31,39 +31,25 @@ func (hub *Hub) run() {
 		// FIXME: ideally, clients should be prepared elsewhere and registered here, not connections.
 		select {
 		case conn := <-hub.Register:
-			client := &Client{
-				Connection: conn,
-			}
-			
-			hub.clients[client] = true
-
 			// FIXME: AAAAAAA
-			assert.That(len(hub.clients) <= 2, "Too many clients")
+			assert.That(len(hub.clients) + 1 <= 2, "Too many clients", nil)
 
-			user, err := db.GetDao().GetUserById(hub.ctx, uint64(len(hub.clients)))
-			client.User = &user
-			assert.That(err == nil, "Failed to get user")
+			user, err := db.GetDao().GetUserById(hub.ctx, uint64(len(hub.clients) + 1))
+			assert.That(err == nil, "Failed to get user", err)
 
-			hub.clients[client] = true
+			hub.clients[&user] = conn
+			// client.User = &user
 
-			log.Println("Client registered", client)
+			log.Println("Client registered", user, conn)
 
 		case conn := <-hub.Unregister:
-			clientWithConn := func(c *websocket.Conn) *Client {
-				for client := range hub.clients {
-					if client.Connection == c {
-						return client
-					}
+			for user, c := range hub.clients {
+				if c == conn {
+					delete(hub.clients, user)
+					log.Println("Client unregistered", user, c)
+					conn.Close(websocket.StatusNormalClosure, "Connection closing")
+					break
 				}
-				return nil	
-			}(conn)
-
-			assert.That(clientWithConn != nil, "Attempting to unregister a nonexistent client")
-
-			if _, ok := hub.clients[clientWithConn]; ok {
-				log.Println("Client unregistered", clientWithConn)
-				delete(hub.clients, clientWithConn)
-				conn.Close(websocket.StatusNormalClosure, "Connection closing")
 			}
 		}
 	}
