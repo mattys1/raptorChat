@@ -8,6 +8,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/db"
+	msg "github.com/mattys1/raptorChat/src/pkg/messaging"
 )
 
 type Hub struct {
@@ -15,14 +16,16 @@ type Hub struct {
 	Register chan *websocket.Conn
 	Unregister chan *websocket.Conn
 	ctx context.Context
+	router *msg.MessageRouter
 }
 
-func newHub() *Hub {
+func newHub(router *msg.MessageRouter) *Hub {
 	return &Hub{
 		Register:   make(chan *websocket.Conn),
 		Unregister: make(chan *websocket.Conn),
 		clients:    make(map[*db.User]*websocket.Conn),
 		ctx:        context.Background(),
+		router:     router,
 	}
 }
 
@@ -41,10 +44,12 @@ func (hub *Hub) run() {
 			// client.User = &user
 
 			log.Println("Client registered", user, conn)
+			go listenForMessages(conn, hub.router)
 
 		case conn := <-hub.Unregister:
 			for user, c := range hub.clients {
 				if c == conn {
+					hub.router.UnsubscribeAll(conn) //TODO: this may not be necessary
 					delete(hub.clients, user)
 					log.Println("Client unregistered", user, c)
 					conn.Close(websocket.StatusNormalClosure, "Connection closing")
@@ -61,7 +66,8 @@ var once sync.Once
 
 func GetHub() *Hub {
 	once.Do(func() {
-		instance = newHub()
+		router := msg.NewMessageRouter()
+		instance = newHub(router)
 	})
 
 	return instance
