@@ -57,7 +57,7 @@ services:
       GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3306)/${DB_NAME}
     volumes:
       - ./backend/db/migrations:/migrations
-    command: ["goose", "up", "--dir", "/migrations"]
+    command: ["sh", "-c", "goose ${MIGRATION_DIRECTION:-up} --dir /migrations ${MIGRATION_FILE:-}"]
 
   frontend-build:
     build: 
