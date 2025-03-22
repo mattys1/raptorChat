@@ -39,6 +39,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	fmt.Print("Starting...")
 	http.HandleFunc("/login", auth.LoginHandler)
+	http.HandleFunc("/register", auth.RegisterHandler)
 	http.HandleFunc("/ws", wsHandler)
 
 	ctx := context.Background()
