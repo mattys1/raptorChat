@@ -40,3 +40,19 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	}
 	return items, nil
 }
+
+const getUserById = `-- name: GetUserById :one
+SELECT id, username, email, created_at FROM users WHERE id = ?
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.CreatedAt,
+	)
+	return i, err
+}

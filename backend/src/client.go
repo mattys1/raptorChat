@@ -7,6 +7,6 @@ import (
 
 type Client struct {
 	User *db.User `json:"user"`
-	IP string `json:"ip"`
+	// IP string `json:"ip"`
 	Connection *websocket.Conn 
 }

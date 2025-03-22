@@ -3,12 +3,9 @@ package main
 import (
 	"context"
 	_ "database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/coder/websocket"
 
@@ -17,10 +14,8 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
-var CLIENTS []*Client = []*Client{}
-var HUB *Hub = newHub()
-
 func wsHandler(w http.ResponseWriter, r *http.Request) {
+	hub := GetHub()
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
 	})
@@ -28,65 +23,22 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("WebSocket connection failed: %v", err)
 		return
 	}
+
+	hub.Register <- conn
+
 	defer func() {
-		HUB.unregister <- CLIENTS[len(CLIENTS) - 1]
-		conn.Close(websocket.StatusInternalError, "Connection closing")
+		hub.Unregister <- conn
+		conn.Close(websocket.StatusNormalClosure, "Connection closing")
 	}()
 
-	client := &Client {
-		IP: r.RemoteAddr, 
-		Connection: conn,
-	}
-	log.Println("Client connected! IP:", client.IP)
-
-	CLIENTS = append(CLIENTS, client)
-
-	HUB.register <- client	
-
-	ctx, cancel := context.WithTimeout(r.Context(), time.Hour)
-	defer cancel()
-
-	coolCounter := 0
-
+	// Listen for messages until the connection is closed
 	for {
-		messageType, messageContents, err := conn.Read(ctx)
+		_, _, err := conn.Read(context.Background())
 		if err != nil {
-			log.Println("Client disconnected:", err)
+			log.Printf("Connection closed: %v", err)
 			break
 		}
-
-		assert.That(messageType == websocket.MessageText, "Not implemented, probably shouldn't even be handled")
-
-		message := string(messageContents)
-		switch message {
-		case "button-pressed":
-			coolCounter++
-			conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
-			fmt.Println("Button pressed")
-
-		default: 
-			log.Default().Println("New message:", message)
-
-			encoded, err := json.Marshal(
-				Message {
-					Sender: client,
-					Content: message,
-				},
-			)
-			assert.That(err == nil, "Failed to encode message")
-
-			for _, client := range CLIENTS {
-				client.Connection.Write(ctx, websocket.MessageText, encoded)
-			}
-
-			log.Println("Sent:", string(encoded))
-			
-		}
-
-		fmt.Println("Cool counter: ", coolCounter);
 	}
-
-	conn.Close(websocket.StatusNormalClosure, "")
 }
 
 func main() {
@@ -104,7 +56,7 @@ func main() {
 
 	// assert.That(false, "")
 
-	go HUB.run()	
+	go GetHub().run()	
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
