@@ -7,10 +7,27 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
+const createUser = `-- name: CreateUser :exec
+INSERT INTO users (username, email, password, created_at)
+VALUES (?, ?, ?, NOW())
+`
+
+type CreateUserParams struct {
+	Username string
+	Email    string
+	Password string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
+	_, err := q.db.ExecContext(ctx, createUser, arg.Username, arg.Email, arg.Password)
+	return err
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, created_at FROM users
+SELECT id, username, email, created_at, password FROM users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -27,6 +44,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.Username,
 			&i.Email,
 			&i.CreatedAt,
+			&i.Password,
 		); err != nil {
 			return nil, err
 		}
@@ -39,4 +57,29 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, username, email, password, created_at FROM users WHERE email = ? LIMIT 1
+`
+
+type GetUserByEmailRow struct {
+	ID        uint64
+	Username  string
+	Email     string
+	Password  string
+	CreatedAt time.Time
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+	)
+	return i, err
 }

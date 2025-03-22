@@ -29,9 +29,9 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close(websocket.StatusInternalError, "Connection closing")
 
-	client := &Client {
-		Id: 0,
-		IP: r.RemoteAddr, 
+	client := &Client{
+		Id:         0,
+		IP:         r.RemoteAddr,
 		Connection: conn,
 	}
 	log.Println("Client connected! IP:", client.IP)
@@ -59,12 +59,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			conn.Write(ctx, websocket.MessageText, []byte(strconv.Itoa(coolCounter)))
 			fmt.Println("Button pressed")
 
-		default: 
+		default:
 			log.Default().Println("New message:", message)
 
 			encoded, err := json.Marshal(
-				Message {
-					Sender: client,
+				Message{
+					Sender:  client,
 					Content: message,
 				},
 			)
@@ -75,10 +75,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Println("Sent:", string(encoded))
-			
+
 		}
 
-		fmt.Println("Cool counter: ", coolCounter);
+		fmt.Println("Cool counter: ", coolCounter)
 	}
 
 	conn.Close(websocket.StatusNormalClosure, "")
@@ -87,6 +87,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	fmt.Print("Starting...")
 	http.HandleFunc("/login", auth.LoginHandler)
+	http.HandleFunc("/register", auth.RegisterHandler)
 	http.HandleFunc("/ws", wsHandler)
 
 	ctx := context.Background()
@@ -96,8 +97,6 @@ func main() {
 	users, err := dao.GetAllUsers(ctx)
 	assert.That(err == nil, "Failed to get users")
 	log.Println("Users:", users)
-
-	// assert.That(false, "")
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

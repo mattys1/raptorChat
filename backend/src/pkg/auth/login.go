@@ -1,15 +1,18 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
-	// "github.com/mattys1/raptorChat/src/pkg/db"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
 type LoginCredentials struct {
-	Username    string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -37,9 +40,22 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	time.Sleep(1 * time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	dao := db.GetDao()
+	user, err := dao.GetUserByEmail(ctx, creds.Email)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)); err != nil {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status": "success"}`))
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
