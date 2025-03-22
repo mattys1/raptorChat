@@ -2,6 +2,6 @@
 
 package assert
 
-func That(condition bool, message string) {
+func That(condition bool, message string, err error) {
 
 }

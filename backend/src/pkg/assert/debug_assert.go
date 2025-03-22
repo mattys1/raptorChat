@@ -2,11 +2,15 @@
 
 package assert
 
-import "log"
+// import "log"
 
-func That(condition bool, message string) {
+func That(condition bool, message string, err error) {
     if !condition {	
-		log.Panic("Assertion failed: ", message, "\n")
+		if err != nil {
+			message += " --- ERR: " + err.Error()	
+		} 
+		panic("Assertion failed: " + message + "\n")
+		
     }
 }
 
