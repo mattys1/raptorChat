@@ -21,5 +21,8 @@ CREATE TABLE messages (
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS messages;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 DROP TABLE IF EXISTS rooms;
 -- +goose StatementEnd
