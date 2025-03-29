@@ -31,23 +31,6 @@ export function useLoginHook(onLoginSuccess: () => void) {
 		}
 	};
 
-	const setupWebSocket = () => {
-		const ws = new WebSocket("ws://localhost:8080/ws");
-
-		ws.onopen = () => {
-			console.log("WebSocket connection established.");
-			const subscription = {
-				type: "subscribe",
-				contents: "chat_messages"
-			}
-			ws.send(JSON.stringify(subscription));
-		}
-
-		ws.onmessage = (event) => {
-			console.log("WebSocket message received:", event.data);
-		}
-	};
-
 	return {
 		email,
 		password,
