@@ -1,9 +1,9 @@
 import React from "react";
 import "./Start.css";
-import { useStartHook } from "../hooks/useStartHook";
+import { useMainHook } from "../hooks/useStartHook";
 
-const StartMain: React.FC = () => {
-	const socket = useStartHook()
+const MainView: React.FC = () => {
+	const socket = useMainHook()
 
 	return (
 		<div>
@@ -15,4 +15,4 @@ const StartMain: React.FC = () => {
 	);
 };
 
-export default StartMain;
+export default MainView;

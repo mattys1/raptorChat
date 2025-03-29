@@ -2,7 +2,7 @@ import React from "react";
 import LoginView from "./views/LoginView";
 import RegistrationView from "./views/RegistrationView";
 // import Layout from "./Layout";
-import StartMain from "./views/StartMain";
+import MainView from "./views/MainView";
 // import SettingsMain from "./views/SettingsMain";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Layout from "./Layout";
@@ -24,7 +24,7 @@ const App: React.FC = () => {
 
 			<Route path="/main" element={
 				<Layout navigate={navigate}>
-					<StartMain />
+					<MainView />
 				</Layout>
 			} />
 
