@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import "./Login.css";
 
-interface RegistrationViewProps {
-  onRegistrationSuccess: () => void;
-  onToggleToLogin: () => void;
-}
-
-const RegistrationView: React.FC<RegistrationViewProps> = ({
-  onRegistrationSuccess,
-  onToggleToLogin,
-}) => {
+const RegistrationView = ({
+	onRegistrationSuccess,
+	onToggleToLogin,
+}: {
+		onRegistrationSuccess: () => void;
+		onToggleToLogin: () => void;
+	}) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

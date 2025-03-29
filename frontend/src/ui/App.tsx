@@ -1,55 +1,39 @@
-import React, { useState } from "react";
+import React from "react";
 import LoginView from "./views/LoginView";
 import RegistrationView from "./views/RegistratiovView";
-import Layout from "./Layout";
+// import Layout from "./Layout";
 import StartMain from "./views/StartMain";
+// import SettingsMain from "./views/SettingsMain";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import Layout from "./Layout";
 import SettingsMain from "./views/SettingsMain";
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showRegistration, setShowRegistration] = useState(false);
-  const [currentView, setCurrentView] = useState<"start" | "settings">("start");
+	const navigate = useNavigate()
 
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-    setCurrentView("start");
-  };
+	const handleLoginSuccess = () => {
+		navigate("/main")
+	};
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
+	return (
+		<Routes>
+			<Route path="/login" element={<LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => navigate("/register")} />}/>
 
-  const renderMainContent = () => {
-    if (currentView === "start") {
-      return <StartMain />;
-    } else if (currentView === "settings") {
-      return (
-        <SettingsMain
-          onReturn={() => setCurrentView("start")}
-          onLogout={handleLogout}
-        />
-      );
-    }
-  };
+			<Route path="/register" element={<RegistrationView onRegistrationSuccess={handleLoginSuccess} onToggleToLogin={() => navigate("/")} />}/>
 
-  return (
-    <>
-      {!isLoggedIn ? (
-        showRegistration ? (
-          <RegistrationView
-            onRegistrationSuccess={() => setShowRegistration(false)}
-            onToggleToLogin={() => setShowRegistration(false)}
-          />
-        ) : (
-          <LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => setShowRegistration(true)} />
-        )
-      ) : (
-        <Layout onSettingsClick={() => setCurrentView("settings")}>
-          {renderMainContent()}
-        </Layout>
-      )}
-    </>
-  );
+			<Route path="/main" element={
+				<Layout navigate={navigate}>
+					<StartMain />
+				</Layout>
+			} />
+
+			<Route path="/settings" element={
+				<Layout navigate={navigate}>
+					<SettingsMain navigate={navigate}/>
+				</Layout>
+			} />
+		</Routes>
+	);
 };
 
 export default App;

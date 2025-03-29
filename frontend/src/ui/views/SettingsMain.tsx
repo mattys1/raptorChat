@@ -1,34 +1,29 @@
-import React from "react";
 import "./Start.css";
+import { NavigateFunction } from "react-router-dom";
 
-interface SettingsMainProps {
-  onReturn: () => void;
-  onLogout: () => void;
-}
-
-const SettingsMain: React.FC<SettingsMainProps> = ({ onReturn, onLogout }) => {
+const SettingsMain = ({navigate}: {navigate: NavigateFunction} ) => {
   const handleChangeUsername = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/change-username", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newUsername: "dummy" }),
-      });
-    } catch (error) {
-      console.error("Error changing username", error);
-    }
+    // try {
+    //   const response = await fetch("http://localhost:8080/change-username", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ newUsername: "dummy" }),
+    //   });
+    // } catch (error) {
+    //   console.error("Error changing username", error);
+    // }
   };
 
   const handleChangePassword = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword: "dummy" }),
-      });
-    } catch (error) {
-      console.error("Error changing password", error);
-    }
+    // try {
+    //   const response = await fetch("http://localhost:8080/change-password", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ newPassword: "dummy" }),
+    //   });
+    // } catch (error) {
+    //   console.error("Error changing password", error);
+    // }
   };
 
   return (
@@ -42,10 +37,10 @@ const SettingsMain: React.FC<SettingsMainProps> = ({ onReturn, onLogout }) => {
           <button onClick={handleChangePassword}>Change Password</button>
         </li>
         <li>
-          <button onClick={onLogout}>Log Out</button>
+          <button onClick={() => navigate("/login")}>Log Out</button>
         </li>
         <li>
-          <button onClick={onReturn}>Return to Start Screen</button>
+          <button onClick={() => navigate("/main")}>Return to Start Screen</button>
         </li>
       </ul>
     </div>
