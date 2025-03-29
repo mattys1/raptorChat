@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import styles from "./Login.module.css";
 import { useLoginHook } from "../hooks/useLoginHook";
 
@@ -8,6 +7,7 @@ interface FormProps {
 	label: string
 	placeholder: string
 	id: string
+	hidden?: boolean
 }
 
 const Form = ({
@@ -15,13 +15,14 @@ const Form = ({
 	setValue: setValue,
 	label,
 	placeholder,
-	id
+	id,
+	hidden = false
 }: FormProps) => {
 	return (
 		<>
 			<label htmlFor={id}>{label}</label>
 			<input
-				type="text"
+				type={hidden ? "password" : "text"}
 				id={id}
 				name={id}
 				placeholder={placeholder}
