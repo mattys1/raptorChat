@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import styles from "./Login.module.css";
+
 import { useRegistrationHook } from "../hooks/useRegistrationHook";
+import { Form } from "../components/Form"
 
 const RegistrationView = ({
 	onRegistrationSuccess,
@@ -30,46 +32,40 @@ const RegistrationView = ({
 					<img src="avatar.png" alt="Avatar" className={styles.avatar} />
 				</div>
 				<form className={styles.loginForm} onSubmit={handleSubmit}>
-					<label htmlFor="userEmail">E-mail</label>
-					<input
-						type="email"
-						id="userEmail"
-						name="userEmail"
+					<Form 
+						readValue={email}
+						setValue={setEmail}
+						label="E-mail"
 						placeholder="Enter your email"
-						required
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
+						id="userEmail"
 					/>
-					<label htmlFor="username">Username</label>
-					<input
-						type="text"
-						id="username"
-						name="username"
+
+					<Form 
+						readValue={username}
+						setValue={setUsername}
+						label="Username"
 						placeholder="Enter your username"
-						required
-						value={username}
-						onChange={(e) => setUsername(e.target.value)}
+						id="username"
 					/>
-					<label htmlFor="userPassword">Password</label>
-					<input
-						type="password"
-						id="userPassword"
-						name="userPassword"
+
+					<Form 
+						readValue={password}
+						setValue={setPassword}
+						label="Password"
 						placeholder="Enter your password"
-						required
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
+						id="userPassword"
+						hidden={true}
 					/>
-					<label htmlFor="repeatPassword">Repeat Password</label>
-					<input
-						type="password"
-						id="repeatPassword"
-						name="repeatPassword"
+
+					<Form 
+						readValue={repeatPassword}
+						setValue={setRepeatPassword}
+						label="Repeat Password"
 						placeholder="Repeat your password"
-						required
-						value={repeatPassword}
-						onChange={(e) => setRepeatPassword(e.target.value)}
+						id="repeatPassword"
+						hidden={true}
 					/>
+
 					<div className={styles.buttonGroup}>
 						<button type="submit" className={styles.primaryBtn} disabled={loading}>
 							{loading ? "Creating account..." : "Create account"}
