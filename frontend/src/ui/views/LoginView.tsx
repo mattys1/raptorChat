@@ -1,12 +1,41 @@
 import React, { useState } from "react";
 import styles from "./Login.module.css";
 
-interface LoginViewProps {
-	onLoginSuccess: () => void;
-	onToggleToRegistration: () => void;
+interface FormProps {
+	readValue: string
+	setValue: (email: string) => void
+	label: string
+	placeholder: string
+	id: string
 }
 
-const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onToggleToRegistration }) => {
+const Form = ({
+	readValue: readValue,
+	setValue: setValue,
+	label,
+	placeholder,
+	id
+}: FormProps) => {
+	return (
+		<>
+			<label htmlFor={id}>{label}</label>
+			<input
+				type="text"
+				id={id}
+				name={id}
+				placeholder={placeholder}
+				required
+				value={readValue}
+				onChange={(e) => setValue(e.target.value)}
+			/>
+		</>
+	)
+}
+
+const LoginView  = ({ onLoginSuccess, onToggleToRegistration }: {
+	onLoginSuccess: () => void;
+	onToggleToRegistration: () => void;
+}) => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -58,26 +87,18 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onToggleToRegistr
 					<img src="avatar.png" alt="Avatar" className={styles.avatar} />
 				</div>
 				<form className={styles.loginForm} onSubmit={handleSubmit}>
-					<label htmlFor="userEmail">Email or Nickname</label>
-					<input
-						type="text"
-						id="userEmail"
-						name="userEmail"
+					<Form 
+						readValue={email}
+						setValue={setEmail}
+						label="Email or Nickname"
 						placeholder="Enter email or nickname"
-						required
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-					/>
-					<label htmlFor="userPassword">Password</label>
-					<input
-						type="password"
-						id="userPassword"
-						name="userPassword"
+						id="userEmail" />
+					<Form 
+						readValue={password}
+						setValue={setPassword}
+						label="Password"
 						placeholder="Enter password"
-						required
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-					/>
+						id="userPassword" />
 					<div className={styles.buttonGroup}>
 						<button type="submit" className={styles.primaryBtn} disabled={loading}>
 							{loading ? "Logging in..." : "Log In"}
