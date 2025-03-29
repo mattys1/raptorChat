@@ -1,5 +1,5 @@
 import React from "react";
-import "./Start.css";
+import styles from "./Start.module.css";
 
 interface SidebarProps {
   onSettingsClick: () => void;
@@ -8,7 +8,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
   return (
     <>
-      <div className="friends-section">
+      <div className={styles.friendsSection}>
         <h2>Friends</h2>
         <ul>
           <li>Friend name</li>
@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
           <li>Friend name</li>
         </ul>
       </div>
-      <div className="groups-section">
+      <div className={styles.groupsSection}>
         <h2>Group chat</h2>
         <ul>
           <li>Group chat</li>
@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
         </ul>
       </div>
       <div
-        className="settings"
+        className={styles.settings}
         onClick={onSettingsClick}
         style={{ cursor: "pointer" }}
       >

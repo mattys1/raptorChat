@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./Login.css";
+import styles from "./Login.module.css";
 
 const RegistrationView = ({
 	onRegistrationSuccess,
@@ -46,12 +46,12 @@ const RegistrationView = ({
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="avatar-container">
-          <img src="avatar.png" alt="Avatar" className="avatar" />
+    <div className={styles.loginContainer}>
+      <div className={styles.loginCard}>
+        <div className={styles.avatarContainer}>
+          <img src="avatar.png" alt="Avatar" className={styles.avatar} />
         </div>
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form className={styles.loginForm} onSubmit={handleSubmit}>
           <label htmlFor="userEmail">E-mail</label>
           <input
             type="email"
@@ -92,11 +92,11 @@ const RegistrationView = ({
             value={repeatPassword}
             onChange={(e) => setRepeatPassword(e.target.value)}
           />
-          <div className="button-group">
-            <button type="submit" className="primary-btn" disabled={loading}>
+          <div className={styles.buttonGroup}>
+            <button type="submit" className={styles.primaryBtn} disabled={loading}>
               {loading ? "Creating account..." : "Create account"}
             </button>
-            <button type="button" className="secondary-btn" onClick={onToggleToLogin}>
+            <button type="button" className={styles.secondaryBtn} onClick={onToggleToLogin}>
               Already have an account? Log in
             </button>
           </div>

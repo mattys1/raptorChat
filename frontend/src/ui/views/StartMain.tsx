@@ -1,12 +1,12 @@
 import React from "react";
-import "./Start.css";
+import styles from "./Start.module.css";
 
 const StartMain: React.FC = () => {
   return (
     <div>
       <h1>Welcome to raptorChat!</h1>
-      <button className="add-friend-btn">
-        <span className="icon">+</span> Add Friend
+      <button className={styles.addFriendBtn}>
+        <span className={styles.icon}>+</span> Add Friend
       </button>
     </div>
   );

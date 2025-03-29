@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./Login.css";
+import styles from "./Login.module.css";
 
 interface LoginViewProps {
 	onLoginSuccess: () => void;
@@ -52,12 +52,12 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onToggleToRegistr
 	};
 	
 	return (
-		<div className="login-container">
-			<div className="login-card">
-				<div className="avatar-container">
-					<img src="avatar.png" alt="Avatar" className="avatar" />
+		<div className={styles.loginContainer}>
+			<div className={styles.loginCard}>
+				<div className={styles.avatarContainer}>
+					<img src="avatar.png" alt="Avatar" className={styles.avatar} />
 				</div>
-				<form className="login-form" onSubmit={handleSubmit}>
+				<form className={styles.loginForm} onSubmit={handleSubmit}>
 					<label htmlFor="userEmail">Email or Nickname</label>
 					<input
 						type="text"
@@ -78,13 +78,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onToggleToRegistr
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 					/>
-					<div className="button-group">
-						<button type="submit" className="primary-btn" disabled={loading}>
+					<div className={styles.buttonGroup}>
+						<button type="submit" className={styles.primaryBtn} disabled={loading}>
 							{loading ? "Logging in..." : "Log In"}
 						</button>
 						<button 
 							type="button" 
-							className="secondary-btn" 
+							className={styles.secondaryBtn} 
 							onClick={onToggleToRegistration}
 						>
 							Create Account

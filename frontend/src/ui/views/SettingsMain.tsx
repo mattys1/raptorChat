@@ -1,4 +1,3 @@
-import "./Start.css";
 import { NavigateFunction } from "react-router-dom";
 
 const SettingsMain = ({navigate}: {navigate: NavigateFunction} ) => {
