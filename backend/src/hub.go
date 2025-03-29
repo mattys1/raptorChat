@@ -38,7 +38,10 @@ func (hub *Hub) run() {
 			assert.That(len(hub.clients) + 1 <= 2, "Too many clients", nil)
 
 			user, err := db.GetDao().GetUserById(hub.ctx, uint64(len(hub.clients) + 1))
-			assert.That(err == nil, "Failed to get user", err)
+			if err != nil {
+				log.Println("Error getting user", err)
+				break
+			}
 
 			hub.clients[&user] = conn
 			// client.User = &user
