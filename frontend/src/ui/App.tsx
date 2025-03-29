@@ -17,6 +17,7 @@ const App: React.FC = () => {
 
 	return (
 		<Routes>
+			<Route path="/" element={<LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => navigate("/register")} />}/>
 			<Route path="/login" element={<LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => navigate("/register")} />}/>
 
 			<Route path="/register" element={<RegistrationView onRegistrationSuccess={handleLoginSuccess} onToggleToLogin={() => navigate("/")} />}/>
