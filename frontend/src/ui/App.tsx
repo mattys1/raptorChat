@@ -1,6 +1,6 @@
 import React from "react";
 import LoginView from "./views/LoginView";
-import RegistrationView from "./views/RegistratiovView";
+import RegistrationView from "./views/RegistrationView";
 // import Layout from "./Layout";
 import StartMain from "./views/StartMain";
 // import SettingsMain from "./views/SettingsMain";
