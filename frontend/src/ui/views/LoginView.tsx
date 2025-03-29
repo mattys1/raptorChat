@@ -54,13 +54,16 @@ const LoginView  = ({ onLoginSuccess, onToggleToRegistration }: {
 						setValue={setEmail}
 						label="Email or Nickname"
 						placeholder="Enter email or nickname"
-						id="userEmail" />
+						id="userEmail" 
+					/>
 					<Form 
 						readValue={password}
 						setValue={setPassword}
 						label="Password"
 						placeholder="Enter password"
-						id="userPassword" />
+						id="userPassword"
+						hidden={true}
+					/>
 					<div className={styles.buttonGroup}>
 						<button type="submit" className={styles.primaryBtn} disabled={loading}>
 							{loading ? "Logging in..." : "Log In"}
