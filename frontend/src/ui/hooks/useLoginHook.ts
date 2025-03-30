@@ -16,8 +16,6 @@ export function useLoginHook(onLoginSuccess: () => void) {
 				body: JSON.stringify({ email, password }),
 			});
 
-			setupWebSocket();
-
 			if (response.ok) {
 				onLoginSuccess();
 			} else {

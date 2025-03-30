@@ -8,6 +8,7 @@ import (
 	"github.com/coder/websocket"
 
 	"github.com/mattys1/raptorChat/src/pkg/assert"
+	"slices"
 )
 
 type MessageRouter struct {
@@ -29,7 +30,7 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, conn *websocket.Con
 	subs := router.subscribers[event]
 	for i, c := range subs {
 		if c == conn {
-			router.subscribers[event] = append(subs[:i], subs[i+1:]...)
+			router.subscribers[event] = slices.Delete(subs, i, i+1)
 			break
 		}
 	}
@@ -39,7 +40,7 @@ func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
 	for event, subs := range router.subscribers {
 		for i, c := range subs {
 			if c == conn {
-				router.subscribers[event] = append(subs[:i], subs[i+1:]...)
+				router.subscribers[event] = slices.Delete(subs, i, i+1)
 				break
 			}
 		}

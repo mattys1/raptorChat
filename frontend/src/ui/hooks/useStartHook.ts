@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 
 import { WebsocketService } from "../../logic/websocket";
+import { SubscriptionManager } from "../../logic/SubscriptionManager";
+import { User } from "../../types/models/Models";
+import { MessageEvents } from "../../types/MessageNames";
 
 export const useMainHook = () => {
 	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const [isConnecting, setIsConnecting] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
+	const [users, setUsers] = useState<User[]>([])
 
 		const setupWebSocket = async () => {
 			setIsConnecting(true);
@@ -17,17 +21,9 @@ export const useMainHook = () => {
 			} else {
 				console.log("WebSocket instance created:", ws.value);
 
-				ws.value.onopen = async () => {
-					console.log("WebSocket connection established.");
-					const subscription = {
-						type: "subscribe",
-						contents: "chat_messages"
-					}
-					ws.value.send(JSON.stringify(subscription));
-				}
-
-				ws.value.onmessage = async (event) => {
-					console.log("WebSocket message received:", event.data);
+				ws.value.onopen = () => {
+					const manager = new SubscriptionManager(ws.value)
+					manager.subscribe<User>(MessageEvents.USERS, users, setUsers)
 				}
 
 				setSocket(ws.value);
@@ -38,12 +34,18 @@ export const useMainHook = () => {
 
 	useEffect(() => {
 		setupWebSocket();
+
+		return () => {
+
+		}
 	}, [])
 
 	return {
 		socket,
 		isConnecting,
-		error
+		error,
+		users,
+		setUsers
 	}
 };
 

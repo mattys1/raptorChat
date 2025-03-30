@@ -2,5 +2,10 @@ package messaging
 
 type Message struct {
 	Type string `json:"type"`
-	Contents interface{} `json:"contents"`
+	Contents any `json:"contents"`
+}
+
+type Resource struct {
+	EventName string `json:"eventName"`	
+	Contents []any `json:"contents"`
 }

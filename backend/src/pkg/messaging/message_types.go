@@ -13,4 +13,5 @@ type MessageEvent string
 
 const (
 	MessageEventChatMessages MessageEvent = "chat_messages"
+	MessageEventUsers MessageEvent = "users"
 )

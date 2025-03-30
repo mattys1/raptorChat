@@ -3,10 +3,21 @@ import "./Start.css";
 import { useMainHook } from "../hooks/useStartHook";
 
 const MainView: React.FC = () => {
-	const socket = useMainHook()
+	const props = useMainHook()
+	const socket = props.socket
+	const users = props.users
 
 	return (
 		<div>
+			{users.map((user) => {
+				return(
+					<div>
+						{user.username}
+						{user.email}
+						{user.created_at.toString()}
+					</div>
+				)
+			})}
 			<h1>Welcome to raptorChat!</h1>
 			<button className="add-friend-btn">
 				<span className="icon">+</span> Add Friend

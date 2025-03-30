@@ -40,15 +40,36 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 
 		switch msg.MessageType(message.Type) {
 		case msg.MessageTypeSubscribe:
-			event, success := message.Contents.(string)
-			event = string(msg.MessageEvent(event))
-			assert.That(success, "Failed to convert message contents to MessageEvent", nil)
+			eventName, success := message.Contents.(string)
+			assert.That(success, "Failed to convert message contents to string", nil)
 
-			switch msg.MessageEvent(event) {
+			switch msg.MessageEvent(eventName) {
 			case msg.MessageEventChatMessages:
-				router.Subscribe(msg.MessageEvent(event), conn)
+				router.Subscribe(msg.MessageEvent(eventName), conn)
 				go conn.Write(context.TODO(), websocket.MessageType(websocket.MessageText), []byte("User has subscribed to chat messages"))
 				go testSomePings(router)
+			
+			case msg.MessageEventUsers:
+				router.Subscribe(msg.MessageEventUsers, conn)
+
+				users, err := db.GetDao().GetAllUsers(context.TODO())
+				assert.That(err == nil, "Failed to get users from db", err)
+
+				var sendableUsers []any
+				for _, user := range users {
+					sendableUsers = append(sendableUsers, user.ToSendable())	
+				}
+
+				go router.Publish(
+					msg.MessageEventUsers,
+					msg.Message{
+						Type: string(msg.MesssageTypeCreate),	
+						Contents: msg.Resource{
+							EventName: string(msg.MessageEventUsers),
+							Contents: sendableUsers,
+						},
+					},
+				)
 			}
 		default:
 			log.Println("Unknown message type: ", message.Type)
@@ -61,10 +82,15 @@ func testSomePings(router *msg.MessageRouter) {
 
 	router.Publish(msg.MessageEventChatMessages, msg.Message{
 		Type: string(msg.MesssageTypeCreate),
-		Contents: db.Message{
-			SenderID: 1,
-			RoomID: 1,
-			Contents: "Test message was succesfully sent",
+		Contents: msg.Resource{
+			EventName: string(msg.MessageEventChatMessages),
+			Contents:  []any{
+				db.Message{
+					SenderID: 1,
+					RoomID: 1,
+					Contents: "Test message was succesfully sent",
+				},
+			},
 		},
 	})
 }
