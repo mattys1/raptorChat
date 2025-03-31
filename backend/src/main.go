@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	_ "database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/coder/websocket"
-
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/auth"
 	"github.com/mattys1/raptorChat/src/pkg/db"
@@ -25,6 +25,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hub.Register <- conn
+}
+
+func protectedHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
 
 	// Listen for messages until the connection is closed
 	// for {
@@ -34,6 +42,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// 		break
 	// 	}
 	// }
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Protected data access granted",
+		"userID":  userID,
+	})
 }
 
 func main() {
@@ -42,17 +55,16 @@ func main() {
 	http.HandleFunc("/register", auth.RegisterHandler)
 	http.HandleFunc("/ws", wsHandler)
 
+	http.Handle("/protected", auth.JWTMiddleware(http.HandlerFunc(protectedHandler)))
+
 	ctx := context.Background()
 
 	dao := db.GetDao()
-
 	users, err := dao.GetAllUsers(ctx)
 	assert.That(err == nil, "Failed to get users", err)
 	log.Println("Users:", users)
 
-	// assert.That(false, "")
-
-	go GetHub().run()	
+	go GetHub().run()
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

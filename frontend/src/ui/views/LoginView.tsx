@@ -18,6 +18,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onToggleToRegistr
     try {
       const response = await fetch("http://localhost:8080/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });

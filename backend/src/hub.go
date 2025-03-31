@@ -12,11 +12,11 @@ import (
 )
 
 type Hub struct {
-	clients map[*db.User]*websocket.Conn
-	Register chan *websocket.Conn
+	clients    map[*db.User]*websocket.Conn
+	Register   chan *websocket.Conn
 	Unregister chan *websocket.Conn
-	ctx context.Context
-	router *msg.MessageRouter
+	ctx        context.Context
+	router     *msg.MessageRouter
 }
 
 func newHub(router *msg.MessageRouter) *Hub {
@@ -35,9 +35,9 @@ func (hub *Hub) run() {
 		select {
 		case conn := <-hub.Register:
 			// FIXME: AAAAAAA
-			assert.That(len(hub.clients) + 1 <= 2, "Too many clients", nil)
+			assert.That(len(hub.clients)+1 <= 2, "Too many clients", nil)
 
-			user, err := db.GetDao().GetUserById(hub.ctx, uint64(len(hub.clients) + 1))
+			user, err := db.GetDao().GetUserById(hub.ctx, uint64(len(hub.clients)+1))
 			assert.That(err == nil, "Failed to get user", err)
 
 			hub.clients[&user] = conn
@@ -59,7 +59,6 @@ func (hub *Hub) run() {
 		}
 	}
 }
-
 
 var instance *Hub
 var once sync.Once

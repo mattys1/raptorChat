@@ -17,9 +17,10 @@ type LoginCredentials struct {
 }
 
 func enableCors(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +56,25 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tokenString, err := GenerateToken(user.ID)
+	if err != nil {
+		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		return
+	}
+
+	expirationTime := time.Now().Add(24 * time.Hour)
+	cookie := &http.Cookie{
+		Name:     "token",
+		Value:    tokenString,
+		Expires:  expirationTime,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	}
+	http.SetCookie(w, cookie)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	json.NewEncoder(w).Encode(map[string]string{"status": "login successful"})
 }
