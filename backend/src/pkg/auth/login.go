@@ -23,6 +23,18 @@ func enableCors(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
+// LoginHandler godoc
+// @Summary Log in a user
+// @Description Authenticates a user and sets a JWT token cookie upon success.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body LoginCredentials true "User credentials"
+// @Success 200 {object} map[string]string "Login successful"
+// @Failure 400 {string} string "Bad request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(w)
 

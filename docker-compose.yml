@@ -66,6 +66,17 @@ services:
       context: ./frontend
       target: export
 
+  swagger:
+    image: swaggerapi/swagger-ui
+    environment:
+      - SWAGGER_JSON=/swagger/swagger.yaml
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./swagger:/swagger
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

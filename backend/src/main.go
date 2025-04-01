@@ -14,6 +14,23 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
+// @title raptorChat API
+// @version 1.0
+// @description This is a sample server for raptorChat.
+// @contact.name API Support
+// @contact.email support@raptorchat.io
+// @host localhost:8080
+// @BasePath /
+
+// wsHandler godoc
+// @Summary Upgrade HTTP connection to WebSocket
+// @Description Upgrades an HTTP connection to a WebSocket connection for real-time communication.
+// @Tags websocket
+// @Accept json
+// @Produce json
+// @Success 101 {string} string "Switching Protocols"
+// @Failure 500 {object} map[string]string "Internal Server Error"
+// @Router /ws [get]
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	hub := GetHub()
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -27,6 +44,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	hub.Register <- conn
 }
 
+// protectedHandler godoc
+// @Summary Access protected resource
+// @Description Returns protected data for authenticated users.
+// @Tags protected
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /protected [get]
 func protectedHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.RetrieveUserIDFromContext(r.Context())
 	if !ok {
