@@ -30,7 +30,7 @@ const App: React.FC = () => {
 
 			<Route path="/settings" element={
 				<Layout navigate={navigate}>
-					<SettingsMain navigate={navigate}/>
+					<SettingsMain/>
 				</Layout>
 			} />
 		</Routes>

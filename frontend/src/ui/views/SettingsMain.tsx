@@ -1,8 +1,9 @@
-import { NavigateFunction } from "react-router-dom";
+import { NavigateFunction, useNavigate } from "react-router-dom";
 
 import { useSettingsHook } from "../hooks/useSettingsHook";
 
-const SettingsView = (navigate: NavigateFunction) => {
+const SettingsView = () => {
+	const navigate = useNavigate()
 	const { handleChangeUsername, handleChangePassword } = useSettingsHook(navigate);
 
 	return (
