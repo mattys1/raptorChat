@@ -28,6 +28,7 @@ export class SubscriptionManager {
 	// FIXME: sendToServer should actually be async since it's being called multiple times
 	private async unsubscribeAll() { 		
 		this.subscriptions.forEach((_, event) => {
+			console.log(this.constructor.name, "Unsubscribing from", event)
 			this.sendToServer(event, MessageType.UNSUBSCRIBE)
 		})
 	}
