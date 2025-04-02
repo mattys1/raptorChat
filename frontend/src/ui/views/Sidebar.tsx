@@ -27,8 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 							console.log("Chat:", chat)
 							console.log(typeof chat?.name)
 							return (<li key={chat.id}>
-								{chat?.id}
-								<div> {chat.name?.String.toString()}</div>
+								<div> {chat?.name}</div>
 							</li>)
 						})
 					}
