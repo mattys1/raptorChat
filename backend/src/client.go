@@ -46,8 +46,6 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 			switch msg.MessageEvent(eventName) {
 			case msg.MessageEventChatMessages:
 				router.Subscribe(msg.MessageEvent(eventName), conn)
-				go conn.Write(context.TODO(), websocket.MessageType(websocket.MessageText), []byte("User has subscribed to chat messages"))
-				go testSomePings(router)
 			
 			case msg.MessageEventUsers:
 				router.Subscribe(msg.MessageEventUsers, conn)
@@ -70,7 +68,30 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 						},
 					},
 				)
+			case msg.MessageEventRooms:
+				log.Println("Chat subscription")
+				router.Subscribe(msg.MessageEvent(eventName), conn)
+				rooms, err := db.GetDao().GetAllRooms(context.TODO())
+				assert.That(err == nil, "Failed to get rooms from db", err)
+
+				sendableRooms := make([]any, len(rooms))
+				for i, room := range rooms {
+					sendableRooms[i] = room
+				}
+
+				log.Println("Publishing rooms", sendableRooms)
+				router.Publish(
+					msg.MessageEventRooms,
+					msg.Message{
+						Type: string(msg.MesssageTypeCreate),
+						Contents: msg.Resource{
+							EventName: string(msg.MessageEventRooms),
+							Contents: sendableRooms,
+						},
+					},
+				)
 			}
+			
 		case msg.MessageTypeUnsubscribe:
 			eventName, success := message.Contents.(string)
 			assert.That(success, "Failed to convert message contents to string", nil)

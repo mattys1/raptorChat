@@ -11,11 +11,11 @@ const MainView: React.FC = () => {
 		<div>
 			{users.map((user) => {
 				return(
-					<div>
+					<li key={user.id}>
 						{user.username}
 						{user.email}
 						{user.created_at.toString()}
-					</div>
+					</li>
 				)
 			})}
 			<h1>Welcome to raptorChat!</h1>

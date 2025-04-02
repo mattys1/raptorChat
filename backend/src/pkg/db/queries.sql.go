@@ -25,6 +25,33 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
+const getAllRooms = `-- name: GetAllRooms :many
+SELECT id, name FROM rooms
+`
+
+func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getAllRooms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, username, email, created_at, password FROM users
 `

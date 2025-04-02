@@ -15,6 +15,7 @@ export const useWebsocketListener = <T>(eventName: MessageEvents, ws: WebSocket 
 		}
 
 		const parsed = parsedResult.value as Message<T>;
+		console.log("message received:", parsed)
 
 		switch(parsed.type) {
 			case MessageTypes.CREATE: {
@@ -22,6 +23,7 @@ export const useWebsocketListener = <T>(eventName: MessageEvents, ws: WebSocket 
 				const contents = resource.contents as T[]
 
 				if (resource.eventName === eventName) {
+					console.log("Received CREATE message:", resource, eventName)
 					setData((prev) => [...prev, ...contents])
 				}
 				break
@@ -50,5 +52,5 @@ export const useWebsocketListener = <T>(eventName: MessageEvents, ws: WebSocket 
 	return [
 		data,
 		setData
-	]
+	] as const as [T[], React.Dispatch<React.SetStateAction<T[]>>] 
 }

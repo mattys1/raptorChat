@@ -24,6 +24,7 @@ func NewMessageRouter() *MessageRouter {
 func (router *MessageRouter) Subscribe(event MessageEvent, conn *websocket.Conn) {
 	router.subscribers[event] = append(router.subscribers[event], conn)
 	log.Println("Connection subscribed to", event)
+	log.Println("Subscribers of ", event, ":", router.subscribers[event])
 }
 
 func (router *MessageRouter) Unsubscribe(event MessageEvent, conn *websocket.Conn) {
@@ -52,7 +53,9 @@ func (router *MessageRouter) Publish(event MessageEvent, message Message) {
 	marshalled, err := json.Marshal(message)
 	assert.That(err == nil, "Failed to marshal published message", err)
 
+	log.Println("Subscribers of ", event, ":", router.subscribers[event])
 	for _, conn := range router.subscribers[event] {
+		log.Println("Sending message to", event, "subscribers")
 		conn.Write(
 			context.TODO(),
 			websocket.MessageType(websocket.MessageText),
