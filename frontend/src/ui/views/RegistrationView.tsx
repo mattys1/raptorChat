@@ -3,14 +3,11 @@ import styles from "./Login.module.css";
 
 import { useRegistrationHook } from "../hooks/useRegistrationHook";
 import { Form } from "../components/Form"
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../routes";
 
-const RegistrationView = ({
-	onRegistrationSuccess,
-	onToggleToLogin,
-}: {
-		onRegistrationSuccess: () => void;
-		onToggleToLogin: () => void;
-	}) => {
+const RegistrationView = () => {
+	const navigate = useNavigate()
 
 	const {
 		email,
@@ -23,7 +20,7 @@ const RegistrationView = ({
 		setPassword,
 		setRepeatPassword,
 		handleSubmit
-	} = useRegistrationHook(onRegistrationSuccess)
+	} = useRegistrationHook(navigate)
 
 	return (
 		<div className={styles.loginContainer}>
@@ -70,7 +67,8 @@ const RegistrationView = ({
 						<button type="submit" className={styles.primaryBtn} disabled={loading}>
 							{loading ? "Creating account..." : "Create account"}
 						</button>
-						<button type="button" className={styles.secondaryBtn} onClick={onToggleToLogin}>
+
+						<button type="button" className={styles.secondaryBtn} onClick={() => navigate(ROUTES.ROOT)}>
 							Already have an account? Log in
 						</button>
 					</div>

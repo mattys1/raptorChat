@@ -7,32 +7,22 @@ import MainView from "./views/MainView";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Layout from "./Layout";
 import SettingsMain from "./views/SettingsMain";
+import { ROUTES } from "./routes";
 
 const App: React.FC = () => {
 	const navigate = useNavigate()
 
-	const handleLoginSuccess = () => {
-		navigate("/main")
-	};
-
 	return (
 		<Routes>
-			<Route path="/" element={<LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => navigate("/register")} />}/>
-			<Route path="/login" element={<LoginView onLoginSuccess={handleLoginSuccess} onToggleToRegistration={() => navigate("/register")} />}/>
+			<Route path={ROUTES.ROOT} element={<LoginView />}/>
+			<Route path={ROUTES.LOGIN} element={<LoginView />}/>
 
-			<Route path="/register" element={<RegistrationView onRegistrationSuccess={handleLoginSuccess} onToggleToLogin={() => navigate("/")} />}/>
+			<Route path={ROUTES.REGISTER} element={<RegistrationView />}/>
 
-			<Route path="/main" element={
-				<Layout navigate={navigate}>
-					<MainView />
-				</Layout>
-			} />
-
-			<Route path="/settings" element={
-				<Layout navigate={navigate}>
-					<SettingsMain/>
-				</Layout>
-			} />
+			<Route path={ROUTES.APP} element={<Layout />}>
+				<Route path={ROUTES.MAIN} element={<MainView />} />
+				<Route path={ROUTES.SETTINGS} element={<SettingsMain />} />
+			</Route>
 		</Routes>
 	);
 };

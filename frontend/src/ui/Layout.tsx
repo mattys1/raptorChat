@@ -1,22 +1,19 @@
 import React from "react";
 import Sidebar from "./views/Sidebar";
 import "./views/Start.css";
-import { NavigateFunction } from "react-router-dom";
+import { NavigateFunction, Outlet, useNavigate } from "react-router-dom";
+import { ROUTES } from "./routes";
 
-interface LayoutProps {
-	children: React.ReactNode
-	navigate: NavigateFunction
-}
-
-const Layout: React.FC<LayoutProps> = ({ children, navigate }) => {
-  return (
-    <div className="container">
-      <aside className="sidebar">
-        <Sidebar onSettingsClick={() => {navigate("/settings"); console.log("Navigating to settings")}} />
-      </aside>
-      <main className="main-content">{children}</main>
-    </div>
-  );
+const Layout: React.FC = () => {
+	const navigate = useNavigate()
+	return (
+		<div className="container">
+			<aside className="sidebar">
+				<Sidebar onSettingsClick={() => {navigate(ROUTES.SETTINGS); console.log("Navigating to settings")}} />
+			</aside>
+			<main className="main-content">{<Outlet />}</main>
+		</div>
+	);
 };
 
 export default Layout;

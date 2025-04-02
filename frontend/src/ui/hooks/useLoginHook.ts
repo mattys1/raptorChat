@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { NavigateFunction, useNavigate } from "react-router-dom";
+import { ROUTES } from "../routes";
 
-export function useLoginHook(onLoginSuccess: () => void) {
+export function useLoginHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ export function useLoginHook(onLoginSuccess: () => void) {
 			});
 
 			if (response.ok) {
-				onLoginSuccess();
+				navigate(ROUTES.MAIN)
 			} else {
 				alert("Login failed. Server responded with an error.");
 			}

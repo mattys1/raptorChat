@@ -1,6 +1,7 @@
 import { NavigateFunction, useNavigate } from "react-router-dom";
 
 import { useSettingsHook } from "../hooks/useSettingsHook";
+import { ROUTES } from "../routes";
 
 const SettingsView = () => {
 	const navigate = useNavigate()
@@ -17,10 +18,10 @@ const SettingsView = () => {
 					<button onClick={handleChangePassword}>Change Password</button>
 				</li>
 				<li>
-					<button onClick={() => navigate("/login")}>Log Out</button>
+					<button onClick={() => navigate(ROUTES.LOGIN)}>Log Out</button>
 				</li>
 				<li>
-					<button onClick={() => navigate("/main")}>Return to Start Screen</button>
+					<button onClick={() => navigate(ROUTES.MAIN)}>Return to Start Screen</button>
 				</li>
 			</ul>
 		</div>

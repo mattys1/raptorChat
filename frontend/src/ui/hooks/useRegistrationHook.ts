@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { NavigateFunction } from "react-router-dom";
+import { ROUTES } from "../routes";
 
-export function useRegistrationHook(onRegistrationSuccess: () => void) {
+export function useRegistrationHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
@@ -11,7 +13,7 @@ export function useRegistrationHook(onRegistrationSuccess: () => void) {
 		e.preventDefault();
 
 		if (password !== repeatPassword) {
-			alert("Passwords do not match");
+			window.alert("Passwords do not match");
 			return;
 		}
 
@@ -26,7 +28,7 @@ export function useRegistrationHook(onRegistrationSuccess: () => void) {
 
 			if (response.ok) {
 				alert("Registration successful!");
-				onRegistrationSuccess();
+				navigate(ROUTES.MAIN);
 			} else {
 				alert("Registration failed. Server responded with an error.");
 			}
