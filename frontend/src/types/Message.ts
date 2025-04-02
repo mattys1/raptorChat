@@ -5,5 +5,5 @@ export interface Message<T> {
 
 export interface Resource<T> {
 	eventName: string
-	contents: Array<T>
+	contents: T[]
 }
