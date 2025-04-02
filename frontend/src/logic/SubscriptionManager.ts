@@ -3,6 +3,7 @@ import { SafeMarshall, SafeUnmarshall } from "./ProcessJSONResult"
 import { MessageEvents, MessageTypes as MessageType } from "../types/MessageNames"
 import { Message, Resource } from "../types/Message"
 import { User } from "../types/models/Models"
+import { WebsocketService } from "./websocket"
 
 export class SubscriptionManager {
 	private ws: WebSocket
@@ -18,7 +19,9 @@ export class SubscriptionManager {
 			return payload.error
 		}
 
-		this.ws.send(payload.value)
+		console.log("Sending payload:", payload.value)
+
+		WebsocketService.safeSend(payload.value)
 		return null
 	}
 
@@ -36,9 +39,8 @@ export class SubscriptionManager {
 
 	public async subscribe<T>(
 		event: MessageEvents, 
-		readState: T[],
-		writeState: React.Dispatch<React.SetStateAction<T[]>>
 	): Promise<Result<boolean, Error>> {
+		console.log("Calling subscribe")
 		if(this.subscriptions.has(event)) {
 			return ok(false)
 		}
@@ -60,7 +62,6 @@ export class SubscriptionManager {
 			console.log("Decoded:", decoded)
 			if(decoded.value.type == MessageType.CREATE) {
 				const resource = decoded.value.contents as Resource<T>
-				writeState(resource.contents)
 			}
 		}
 
