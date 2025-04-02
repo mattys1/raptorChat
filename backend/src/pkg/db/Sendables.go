@@ -18,3 +18,19 @@ func (u *User) ToSendable() *UserSendable {
 		CreatedAt: u.CreatedAt,
 	}
 }
+
+type RoomSendable struct {
+	ID   uint64         `json:"id"`
+	Name *string 		`json:"name"`
+}
+
+func (r *Room) ToSendable() *RoomSendable {
+	var namePtr *string = nil
+
+	if r.Name.Valid { namePtr = &r.Name.String }
+
+	return &RoomSendable{
+		ID:   r.ID,
+		Name: namePtr,
+	}
+}

@@ -76,7 +76,7 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 
 				sendableRooms := make([]any, len(rooms))
 				for i, room := range rooms {
-					sendableRooms[i] = room
+					sendableRooms[i] = room.ToSendable()
 				}
 
 				log.Println("Publishing rooms", sendableRooms)
