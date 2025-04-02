@@ -4,6 +4,7 @@ type MessageType string
 
 const (
 	MessageTypeSubscribe MessageType = "subscribe"
+	MessageTypeUnsubscribe MessageType = "unsubscribe"
 	MessageTypeUpdate MessageType = "update"
 	MessageTypeDelete MessageType = "delete"
 	MesssageTypeCreate MessageType = "create"

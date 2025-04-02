@@ -31,6 +31,7 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, conn *websocket.Con
 	for i, c := range subs {
 		if c == conn {
 			router.subscribers[event] = slices.Delete(subs, i, i+1)
+			log.Println("Unsubscribed from:", event, "Client:", conn)
 			break
 		}
 	}

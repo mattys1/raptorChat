@@ -71,6 +71,13 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 					},
 				)
 			}
+		case msg.MessageTypeUnsubscribe:
+			eventName, success := message.Contents.(string)
+			assert.That(success, "Failed to convert message contents to string", nil)
+
+			router.Unsubscribe(msg.MessageEvent(eventName), conn)
+			
+
 		default:
 			log.Println("Unknown message type: ", message.Type)
 		}
