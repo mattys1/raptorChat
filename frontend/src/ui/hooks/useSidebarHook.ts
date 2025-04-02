@@ -25,7 +25,7 @@ export const useSidebarHook = () => {
 		const subManager = new SubscriptionManager(socket)
 		subManager.subscribe(MessageEvents.CHATS)
 
-		return subManager.cleanup()
+		return () => subManager.cleanup()
 	}, [socket])
 
 	return {
