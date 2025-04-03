@@ -30,6 +30,8 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 	assert.That(slices.Equal(targetIds, slices.Compact(targetIds)), "Target IDs should not contain duplicates", nil)
 	assert.That(len(targetIds) != 0, "Target IDs should not be empty", nil)
 
+	log.Println("Connection", conn, "subscribing to", event, "with target IDs", targetIds)
+
 	if _, ok := router.subscribers[event]; !ok {
 		router.subscribers[event] = append(router.subscribers[event], &Subscriber{
 			InterestedIds: targetIds,
@@ -133,8 +135,27 @@ func (router *MessageRouter) Publish(event MessageEvent, message *message) {
 		log.Println("Sending message to", event, "subscribers")
 		sub.conn.Write(
 			context.TODO(),
-			websocket.MessageType(websocket.MessageText),
+			websocket.MessageText,
 			marshalled,
 		)
 	}
+}
+
+// TODO: this method will probably become unnecessary, as targetIDs will be more integrated into the client. 
+func (router *MessageRouter) FillSubInOn(event MessageEvent, conn *websocket.Conn, message *message) {
+	assert.That(slices.IndexFunc(router.subscribers[event], func(sub *Subscriber) bool {
+		return sub.conn == conn
+		}) != -1,
+		"There doesn't exist a connection in subscribers to be filled in on",
+		nil,
+	)
+
+	marshalled, err := json.Marshal(message)
+	assert.That(err == nil, "Failed to marshal fill-in message", err)
+
+	conn.Write(
+		context.TODO(),
+		websocket.MessageText,
+		marshalled,
+	)
 }

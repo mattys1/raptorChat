@@ -68,8 +68,9 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 
 				assert.That(err == nil, "Failed to create message", err)
 
-				go router.Publish(
+				go router.FillSubInOn(
 					msg.MessageEventUsers,
+					conn,
 					publish,
 				)
 			case msg.MessageEventRooms:
@@ -92,8 +93,9 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 
 				assert.That(err == nil, "Failed to create message", err)
 
-				router.Publish(
+				router.FillSubInOn(
 					msg.MessageEventRooms,
+					conn,
 					publish,
 				)
 			}
