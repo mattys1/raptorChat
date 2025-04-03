@@ -27,8 +27,8 @@ func NewMessageRouter() *MessageRouter {
 }
 
 func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn *websocket.Conn) {
-	assert.That(!slices.Equal(targetIds, slices.Compact(targetIds)), "Target IDs should not contain duplicates", nil)
-	assert.That(!slices.Equal(targetIds, []int{}), "Target IDs should not be empty", nil)
+	assert.That(slices.Equal(targetIds, slices.Compact(targetIds)), "Target IDs should not contain duplicates", nil)
+	assert.That(len(targetIds) != 0, "Target IDs should not be empty", nil)
 
 	if _, ok := router.subscribers[event]; !ok {
 		router.subscribers[event] = append(router.subscribers[event], &Subscriber{

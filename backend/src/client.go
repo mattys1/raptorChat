@@ -41,7 +41,7 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 		case msg.MessageTypeSubscribe:
 			log.Println("Message contents pre unmarshall: ", message.Contents)
 			subscription, err := msg.GetMessageContents[msg.Subscription](message)
-			assert.That(err != nil, "Failed to get subscription from message", err)
+			assert.That(err == nil, "Failed to get subscription from message", err)
 
 			log.Println("Subscription: ", subscription)
 			eventName := subscription.EventName
@@ -101,7 +101,7 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 		case msg.MessageTypeUnsubscribe:
 			unsubscription, err := msg.GetMessageContents[msg.Subscription](message)
 
-			assert.That(err != nil, "Failed to convert message contents to Unsubscription", nil)
+			assert.That(err == nil, "Failed to convert message contents to Unsubscription", nil)
 
 			router.Unsubscribe(msg.MessageEvent(unsubscription.EventName), []int{-1},  conn)
 			

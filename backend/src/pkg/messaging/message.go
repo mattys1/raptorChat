@@ -2,6 +2,7 @@ package messaging
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 )
@@ -23,9 +24,13 @@ type Subscription struct {
 
 func GetMessageContents[T Resource | Subscription](message *message) (*T, error) {
 	var contents T
-	if err := json.Unmarshal(message.Contents, contents); err != nil {
+
+	log.Println("Message contents: ", string(message.Contents))
+	if err := json.Unmarshal(message.Contents, &contents); err != nil {
 		return &contents, err
 	}
+
+	log.Println("Unmarashalled contents:", contents, "JSON:", string(message.Contents))
 
 	return &contents, nil
 }
