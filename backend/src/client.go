@@ -36,12 +36,15 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 		assert.That(mType == websocket.MessageText, "Message arrived that's not text", nil)
 
 		var message msg.Message; json.Unmarshal(contents, &message)
-		log.Println("Message: ", message)
+		log.Println("Unmarshalled message: ", message)
 
 		switch msg.MessageType(message.Type) {
 		case msg.MessageTypeSubscribe:
-			eventName, success := message.Contents.(string)
-			assert.That(success, "Failed to convert message contents to string", nil)
+			log.Println("Subscribing to event: ", message.Contents)
+			subscription, success := message.Contents.(msg.Subscription)
+			assert.That(success, "Failed to convert message contents to Subscription", nil)
+
+			eventName := subscription.EventName
 
 			switch msg.MessageEvent(eventName) {
 			case msg.MessageEventChatMessages:
@@ -93,10 +96,10 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 			}
 			
 		case msg.MessageTypeUnsubscribe:
-			eventName, success := message.Contents.(string)
-			assert.That(success, "Failed to convert message contents to string", nil)
+			unsubscription, success := message.Contents.(msg.Subscription)
+			assert.That(success, "Failed to convert message contents to Unsubscription", nil)
 
-			router.Unsubscribe(msg.MessageEvent(eventName), conn)
+			router.Unsubscribe(msg.MessageEvent(unsubscription.EventName), conn)
 			
 
 		default:
