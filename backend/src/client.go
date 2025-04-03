@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"time"
 
 	"github.com/coder/websocket"
 	"github.com/mattys1/raptorChat/src/pkg/assert"
@@ -35,23 +33,25 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 		log.Println("Message received: ", string(contents))
 		assert.That(mType == websocket.MessageText, "Message arrived that's not text", nil)
 
-		var message msg.Message; json.Unmarshal(contents, &message)
+		message, err := msg.GetMessageFromJSON(contents) 
+		assert.That(err == nil, "Failed to unmarshal message", err)
 		log.Println("Unmarshalled message: ", message)
 
 		switch msg.MessageType(message.Type) {
 		case msg.MessageTypeSubscribe:
-			log.Println("Subscribing to event: ", message.Contents)
-			subscription, success := message.Contents.(msg.Subscription)
-			assert.That(success, "Failed to convert message contents to Subscription", nil)
+			log.Println("Message contents pre unmarshall: ", message.Contents)
+			subscription, err := msg.GetMessageContents[msg.Subscription](message)
+			assert.That(err != nil, "Failed to get subscription from message", err)
 
+			log.Println("Subscription: ", subscription)
 			eventName := subscription.EventName
 
 			switch msg.MessageEvent(eventName) {
 			case msg.MessageEventChatMessages:
-				router.Subscribe(msg.MessageEvent(eventName), conn)
+				router.Subscribe(msg.MessageEvent(eventName), []int{-1}, conn)
 			
 			case msg.MessageEventUsers:
-				router.Subscribe(msg.MessageEventUsers, conn)
+				router.Subscribe(msg.MessageEventUsers, []int{-1}, conn)
 
 				users, err := db.GetDao().GetAllUsers(context.TODO())
 				assert.That(err == nil, "Failed to get users from db", err)
@@ -61,19 +61,20 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 					sendableUsers = append(sendableUsers, user.ToSendable())	
 				}
 
+				publish, err := msg.NewMessage(msg.MessageTypeCreate, &msg.Resource{
+					EventName: string(msg.MessageEventUsers),
+					Contents: sendableUsers,
+				})
+
+				assert.That(err == nil, "Failed to create message", err)
+
 				go router.Publish(
 					msg.MessageEventUsers,
-					msg.Message{
-						Type: string(msg.MesssageTypeCreate),	
-						Contents: msg.Resource{
-							EventName: string(msg.MessageEventUsers),
-							Contents: sendableUsers,
-						},
-					},
+					publish,
 				)
 			case msg.MessageEventRooms:
 				log.Println("Chat subscription")
-				router.Subscribe(msg.MessageEvent(eventName), conn)
+				router.Subscribe(msg.MessageEvent(eventName), []int{-1}, conn)
 				rooms, err := db.GetDao().GetAllRooms(context.TODO())
 				assert.That(err == nil, "Failed to get rooms from db", err)
 
@@ -83,23 +84,26 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 				}
 
 				log.Println("Publishing rooms", sendableRooms)
+
+				publish, err := msg.NewMessage(msg.MessageTypeCreate, &msg.Resource{
+					EventName: string(msg.MessageEventRooms),
+					Contents: sendableRooms,
+				})
+
+				assert.That(err == nil, "Failed to create message", err)
+
 				router.Publish(
 					msg.MessageEventRooms,
-					msg.Message{
-						Type: string(msg.MesssageTypeCreate),
-						Contents: msg.Resource{
-							EventName: string(msg.MessageEventRooms),
-							Contents: sendableRooms,
-						},
-					},
+					publish,
 				)
 			}
 			
 		case msg.MessageTypeUnsubscribe:
-			unsubscription, success := message.Contents.(msg.Subscription)
-			assert.That(success, "Failed to convert message contents to Unsubscription", nil)
+			unsubscription, err := msg.GetMessageContents[msg.Subscription](message)
 
-			router.Unsubscribe(msg.MessageEvent(unsubscription.EventName), conn)
+			assert.That(err != nil, "Failed to convert message contents to Unsubscription", nil)
+
+			router.Unsubscribe(msg.MessageEvent(unsubscription.EventName), []int{-1},  conn)
 			
 
 		default:
@@ -108,20 +112,20 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 	}
 }
 
-func testSomePings(router *msg.MessageRouter) {
-	time.Sleep(3 * time.Second)
-
-	router.Publish(msg.MessageEventChatMessages, msg.Message{
-		Type: string(msg.MesssageTypeCreate),
-		Contents: msg.Resource{
-			EventName: string(msg.MessageEventChatMessages),
-			Contents:  []any{
-				db.Message{
-					SenderID: 1,
-					RoomID: 1,
-					Contents: "Test message was succesfully sent",
-				},
-			},
-		},
-	})
-}
+// func testSomePings(router *msg.MessageRouter) {
+// 	time.Sleep(3 * time.Second)
+//
+// 	router.Publish(msg.MessageEventChatMessages, msg.Message{
+// 		Type: string(msg.MessageTypeCreate),
+// 		Contents: msg.Resource{
+// 			EventName: string(msg.MessageEventChatMessages),
+// 			Contents:  []any{
+// 				db.Message{
+// 					SenderID: 1,
+// 					RoomID: 1,
+// 					Contents: "Test message was succesfully sent",
+// 				},
+// 			},
+// 		},
+// 	})
+// }

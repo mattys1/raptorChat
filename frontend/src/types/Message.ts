@@ -1,9 +1,14 @@
-export interface Message<T> {
+export interface Message<T = unknown> {
 	type: string
-	contents: string | Resource<T>
+	contents: Subscription | Resource<T>
 }
 
 export interface Resource<T> {
 	eventName: string
 	contents: Array<T>
+}
+
+export interface Subscription {
+	eventName: string
+	targetIds: number[]
 }

@@ -27,11 +27,14 @@ func NewMessageRouter() *MessageRouter {
 }
 
 func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn *websocket.Conn) {
-	assert.That(slices.Equal(targetIds, slices.Compact(targetIds)), "Target IDs should not contain duplicates", nil)
-	assert.That(slices.Equal(targetIds, []int{}), "Target IDs should not be empty", nil)
+	assert.That(!slices.Equal(targetIds, slices.Compact(targetIds)), "Target IDs should not contain duplicates", nil)
+	assert.That(!slices.Equal(targetIds, []int{}), "Target IDs should not be empty", nil)
 
 	if _, ok := router.subscribers[event]; !ok {
-		router.subscribers[event] = append(router.subscribers[event], )
+		router.subscribers[event] = append(router.subscribers[event], &Subscriber{
+			InterestedIds: targetIds,
+			conn: conn,
+		})
 		return
 	}
 
@@ -78,35 +81,56 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 }
 
 func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, conn *websocket.Conn) {
+	assert.That(slices.Equal(targetIds, slices.Compact(targetIds)), "Target IDs should not contain duplicates", nil)
+	assert.That(len(targetIds) != 0, "Target IDs should not be empty", nil)
+
 	subs := router.subscribers[event]
-	for i, s := range subs {
-		if s.conn == conn {
-			router.subscribers[event] = slices.Delete(subs, i, i+1)
-			log.Println("Unsubscribed from:", event, "Client:", conn)
+	connIdx := slices.IndexFunc(subs, func(sub *Subscriber) bool {
+		return sub.conn == conn
+	})
+	assert.That(connIdx != -1, "Connection not found in subscribers", nil)
+
+	interested := subs[connIdx].InterestedIds
+
+	subs[connIdx].InterestedIds = slices.DeleteFunc(interested, func(id int) bool {
+		return slices.Contains(targetIds, id)
+	})
+
+	if len(subs[connIdx].InterestedIds) == 0 {
+		log.Println("Subscriber:", subs[connIdx], "unsubscribed completely. Client:", conn)
+		router.subscribers[event] = slices.Delete(subs, connIdx, connIdx + 1)
+
+		return
+	}
+
+	for k, e := range router.subscribers {
+		if len(e) == 0 {
+			delete(router.subscribers, k)
+			log.Println("Unsubscribed from:", event, "completely.")
 			break
 		}
 	}
 }
 
-func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
-	for event, subs := range router.subscribers {
-		for i, c := range subs {
-			if c == conn {
-				router.subscribers[event] = slices.Delete(subs, i, i+1)
-				break
-			}
-		}
-	}
-}
+// func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
+// 	for event, subs := range router.subscribers {
+// 		for i, c := range subs {
+// 			if c == conn {
+// 				router.subscribers[event] = slices.Delete(subs, i, i+1)
+// 				break
+// 			}
+// 		}
+// 	}
+// }
 
-func (router *MessageRouter) Publish(event MessageEvent, originatorId int, message Message) {
+func (router *MessageRouter) Publish(event MessageEvent, message *message) {
 	marshalled, err := json.Marshal(message)
 	assert.That(err == nil, "Failed to marshal published message", err)
 
 	log.Println("Subscribers of ", event, ":", router.subscribers[event])
-	for _, conn := range router.subscribers[event] {
+	for _, sub := range router.subscribers[event] {
 		log.Println("Sending message to", event, "subscribers")
-		conn.Write(
+		sub.conn.Write(
 			context.TODO(),
 			websocket.MessageType(websocket.MessageText),
 			marshalled,

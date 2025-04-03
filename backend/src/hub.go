@@ -52,7 +52,7 @@ func (hub *Hub) run() {
 		case conn := <-hub.Unregister:
 			for user, c := range hub.clients {
 				if c == conn {
-					hub.router.UnsubscribeAll(conn) //TODO: this may not be necessary
+					// hub.router.UnsubscribeAll(conn) //TODO: this may not be necessary
 					delete(hub.clients, user)
 					log.Println("Client unregistered", user, c)
 					conn.Close(websocket.StatusNormalClosure, "Connection closing")
