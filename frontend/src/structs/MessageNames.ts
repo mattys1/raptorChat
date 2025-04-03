@@ -8,4 +8,5 @@ export enum MessageEvents {
 	MESSAGES = "messages",
 	USERS = "users",
 	CHATS = "chats",
+	CHAT_MESSAGES = "chat_messages",
 }
