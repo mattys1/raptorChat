@@ -43,7 +43,7 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 		return sub.conn == conn
 	})
 
-	if connIdx != -1 {
+	if connIdx == -1 {
 		subscribers = append(subscribers, &Subscriber{
 			InterestedIds: targetIds,
 			conn: conn,
@@ -93,6 +93,7 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, co
 	interested := subs[connIdx].InterestedIds
 
 	subs[connIdx].InterestedIds = slices.DeleteFunc(interested, func(id int) bool {
+		log.Println("Deleting ID", id, "from", interested, "in", connIdx)
 		return slices.Contains(targetIds, id)
 	})
 

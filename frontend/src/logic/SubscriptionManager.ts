@@ -51,7 +51,7 @@ export class SubscriptionManager {
 		if(this.subscriptions.has(event)) {
 			return ok(false)
 		}
-		this.subscriptions.set(event, true)
+		this.subscriptions.set(event, targetId)
 
 		const error = this.sendToServer(event, targetId, MessageType.SUBSCRIBE)
 		if(error) {
