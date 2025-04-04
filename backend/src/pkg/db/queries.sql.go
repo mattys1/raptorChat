@@ -169,7 +169,7 @@ func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
 
 const getUsersByRoom = `-- name: GetUsersByRoom :many
 SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
-JOIN users_rooms ur ON ur.room_id = u.id
+JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?
 `
 
