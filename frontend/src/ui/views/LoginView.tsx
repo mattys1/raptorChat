@@ -18,7 +18,7 @@ const LoginView = () => {
 					<img src="avatar.png" alt="Avatar" className={styles.avatar} />
 				</div>
 				<form className={styles.loginForm} onSubmit={handleSubmit}>
-					<Form 
+					<Form
 						readValue={email}
 						setValue={setEmail}
 						label="Email or Nickname"

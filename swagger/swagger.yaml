@@ -1,0 +1,140 @@
+basePath: /
+definitions:
+  auth.LoginCredentials:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  auth.RegistrationCredentials:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@raptorchat.io
+    name: API Support
+  description: This is a sample server for raptorChat.
+  title: raptorChat API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and sets a JWT token cookie upon success.
+      parameters:
+      - description: User credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Log in a user
+      tags:
+      - auth
+  /protected:
+    get:
+      description: Returns protected data for authenticated users.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Access protected resource
+      tags:
+      - protected
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user with an email, username, and password.
+      parameters:
+      - description: User registration details
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegistrationCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Register a new user
+      tags:
+      - auth
+  /ws:
+    get:
+      consumes:
+      - application/json
+      description: Upgrades an HTTP connection to a WebSocket connection for real-time
+        communication.
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upgrade HTTP connection to WebSocket
+      tags:
+      - websocket
+swagger: "2.0"

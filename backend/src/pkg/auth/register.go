@@ -18,6 +18,17 @@ type RegistrationCredentials struct {
 	Password string `json:"password"`
 }
 
+// RegisterHandler godoc
+// @Summary Register a new user
+// @Description Registers a new user with an email, username, and password.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body RegistrationCredentials true "User registration details"
+// @Success 200 {object} map[string]string "Registration successful"
+// @Failure 400 {string} string "Bad request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /register [post]
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(w)
 
