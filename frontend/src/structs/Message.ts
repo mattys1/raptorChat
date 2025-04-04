@@ -5,7 +5,7 @@ export interface Message<T = unknown> {
 
 export interface Resource<T> {
 	eventName: string
-	contents: Array<T>
+	contents: T[]
 }
 
 export interface Subscription {

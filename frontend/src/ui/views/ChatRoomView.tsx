@@ -1,6 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/useChatRoomHook";
 import "./Start.css";
+import { MessageEvents } from "../../structs/MessageNames";
+import { Message } from "../../structs/models/Models";
 
 const ChatRoomView = () => {
 	const key = Number(useParams().chatId)
@@ -21,12 +23,19 @@ const ChatRoomView = () => {
 				))}
 			</p>
 
-			<input
-				type="text"
-				onChange={(e) => {}}
-				placeholder="Enter text here"
-			/>
-
+			<form action={(input) => {
+				const message = input.get("messageBox")?.toString()
+				props.sender.createResource([{
+						id: 0,
+						sender_id: 0,
+						room_id: key,
+						contents: message ?? "Unknown",
+						created_at: new Date(Date.now())
+				}] as Message[], MessageEvents.CHAT_MESSAGES)
+			}}>
+				<input name="messageBox" />
+				<button>Wyslij pan</button>
+			</form> 
 		</>
 	)
 }

@@ -7,8 +7,10 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"slices"
+
+	"github.com/mattys1/raptorChat/src/pkg/assert"
+	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
 type Subscriber struct {
@@ -123,18 +125,34 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, co
 // 	}
 // }
 
-func (router *MessageRouter) Publish(event MessageEvent, message *message) {
+func (router *MessageRouter) Publish(event MessageEvent, message *message, qualifiedUsers []uint64, allClients map[*db.User]*websocket.Conn) { // FIXME: FIXME: FIXME: FIXME: FIXME: FIXME: 
 	marshalled, err := json.Marshal(message)
 	assert.That(err == nil, "Failed to marshal published message", err)
 
-	log.Println("Subscribers of ", event, ":", router.subscribers[event])
+	log.Println("Publishing to subscribers of ", event, ":", router.subscribers[event])
+	log.Println("Qualified users:", qualifiedUsers)
 	for _, sub := range router.subscribers[event] {
-		log.Println("Sending message to", event, "subscribers")
+		uid := connToUID(sub.conn, allClients)
+
+		if slices.Index(qualifiedUsers, uid) == -1 {
+			continue
+		}
+
+		log.Println("Sending message of", event, "to user", uid)
 		sub.conn.Write(
 			context.TODO(),
 			websocket.MessageText,
 			marshalled,
 		)
+
+		// for u, c := range(allClients) {
+		// 	if slices.Index(qualifiedUsers, u.ID) == -1 {
+		// 		continue
+		// 	}
+		//
+		// 	if(c == sub.conn) {
+		// 	}
+		// }
 	}
 }
 
@@ -157,4 +175,15 @@ func (router *MessageRouter) FillSubInOn(event MessageEvent, conn *websocket.Con
 	)
 
 	log.Println("Fill-in message sent to", conn, "Message:", string(marshalled))
+}
+
+// FIXME: FIXME: FIXME:
+func connToUID(conn *websocket.Conn, allClients map[*db.User]*websocket.Conn) uint64 {
+	for u, c := range(allClients) {
+		if c == conn {
+			return u.ID
+		}
+	}
+
+	return 0
 }

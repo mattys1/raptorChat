@@ -8,6 +8,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/db"
+
 	msg "github.com/mattys1/raptorChat/src/pkg/messaging"
 )
 
@@ -18,6 +19,7 @@ type Client struct {
 }
 
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
+// TODO: really have to put this somewhere else
 func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 	defer func() {
 		GetHub().Unregister <- conn
@@ -64,10 +66,10 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 					messagesInAllRooms[i] = messagesInRoom
 				}
 
-				payload, err := msg.NewMessage(msg.MessageTypeCreate, &msg.Resource{
-					EventName: eventName,
-					Contents: messagesInAllRooms,	
-				})
+				resource, err := msg.NewResource(msg.MessageEvent(eventName), messagesInAllRooms)
+				assert.That(err == nil, "Couldn't create resource", err)
+
+				payload, err := msg.NewMessage(msg.MessageTypeCreate, resource)
 
 				router.FillSubInOn(msg.MessageEvent(eventName), conn, payload)
 
@@ -82,10 +84,10 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 					sendableUsers = append(sendableUsers, user.ToSendable())	
 				}
 
-				payload, err := msg.NewMessage(msg.MessageTypeCreate, &msg.Resource{
-					EventName: string(msg.MessageEventUsers),
-					Contents: sendableUsers,
-				})
+				resource, err := msg.NewResource(msg.MessageEventUsers, sendableUsers)
+				assert.That(err == nil, "Failed to create resource", err)
+
+				payload, err := msg.NewMessage(msg.MessageTypeCreate, resource)
 
 				assert.That(err == nil, "Failed to create message", err)
 
@@ -107,10 +109,8 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 
 				log.Println("Publishing rooms", sendableRooms)
 
-				payload, err := msg.NewMessage(msg.MessageTypeCreate, &msg.Resource{
-					EventName: string(msg.MessageEventRooms),
-					Contents: sendableRooms,
-				})
+				resource, err := msg.NewResource(msg.MessageEventRooms, sendableRooms)
+				payload, err := msg.NewMessage(msg.MessageTypeCreate, resource)
 
 				assert.That(err == nil, "Failed to create message", err)
 
@@ -128,6 +128,51 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 
 			log.Println("UNSUBSCRIBE:", unsubscription)
 			router.Unsubscribe(msg.MessageEvent(unsubscription.EventName), unsubscription.Targets, conn)
+		
+		case msg.MessageTypeCreate:
+			resource, err := msg.GetMessageContents[msg.Resource](message)
+			assert.That(err == nil, "Couldnt parse create message", err)
+			event := msg.MessageEvent(resource.EventName)
+
+			switch event {
+			case msg.MessageEventChatMessages:
+				log.Println("Chat message sent", resource.Contents)
+				chatMessages, err := msg.GetResourceContents[db.Message](resource)
+				assert.That(err == nil, "Couldnt convert contents to db.Message", err)
+				assert.That(len(chatMessages) == 1, "More than one message sent, unimplemented", nil)
+
+				chatMessage := chatMessages[0]
+
+				assert.That(chatMessage.ID == 0, "Message sent with a known ID", nil)
+				assert.That(chatMessage.SenderID == 0, "Message sent with a known sender ID", nil)
+
+				dao := db.GetDao()
+
+				for u, c := range(GetHub().Clients) {
+					if(c == conn) {
+						chatMessage.SenderID = u.ID
+					}
+				}
+				log.Println("Chat message sender ID: ", chatMessage.SenderID)
+
+				usersInRoom, err := dao.GetUsersByRoom(context.TODO(), chatMessage.SenderID) 
+				assert.That(err == nil, "Can't get users in room", err)
+				log.Println("Users in room: ", usersInRoom)
+
+				var roomUserIDs []uint64
+
+				for _, user := range usersInRoom {
+					roomUserIDs = append(roomUserIDs, user.ID)
+				}
+
+				dao.CreateMessage(context.TODO(), db.CreateMessageParams{
+					RoomID: chatMessage.RoomID,	
+					SenderID: chatMessage.SenderID,
+					Contents: chatMessage.Contents,
+				})
+
+				router.Publish(event, message, roomUserIDs, GetHub().Clients)
+			}
 			
 
 		default:

@@ -5,6 +5,7 @@ import { useWebsocketListener } from "./useWebsocketListener"
 import { MessageEvents } from "../../structs/MessageNames"
 import { useParams } from "react-router-dom"
 import { Message } from "../../structs/models/Models"
+import { EventSender } from "../../logic/eventSender"
 
 export const useChatRoomHook = (key: number) => {
 	const chatId = key
@@ -12,6 +13,7 @@ export const useChatRoomHook = (key: number) => {
 
 	const [socket, setSocket] = useState<WebSocket | null>(null)
 	const [messageList, setMessages] = useWebsocketListener<Message>(MessageEvents.CHAT_MESSAGES, socket)
+	const sender = new EventSender
 
 	const setUpSocket = async () => {
 		const socket = WebsocketService.getInstance().unwrapOr(null)
@@ -39,6 +41,7 @@ export const useChatRoomHook = (key: number) => {
 	}, [socket, chatId])
 
 	return {
+		sender,
 		messageList: messageList?.flatMap(message => message), //FIXME: super hacky, don't know what to change it to
 		setMessages,
 	}

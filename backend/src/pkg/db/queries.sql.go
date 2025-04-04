@@ -9,6 +9,21 @@ import (
 	"context"
 )
 
+const createMessage = `-- name: CreateMessage :exec
+INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
+`
+
+type CreateMessageParams struct {
+	RoomID   uint64 `json:"room_id"`
+	SenderID uint64 `json:"sender_id"`
+	Contents string `json:"contents"`
+}
+
+func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
+	_, err := q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
+	return err
+}
+
 const createUser = `-- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW())
@@ -150,4 +165,39 @@ func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
 		&i.Password,
 	)
 	return i, err
+}
+
+const getUsersByRoom = `-- name: GetUsersByRoom :many
+SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
+JOIN users_rooms ur ON ur.room_id = u.id
+WHERE ur.room_id = ?
+`
+
+func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersByRoom, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.CreatedAt,
+			&i.Password,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

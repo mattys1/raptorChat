@@ -1,7 +1,9 @@
 export enum MessageTypes {
 	SUBSCRIBE = "subscribe",
 	UNSUBSCRIBE = "unsubscribe",
-	CREATE = "create"
+	CREATE = "create",
+	DELETE = "delete",
+	UPDATE = "update",
 }
 
 export enum MessageEvents {

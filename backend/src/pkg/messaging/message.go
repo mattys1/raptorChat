@@ -14,7 +14,7 @@ type message struct {
 
 type Resource struct {
 	EventName string `json:"eventName"`	
-	Contents any `json:"contents"`
+	Contents json.RawMessage `json:"contents"`
 }
 
 type Subscription struct {
@@ -56,4 +56,29 @@ func GetMessageFromJSON(contents []byte) (*message, error) {
 	}
 
 	return &msg, nil
+}
+
+func GetResourceContents[T any](resource *Resource) ([]T, error) {
+	var contents []T
+
+	log.Println("Resource contents: ", string(resource.Contents))
+	if err := json.Unmarshal(resource.Contents, &contents); err != nil {
+		return contents, err
+	}
+
+	log.Println("Unmarashalled contents:", contents, "JSON:", string(resource.Contents))
+
+	return contents, nil
+}
+
+func NewResource[T any](event MessageEvent, contents []T) (*Resource, error) {
+	contentsData, err := json.Marshal(contents)
+	if err != nil {
+		return nil, err	
+	} 
+
+	return &Resource{
+		EventName: string(event),
+		Contents: contentsData,
+	}, nil
 }
