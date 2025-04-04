@@ -1,7 +1,7 @@
 import React from "react";
 import Sidebar from "./views/Sidebar";
 import "./views/Start.css";
-import { NavigateFunction, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { ROUTES } from "./routes";
 
 const Layout: React.FC = () => {

@@ -1,7 +1,7 @@
 import React from "react";
 // import Layout from "./Layout";
 // import SettingsMain from "./views/SettingsMain";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useParams, } from "react-router-dom";
 import Layout from "./Layout";
 
 import LoginView from "./views/LoginView";
@@ -13,7 +13,7 @@ import ChatRoomView from "./views/ChatRoomView"
 import { ROUTES } from "./routes";
 
 const App: React.FC = () => {
-	const navigate = useNavigate()
+	// const navigate = useNavigate()
 
 	return (
 		<Routes>

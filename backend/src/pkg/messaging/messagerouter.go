@@ -106,12 +106,9 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, co
 		return
 	}
 
-	for k, e := range router.subscribers {
-		if len(e) == 0 {
-			delete(router.subscribers, k)
-			log.Println("Unsubscribed from:", event, "completely.")
-			break
-		}
+	if len(router.subscribers[event]) == 0 {
+		delete(router.subscribers, event)
+		log.Println("Unsubscribed from:", event, "completely.")
 	}
 }
 
@@ -158,4 +155,6 @@ func (router *MessageRouter) FillSubInOn(event MessageEvent, conn *websocket.Con
 		websocket.MessageText,
 		marshalled,
 	)
+
+	log.Println("Fill-in message sent to", conn, "Message:", string(marshalled))
 }

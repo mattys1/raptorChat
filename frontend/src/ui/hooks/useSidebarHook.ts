@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { WebsocketService } from "../../logic/websocket"
 import { SubscriptionManager } from "../../logic/SubscriptionManager"
-import { MessageEvents } from "../../types/MessageNames"
-import { Room } from "../../types/models/Models"
+import { MessageEvents } from "../../structs/MessageNames"
+import { Room } from "../../structs/models/Models"
 import { useWebsocketListener } from "./useWebsocketListener"
 
 export const useSidebarHook = () => {

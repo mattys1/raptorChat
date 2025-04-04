@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { WebsocketService } from "../../logic/websocket"
 import { SubscriptionManager } from "../../logic/SubscriptionManager"
 
-const useChatRoomHook = () => {
+export const useChatRoomHook = () => {
 	const [socket, setSocket] = useState<WebSocket | null>(null)
 
 	const setUpSocket = async () => {
@@ -18,7 +18,7 @@ const useChatRoomHook = () => {
 	useEffect(() => {
 		if (!socket) return;
 
-		const subManager = new SubscriptionManager(socket)
+		const subManager = new SubscriptionManager()
 
 		return () => {
 			subManager.cleanup()

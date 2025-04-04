@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import styles from "./Login.module.css";
 
 import { useRegistrationHook } from "../hooks/useRegistrationHook";

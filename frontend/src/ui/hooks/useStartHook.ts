@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 
 import { WebsocketService } from "../../logic/websocket";
 import { SubscriptionManager } from "../../logic/SubscriptionManager";
-import { User } from "../../types/models/Models";
-import { MessageEvents } from "../../types/MessageNames";
+import { User } from "../../structs/models/Models";
+import { MessageEvents } from "../../structs/MessageNames";
 import { useWebsocketListener } from "./useWebsocketListener";
 
 export const useMainHook = () => {

@@ -1,12 +1,11 @@
 import { Result, ok, err } from "neverthrow"
-import { SafeMarshall, SafeUnmarshall } from "./ProcessJSONResult"
-import { MessageEvents, MessageTypes as MessageType } from "../types/MessageNames"
-import { Message, Resource } from "../types/Message"
-import { User } from "../types/models/Models"
+import { SafeMarshall, } from "./ProcessJSONResult"
+import { MessageEvents, MessageTypes as MessageType } from "../structs/MessageNames"
+import { Message, } from "../structs/Message"
 import { WebsocketService } from "./websocket"
 
 export class SubscriptionManager {
-	private ws: WebSocket
+	// private ws: WebSocket
 	private subscriptions: Map<MessageEvents, number[]> = new Map()
 
 	private sendToServer(event: MessageEvents, targetIds: number[], type: MessageType): Error | null {
@@ -37,11 +36,6 @@ export class SubscriptionManager {
 			this.sendToServer(event, targetIds, MessageType.UNSUBSCRIBE)
 		})
 	}
-
-	public constructor(ws: WebSocket) {
-		this.ws = ws
-	}
-	
 
 	public async subscribe(
 		event: MessageEvents, 
