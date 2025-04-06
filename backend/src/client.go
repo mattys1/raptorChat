@@ -171,7 +171,16 @@ func listenForMessages(conn *websocket.Conn, router *msg.MessageRouter) {
 					Contents: chatMessage.Contents,
 				})
 
-				router.Publish(event, message, roomUserIDs, GetHub().Clients)
+				publishResource, err := msg.NewResource(
+					msg.MessageEventChatMessages,
+					[]db.Message{chatMessage},
+				)
+
+				assert.That(err == nil, "Failed to create publish resource", err)
+
+				publish, err := msg.NewMessage(msg.MessageTypeCreate, publishResource)
+
+				go router.Publish(event, publish, roomUserIDs, GetHub().Clients)
 			}
 			
 

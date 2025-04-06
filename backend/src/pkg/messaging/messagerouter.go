@@ -139,6 +139,7 @@ func (router *MessageRouter) Publish(event MessageEvent, message *message, quali
 		}
 
 		log.Println("Sending message of", event, "to user", uid)
+		log.Println("Contents of published message:", string(marshalled))
 		sub.conn.Write(
 			context.TODO(),
 			websocket.MessageText,
