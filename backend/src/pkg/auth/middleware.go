@@ -8,8 +8,12 @@ import (
 
 type contextKey string
 
-const userContextKey contextKey = "userID"
+const userContextKey contextKey = "userClaims"
 
+// JWTMiddleware godoc
+// @Summary JWT authentication middleware
+// @Description Validates the JWT token (from Authorization header or cookie) and sets the user claims in the request context.
+// @Tags auth
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var tokenStr string
@@ -40,12 +44,12 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userContextKey, claims.UserID)
+		ctx := context.WithValue(r.Context(), userContextKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func RetrieveUserIDFromContext(ctx context.Context) (uint64, bool) {
-	userID, ok := ctx.Value(userContextKey).(uint64)
-	return userID, ok
+func RetrieveUserClaimsFromContext(ctx context.Context) (*Claims, bool) {
+	claims, ok := ctx.Value(userContextKey).(*Claims)
+	return claims, ok
 }

@@ -11,16 +11,11 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
+// LoginCredentials represents the fields for user login.
+// @Description Login credentials including email and password.
 type LoginCredentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-func enableCors(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
 // LoginHandler godoc
@@ -36,12 +31,11 @@ func enableCors(w http.ResponseWriter) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	enableCors(w)
+	EnableCors(w)
 
 	if r.Method == http.MethodOptions {
 		return
 	}
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -68,7 +62,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := GenerateToken(user.ID)
+	tokenString, err := GenerateToken(user.ID, user.Role)
 	if err != nil {
 		http.Error(w, "Could not generate token", http.StatusInternalServerError)
 		return

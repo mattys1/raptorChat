@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/coder/websocket"
+	"github.com/mattys1/raptorChat/src/pkg/acl" // Import ACL package
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/auth"
 	"github.com/mattys1/raptorChat/src/pkg/db"
@@ -40,7 +41,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("WebSocket connection failed: %v", err)
 		return
 	}
-
 	hub.Register <- conn
 }
 
@@ -54,37 +54,46 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Router /protected [get]
 func protectedHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := auth.RetrieveUserIDFromContext(r.Context())
+	claims, ok := auth.RetrieveUserClaimsFromContext(r.Context())
 	if !ok {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
-
-	// Listen for messages until the connection is closed
-	// for {
-	// 	_, _, err := conn.Read(context.Background())
-	// 	if err != nil {
-	// 		log.Printf("Connection closed: %v", err)
-	// 		break
-	// 	}
-	// }
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Protected data access granted",
-		"userID":  userID,
+		"userID":  claims.UserID,
+		"role":    claims.Role,
 	})
+}
+
+// adminHandler godoc
+// @Summary Access admin resource
+// @Description Returns data for admin users only.
+// @Tags admin
+// @Security ApiKeyAuth
+// @Produce plain
+// @Success 200 {string} string "Welcome to the admin area!"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 403 {string} string "Forbidden"
+// @Router /admin [get]
+func adminHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Welcome to the admin area!"))
 }
 
 func main() {
 	fmt.Print("Starting...")
+
 	http.HandleFunc("/login", auth.LoginHandler)
 	http.HandleFunc("/register", auth.RegisterHandler)
 	http.HandleFunc("/ws", wsHandler)
 
 	http.Handle("/protected", auth.JWTMiddleware(http.HandlerFunc(protectedHandler)))
 
-	ctx := context.Background()
+	enforcer := acl.NewEnforcer()
+	http.Handle("/admin", auth.JWTMiddleware(acl.CasbinMiddleware(enforcer, http.HandlerFunc(adminHandler))))
 
+	ctx := context.Background()
 	dao := db.GetDao()
 	users, err := dao.GetAllUsers(ctx)
 	assert.That(err == nil, "Failed to get users", err)
@@ -92,7 +101,7 @@ func main() {
 
 	go GetHub().run()
 
-	log.Println("Starting server on :8080")
+	log.Println("Server starting on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}

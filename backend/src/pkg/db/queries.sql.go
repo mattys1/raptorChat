@@ -10,18 +10,24 @@ import (
 )
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO users (username, email, password, created_at)
-VALUES (?, ?, ?, NOW())
+INSERT INTO users (username, email, password, created_at, role)
+VALUES (?, ?, ?, NOW(), ?)
 `
 
 type CreateUserParams struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Role     string `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser, arg.Username, arg.Email, arg.Password)
+	_, err := q.db.ExecContext(ctx, createUser,
+		arg.Username,
+		arg.Email,
+		arg.Password,
+		arg.Role,
+	)
 	return err
 }
 
@@ -53,7 +59,7 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, created_at, password FROM users
+SELECT id, username, email, created_at, password, role FROM users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -71,6 +77,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
+			&i.Role,
 		); err != nil {
 			return nil, err
 		}
@@ -86,7 +93,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, created_at, password FROM users WHERE email = ? LIMIT 1
+SELECT id, username, email, created_at, password, role FROM users WHERE email = ? LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -98,12 +105,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Email,
 		&i.CreatedAt,
 		&i.Password,
+		&i.Role,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, username, email, created_at, password FROM users WHERE id = ?
+SELECT id, username, email, created_at, password, role FROM users WHERE id = ?
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
@@ -115,6 +123,7 @@ func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
 		&i.Email,
 		&i.CreatedAt,
 		&i.Password,
+		&i.Role,
 	)
 	return i, err
 }

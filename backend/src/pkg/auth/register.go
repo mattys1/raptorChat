@@ -12,6 +12,8 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
+// RegistrationCredentials represents the required fields for registration.
+// @Description Registration credentials for a new user.
 type RegistrationCredentials struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
@@ -20,7 +22,7 @@ type RegistrationCredentials struct {
 
 // RegisterHandler godoc
 // @Summary Register a new user
-// @Description Registers a new user with an email, username, and password.
+// @Description Registers a new user with email, username, and password.
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -30,12 +32,11 @@ type RegistrationCredentials struct {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /register [post]
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	enableCors(w)
+	EnableCors(w)
 
 	if r.Method == http.MethodOptions {
 		return
 	}
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -57,7 +58,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	dao := db.GetDao()
-
 	_, err := dao.GetUserByEmail(ctx, creds.Email)
 	if err == nil {
 		http.Error(w, "User with this email already exists", http.StatusBadRequest)
@@ -70,10 +70,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	role := "user"
+
 	err = dao.CreateUser(ctx, db.CreateUserParams{
 		Username: creds.Username,
 		Email:    creds.Email,
 		Password: string(hashedPassword),
+		Role:     role,
 	})
 	if err != nil {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)

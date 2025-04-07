@@ -28,6 +28,7 @@ type User struct {
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 	Password  string    `json:"password"`
+	Role      string    `json:"role"`
 }
 
 type UsersRoom struct {
