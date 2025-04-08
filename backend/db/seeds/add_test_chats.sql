@@ -1,1 +1,0 @@
-INSERT INTO rooms VALUES ("Room1")

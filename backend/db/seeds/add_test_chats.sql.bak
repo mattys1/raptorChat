@@ -1,0 +1,2 @@
+INSERT INTO rooms VALUES ("Room1");
+INSERT INTO rooms VALUES ("Room2");
