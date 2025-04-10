@@ -34,6 +34,25 @@ import (
 // @Router /ws [get]
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	hub := GetHub()
+
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := auth.ValidateToken(token)
+	if err != nil {
+		http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	user, err := db.GetDao().GetUserById(r.Context(), claims.UserID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
 	})
@@ -41,7 +60,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("WebSocket connection failed: %v", err)
 		return
 	}
-	hub.Register <- conn
+
+	client := &Client{
+		User:       &user,
+		Connection: conn,
+	}
+	hub.Register <- client
 }
 
 // protectedHandler godoc
