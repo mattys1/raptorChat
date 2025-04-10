@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { WebsocketService } from "../../logic/websocket"
 import { SubscriptionManager } from "../../logic/SubscriptionManager"
-import { MessageEvents } from "../../types/MessageNames"
-import { Room } from "../../types/models/Models"
+import { MessageEvents } from "../../structs/MessageNames"
+import { Room } from "../../structs/models/Models"
 import { useWebsocketListener } from "./useWebsocketListener"
 
 export const useSidebarHook = () => {
@@ -25,7 +25,7 @@ export const useSidebarHook = () => {
 		const subManager = new SubscriptionManager(socket)
 		subManager.subscribe(MessageEvents.CHATS)
 
-		return subManager.cleanup()
+		return () => subManager.cleanup()
 	}, [socket])
 
 	return {

@@ -1,19 +1,23 @@
 import { Result, ok, err } from "neverthrow"
-import { SafeMarshall, SafeUnmarshall } from "./ProcessJSONResult"
-import { MessageEvents, MessageTypes as MessageType } from "../types/MessageNames"
-import { Message, Resource } from "../types/Message"
-import { User } from "../types/models/Models"
+import { SafeMarshall, } from "./ProcessJSONResult"
+import { MessageEvents, MessageTypes as MessageType } from "../structs/MessageNames"
+import { Message, } from "../structs/Message"
 import { WebsocketService } from "./websocket"
 
 export class SubscriptionManager {
-	private ws: WebSocket
-	private subscriptions: Map<MessageEvents, boolean> = new Map()
+	// private ws: WebSocket
+	private subscriptions: Map<MessageEvents, number[]> = new Map()
 
-	private sendToServer(event: MessageEvents, type: MessageType): Error | null {
-		const payload = SafeMarshall({
+	private sendToServer(event: MessageEvents, targetIds: number[], type: MessageType): Error | null {
+		const message: Message = {
 			type: type,
-			contents: event
-		})
+			contents: {
+				eventName: event,
+				targetIds: targetIds
+			}
+		}
+
+		const payload = SafeMarshall(message)
 
 		if(payload.isErr()) {
 			return payload.error
@@ -25,47 +29,29 @@ export class SubscriptionManager {
 		return null
 	}
 
-	// FIXME: sendToServer should actually be async since it's being called multiple times
+	// TODO: sendToServer should actually be async since it's being called multiple times
 	private async unsubscribeAll() { 		
-		this.subscriptions.forEach((_, event) => {
-			this.sendToServer(event, MessageType.UNSUBSCRIBE)
+		this.subscriptions.forEach((targetIds, event) => {
+			console.log(this.constructor.name, "Unsubscribing from", event)
+			this.sendToServer(event, targetIds, MessageType.UNSUBSCRIBE)
 		})
 	}
 
-	public constructor(ws: WebSocket) {
-		this.ws = ws
-	}
-	
-
-	public async subscribe<T>(
+	public async subscribe(
 		event: MessageEvents, 
+		targetId: number[] = [-1]
 	): Promise<Result<boolean, Error>> {
 		console.log("Calling subscribe")
 		if(this.subscriptions.has(event)) {
 			return ok(false)
 		}
-		this.subscriptions.set(event, true)
+		this.subscriptions.set(event, targetId)
 
-		const error = this.sendToServer(event, MessageType.SUBSCRIBE)
+		const error = this.sendToServer(event, targetId, MessageType.SUBSCRIBE)
 		if(error) {
 			this.subscriptions.delete(event)
 			return err(error)
 		}
-
-		this.ws.onmessage = (message) => {
-			const decoded = SafeUnmarshall<Message<T>>(message.data)
-			if(decoded.isErr()) {
-				console.error("Message is error" + message.data)
-				return
-			}
-
-			console.log("Decoded:", decoded)
-			if(decoded.value.type == MessageType.CREATE) {
-				const resource = decoded.value.contents as Resource<T>
-			}
-		}
-
-		console.log("Subscribed to", event)
 
 		return ok(true)
 	}

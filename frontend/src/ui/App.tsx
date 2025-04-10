@@ -1,16 +1,19 @@
 import React from "react";
+// import Layout from "./Layout";
+// import SettingsMain from "./views/SettingsMain";
+import { Routes, Route, useParams, } from "react-router-dom";
+import Layout from "./Layout";
+
 import LoginView from "./views/LoginView";
 import RegistrationView from "./views/RegistrationView";
-// import Layout from "./Layout";
-import MainView from "./views/MainView";
-// import SettingsMain from "./views/SettingsMain";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import Layout from "./Layout";
 import SettingsMain from "./views/SettingsMain";
+import MainView from "./views/MainView";
+import ChatRoomView from "./views/ChatRoomView"
+
 import { ROUTES } from "./routes";
 
 const App: React.FC = () => {
-	const navigate = useNavigate()
+	// const navigate = useNavigate()
 
 	return (
 		<Routes>
@@ -22,6 +25,7 @@ const App: React.FC = () => {
 			<Route path={ROUTES.APP} element={<Layout />}>
 				<Route path={ROUTES.MAIN} element={<MainView />} />
 				<Route path={ROUTES.SETTINGS} element={<SettingsMain />} />
+				<Route path={`${ROUTES.CHATROOM}/:chatId`} element={<ChatRoomView />} />
 			</Route>
 		</Routes>
 	);

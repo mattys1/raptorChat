@@ -13,3 +13,14 @@ SELECT * FROM rooms;
 -- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW());
+
+-- name: GetMessagesByRoom :many
+SELECT * FROM messages WHERE room_id = ?;
+
+-- name: GetUsersByRoom :many
+SELECT u.* FROM users u
+JOIN users_rooms ur ON ur.user_id = u.id
+WHERE ur.room_id = ?;
+
+-- name: CreateMessage :exec
+INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)

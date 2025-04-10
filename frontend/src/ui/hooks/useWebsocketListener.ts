@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { SafeUnmarshall } from "../../logic/ProcessJSONResult";
-import { Message, Resource } from "../../types/Message";
-import { MessageEvents, MessageTypes } from "../../types/MessageNames";
+import { Message, Resource } from "../../structs/Message";
+import { MessageEvents, MessageTypes } from "../../structs/MessageNames";
 
 export const useWebsocketListener = <T>(eventName: MessageEvents, ws: WebSocket | null) => {
 	const [data, setData] = useState<T[]>([]);

@@ -9,6 +9,21 @@ import (
 	"context"
 )
 
+const createMessage = `-- name: CreateMessage :exec
+INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
+`
+
+type CreateMessageParams struct {
+	RoomID   uint64 `json:"room_id"`
+	SenderID uint64 `json:"sender_id"`
+	Contents string `json:"contents"`
+}
+
+func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
+	_, err := q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
+	return err
+}
+
 const createUser = `-- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW())
@@ -85,6 +100,39 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getMessagesByRoom = `-- name: GetMessagesByRoom :many
+SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE room_id = ?
+`
+
+func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getMessagesByRoom, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.SenderID,
+			&i.RoomID,
+			&i.Contents,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, username, email, created_at, password FROM users WHERE email = ? LIMIT 1
 `
@@ -117,4 +165,39 @@ func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
 		&i.Password,
 	)
 	return i, err
+}
+
+const getUsersByRoom = `-- name: GetUsersByRoom :many
+SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
+JOIN users_rooms ur ON ur.user_id = u.id
+WHERE ur.room_id = ?
+`
+
+func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersByRoom, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.CreatedAt,
+			&i.Password,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

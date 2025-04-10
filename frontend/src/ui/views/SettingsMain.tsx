@@ -1,4 +1,4 @@
-import { NavigateFunction, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { useSettingsHook } from "../hooks/useSettingsHook";
 import { ROUTES } from "../routes";

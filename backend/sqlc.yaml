@@ -8,3 +8,5 @@ sql:
         package: "db"
         out: "./src/pkg/db"
         emit_json_tags: true
+
+# TODO: https://www.reddit.com/r/golang/comments/wnnwi0/help_cleaning_up_json_response_of_sqlnullstring/

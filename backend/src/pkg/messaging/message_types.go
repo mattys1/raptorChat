@@ -7,7 +7,7 @@ const (
 	MessageTypeUnsubscribe MessageType = "unsubscribe"
 	MessageTypeUpdate MessageType = "update"
 	MessageTypeDelete MessageType = "delete"
-	MesssageTypeCreate MessageType = "create"
+	MessageTypeCreate MessageType = "create"
 )
 
 type MessageEvent string
