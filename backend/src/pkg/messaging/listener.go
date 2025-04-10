@@ -10,6 +10,54 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
+func subscribeAndNotify[T any](
+	subscription *Subscription,
+	router *MessageRouter,
+	conn *websocket.Conn,
+	query func (reference uint64, dao *db.Queries) ([]T, error),
+) {
+	router.Subscribe(MessageEvent(subscription.EventName), subscription.Targets, conn)
+
+	allItems := make([][]T, len(subscription.Targets))
+	for i := range allItems {
+		itemsOfTarget, err := query(uint64(subscription.Targets[i]), db.GetDao())
+		assert.That(err == nil, "Failed retrieving items from target" + strconv.Itoa(subscription.Targets[i]), err)
+		allItems[i] = itemsOfTarget
+	}
+
+	resource, err := NewResource(MessageEvent(subscription.EventName), allItems)
+	assert.That(err == nil, "Couldn't create resource", err)
+	payload, err := NewMessage(MessageTypeCreate, resource)
+	assert.That(err == nil, "Failed to create message", err)
+
+	router.FillSubInOn(MessageEvent(subscription.EventName), conn, payload)
+}
+
+func handleSubscription(
+	message *message,
+	router *MessageRouter,
+	conn *websocket.Conn,
+) {
+	subscription, err := GetMessageContents[Subscription](message)
+	assert.That(err == nil, "Failed to get subscription from message", err)
+	eventName := MessageEvent(subscription.EventName)
+
+	switch eventName {
+		case MessageEventChatMessages:
+			subscription, err := GetMessageContents[Subscription](message)
+			assert.That(err == nil, "Failed to get subscription from message", err)	
+
+			subscribeAndNotify[db.Message](
+				subscription,
+				router,
+				conn,
+				func(reference uint64, dao *db.Queries) ([]db.Message, error) {
+					return dao.GetMessagesByRoom(context.TODO(), reference)
+				},
+			)
+	}
+}
+
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
 // TODO: really have to put this somewhere else
 func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterConn chan *websocket.Conn, getClients func () map[*db.User]*websocket.Conn) {
@@ -43,28 +91,8 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 
 			switch MessageEvent(eventName) {
 			case MessageEventChatMessages:
-				router.Subscribe(MessageEvent(eventName), subscription.Targets, conn)
-
-				subscription, err := GetMessageContents[Subscription](message)
-				assert.That(err == nil, "Failed to get subscription from message", err)
-				// TODO: so, we need to implement a query to get all messages for a specific room, then we just send it out, pray that everything works, and then implement sending of messages, fuck editing and deleting
-				dao := db.GetDao()
-
-				messagesInAllRooms := make([][]db.Message, len(subscription.Targets))
-				for i := range messagesInAllRooms {
-					messagesInRoom, err := dao.GetMessagesByRoom(context.TODO(), uint64(subscription.Targets[i]))
-					assert.That(err == nil, "Failed retrieving messages from room" + strconv.Itoa(subscription.Targets[i]), err)
-
-					messagesInAllRooms[i] = messagesInRoom
-				}
-
-				resource, err := NewResource(MessageEvent(eventName), messagesInAllRooms)
-				assert.That(err == nil, "Couldn't create resource", err)
-
-				payload, err := NewMessage(MessageTypeCreate, resource)
-
-				router.FillSubInOn(MessageEvent(eventName), conn, payload)
-
+				// test
+				handleSubscription(message, router, conn)
 			case MessageEventUsers:
 				router.Subscribe(MessageEventUsers, subscription.Targets, conn)
 
