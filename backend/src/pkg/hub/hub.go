@@ -1,4 +1,4 @@
-package main
+package hub
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func (hub *Hub) Run() {
 			// client.User = &user
 
 			log.Println("Client registered", user, conn)
-			go listenForMessages(conn, hub.router)
+			go msg.ListenForMessages(conn, hub.router, hub.Unregister, func() map[*db.User]*websocket.Conn { return hub.Clients })
 
 		case conn := <-hub.Unregister:
 			for user, c := range hub.Clients {

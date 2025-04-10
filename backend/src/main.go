@@ -12,6 +12,7 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/auth"
 	"github.com/mattys1/raptorChat/src/pkg/db"
+	"github.com/mattys1/raptorChat/src/pkg/hub"
 )
 
 // @title raptorChat API
@@ -32,7 +33,7 @@ import (
 // @Failure 500 {object} map[string]string "Internal Server Error"
 // @Router /ws [get]
 func wsHandler(w http.ResponseWriter, r *http.Request) {
-	hub := GetHub()
+	hub := hub.GetHub()
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
 	})
@@ -90,7 +91,7 @@ func main() {
 	assert.That(err == nil, "Failed to get users", err)
 	log.Println("Users:", users)
 
-	go GetHub().Run()	
+	go hub.GetHub().Run()	
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
