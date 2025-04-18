@@ -10,15 +10,16 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
-func subscribeAndNotify[T any](
+func subscribeAndNotify[T any, U any](
 	subscription *Subscription,
 	router *MessageRouter,
 	conn *websocket.Conn,
-	query func (reference uint64, dao *db.Queries) ([]T, error),
+	query func (reference uint64, dao *db.Queries) ([]U, error),
 ) {
 	router.Subscribe(MessageEvent(subscription.EventName), subscription.Targets, conn)
 
-	allItems := make([][]T, len(subscription.Targets))
+	// TODO: actually this should be a map that maps target ID to the items of that target. if this is flattened, then  it's not that important 
+	allItems := make([][]U, len(subscription.Targets))
 	for i := range allItems {
 		itemsOfTarget, err := query(uint64(subscription.Targets[i]), db.GetDao())
 		assert.That(err == nil, "Failed retrieving items from target" + strconv.Itoa(subscription.Targets[i]), err)
@@ -52,15 +53,42 @@ func handleSubscription(
 
 	switch eventName {
 		case MessageEventChatMessages:
-			subscription, err := GetMessageContents[Subscription](message)
-			assert.That(err == nil, "Failed to get subscription from message", err)	
-
 			subscribeAndNotify[db.Message](
 				subscription,
 				router,
 				conn,
 				func(reference uint64, dao *db.Queries) ([]db.Message, error) {
 					return dao.GetMessagesByRoom(context.TODO(), reference)
+				},
+			)
+		case MessageEventUsers:
+			subscribeAndNotify[db.User](
+				subscription,
+				router,
+				conn,
+				func(reference uint64, dao *db.Queries) ([]*db.UserSendable, error) {
+					users, err := dao.GetAllUsers(context.TODO())
+					if err != nil {
+						return nil, err
+					}
+
+					sendableUsers := sliceToSendable(users, func(user *db.User) *db.UserSendable { return user.ToSendable() })
+					return sendableUsers, nil
+				},
+			)
+		case MessageEventRooms:
+			subscribeAndNotify[db.Room](
+				subscription,
+				router,
+				conn,
+				func(reference uint64, dao *db.Queries) ([]*db.RoomSendable, error) {
+					rooms, err := dao.GetAllRooms(context.TODO())
+					if err != nil {
+						return nil, err
+					}
+
+					sendableRooms := sliceToSendable(rooms, func(room *db.Room) *db.RoomSendable { return room.ToSendable() }) 
+					return sendableRooms, nil
 				},
 			)
 	}
@@ -95,60 +123,60 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 			assert.That(err == nil, "Failed to get subscription from message", err)
 
 			log.Println("Subscription: ", subscription)
-			eventName := subscription.EventName
+			// eventName := subscription.EventName
 
-			switch MessageEvent(eventName) {
-			case MessageEventChatMessages:
-				// test
-				handleSubscription(message, router, conn)
-			case MessageEventUsers:
-				router.Subscribe(MessageEventUsers, subscription.Targets, conn)
-
-				users, err := db.GetDao().GetAllUsers(context.TODO())
-				assert.That(err == nil, "Failed to get users from db", err)
-
-				var sendableUsers []any
-				for _, user := range users {
-					sendableUsers = append(sendableUsers, user.ToSendable())	
-				}
-
-				resource, err := NewResource(MessageEventUsers, sendableUsers)
-				assert.That(err == nil, "Failed to create resource", err)
-
-				payload, err := NewMessage(MessageTypeCreate, resource)
-
-				assert.That(err == nil, "Failed to create message", err)
-
-				go router.FillSubInOn(
-					MessageEventUsers,
-					conn,
-					payload,
-				)
-			case MessageEventRooms:
-				log.Println("Chat subscription")
-				router.Subscribe(MessageEvent(eventName), subscription.Targets, conn)
-				rooms, err := db.GetDao().GetAllRooms(context.TODO())
-				assert.That(err == nil, "Failed to get rooms from db", err)
-
-				sendableRooms := make([]any, len(rooms))
-				for i, room := range rooms {
-					sendableRooms[i] = room.ToSendable()
-				}
-
-				log.Println("Publishing rooms", sendableRooms)
-
-				resource, err := NewResource(MessageEventRooms, sendableRooms)
-				payload, err := NewMessage(MessageTypeCreate, resource)
-
-				assert.That(err == nil, "Failed to create message", err)
-
-				router.FillSubInOn(
-					MessageEventRooms,
-					conn,
-					payload,
-				)
-			}
-			
+			handleSubscription(message, router, conn)
+			// switch MessageEvent(eventName) {
+			// case MessageEventChatMessages:
+			// 	// test
+			// case MessageEventUsers:
+			// 	router.Subscribe(MessageEventUsers, subscription.Targets, conn)
+			//
+			// 	users, err := db.GetDao().GetAllUsers(context.TODO())
+			// 	assert.That(err == nil, "Failed to get users from db", err)
+			//
+			// 	var sendableUsers []any
+			// 	for _, user := range users {
+			// 		sendableUsers = append(sendableUsers, user.ToSendable())	
+			// 	}
+			//
+			// 	resource, err := NewResource(MessageEventUsers, sendableUsers)
+			// 	assert.That(err == nil, "Failed to create resource", err)
+			//
+			// 	payload, err := NewMessage(MessageTypeCreate, resource)
+			//
+			// 	assert.That(err == nil, "Failed to create message", err)
+			//
+			// 	go router.FillSubInOn(
+			// 		MessageEventUsers,
+			// 		conn,
+			// 		payload,
+			// 	)
+			// case MessageEventRooms:
+			// 	log.Println("Chat subscription")
+			// 	router.Subscribe(MessageEvent(eventName), subscription.Targets, conn)
+			// 	rooms, err := db.GetDao().GetAllRooms(context.TODO())
+			// 	assert.That(err == nil, "Failed to get rooms from db", err)
+			//
+			// 	sendableRooms := make([]any, len(rooms))
+			// 	for i, room := range rooms {
+			// 		sendableRooms[i] = room.ToSendable()
+			// 	}
+			//
+			// 	log.Println("Publishing rooms", sendableRooms)
+			//
+			// 	resource, err := NewResource(MessageEventRooms, sendableRooms)
+			// 	payload, err := NewMessage(MessageTypeCreate, resource)
+			//
+			// 	assert.That(err == nil, "Failed to create message", err)
+			//
+			// 	router.FillSubInOn(
+			// 		MessageEventRooms,
+			// 		conn,
+			// 		payload,
+			// 	)
+			// }
+			//
 		case MessageTypeUnsubscribe:
 			unsubscription, err := GetMessageContents[Subscription](message)
 

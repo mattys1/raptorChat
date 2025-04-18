@@ -4,7 +4,6 @@ import { useMainHook } from "../hooks/useStartHook";
 
 const MainView: React.FC = () => {
 	const props = useMainHook()
-	const socket = props.socket
 	const users = props.users
 
 	return (

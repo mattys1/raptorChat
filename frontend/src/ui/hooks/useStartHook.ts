@@ -11,7 +11,7 @@ export const useMainHook = () => {
 	const [isConnecting, setIsConnecting] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	// const [users, setUsers] = useState<User[]>([])
-	const [users, setUsers] = useWebsocketListener<User>(MessageEvents.USERS, socket)
+	const [users, setUsers] = useWebsocketListener<User[]>(MessageEvents.USERS, socket)
 
 	const setUpSocket = async () => {
 		const socket = WebsocketService.getInstance().unwrapOr(null)
@@ -26,7 +26,7 @@ export const useMainHook = () => {
 	useEffect(() => {
 		if (!socket) return;
 
-		const subManager = new SubscriptionManager(socket)
+		const subManager = new SubscriptionManager()
 		subManager.subscribe(MessageEvents.USERS)
 
 		return () => {
@@ -38,9 +38,7 @@ export const useMainHook = () => {
 		socket,
 		isConnecting,
 		error,
-		users,
-		setUsers
+		users: users.flatMap(usersActualArray => usersActualArray),
+		setUsers,
 	}
 };
-
-
