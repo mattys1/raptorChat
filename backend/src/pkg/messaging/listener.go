@@ -33,6 +33,14 @@ func subscribeAndNotify[T any](
 	router.FillSubInOn(MessageEvent(subscription.EventName), conn, payload)
 }
 
+func sliceToSendable[O any, S any](original []O, convert func (org *O) S) []S {
+	var sendable []S
+	for _, item := range original {
+		sendable = append(sendable, convert(&item))
+	}
+	return sendable
+}
+
 func handleSubscription(
 	message *message,
 	router *MessageRouter,
