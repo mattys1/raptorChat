@@ -7,7 +7,7 @@ import { useWebsocketListener } from "./useWebsocketListener"
 
 export const useSidebarHook = () => {
 	const [socket, setSocket] = useState<WebSocket | null>(null)
-	const [chats, setChats] = useWebsocketListener<Room[]>(MessageEvents.CHATS, socket)
+	const [chats, setChats] = useWebsocketListener<Room>(MessageEvents.CHATS, socket)
 
 	const setUpSocket = async () => {
 		const socket = WebsocketService.getInstance().unwrapOr(null)
@@ -30,7 +30,7 @@ export const useSidebarHook = () => {
 
 	return {
 		socket,
-		chats: (chats || []).flatMap(chat => chat),
+		chats,
 		setChats
 	}
 

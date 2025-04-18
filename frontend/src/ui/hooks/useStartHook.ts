@@ -11,7 +11,7 @@ export const useMainHook = () => {
 	const [isConnecting, setIsConnecting] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	// const [users, setUsers] = useState<User[]>([])
-	const [users, setUsers] = useWebsocketListener<User[]>(MessageEvents.USERS, socket)
+	const [users, setUsers] = useWebsocketListener<User>(MessageEvents.USERS, socket)
 
 	const setUpSocket = async () => {
 		const socket = WebsocketService.getInstance().unwrapOr(null)
@@ -38,7 +38,7 @@ export const useMainHook = () => {
 		socket,
 		isConnecting,
 		error,
-		users: users.flatMap(usersActualArray => usersActualArray),
+		users,//: users.flatMap(usersActualArray => usersActualArray),
 		setUsers,
 	}
 };

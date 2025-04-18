@@ -42,7 +42,7 @@ export const useChatRoomHook = (key: number) => {
 
 	return {
 		sender,
-		messageList: messageList?.flatMap(message => message), //FIXME: super hacky, don't know what to change it to
+		messageList: messageList.filter(msg => msg.room_id === chatId), //is this fine? feels like filtering should be done somewhere else
 		setMessages,
 	}
 }

@@ -19,11 +19,11 @@ func subscribeAndNotify[T any, U any](
 	router.Subscribe(MessageEvent(subscription.EventName), subscription.Targets, conn)
 
 	// TODO: actually this should be a map that maps target ID to the items of that target. if this is flattened, then  it's not that important 
-	allItems := make([][]U, len(subscription.Targets))
-	for i := range allItems {
+	allItems := []U{}
+	for i := range subscription.Targets {
 		itemsOfTarget, err := query(uint64(subscription.Targets[i]), db.GetDao())
 		assert.That(err == nil, "Failed retrieving items from target" + strconv.Itoa(subscription.Targets[i]), err)
-		allItems[i] = itemsOfTarget
+		allItems = append(allItems, itemsOfTarget...)
 	}
 
 	resource, err := NewResource(MessageEvent(subscription.EventName), allItems)
