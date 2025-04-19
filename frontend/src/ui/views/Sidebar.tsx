@@ -6,10 +6,11 @@ import { ROUTES } from "../routes";
 
 interface SidebarProps {
 	onSettingsClick: () => void;
+	onCreateRoomClick: () => void;
 }
 
 
-const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick, onCreateRoomClick }) => {
 	const navigate = useNavigate()
 
 	const props = useSidebarHook()
@@ -45,6 +46,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 				style={{ cursor: "pointer" }}
 			>
 				<p>Settings</p>
+			</div>
+			<div
+				className="styles-settings"
+				onClick={onCreateRoomClick}
+				style={{ cursor: "pointer" }}
+			>
+				<p>Create Room</p>
 			</div>
 		</>
 	);

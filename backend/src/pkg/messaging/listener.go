@@ -178,6 +178,32 @@ func handleCreate(
 			},
 			getClients,
 		)
+	case MessageEventRooms:
+		createAndSend(
+			event, resource, router, conn,
+			func(room *db.Room, user *db.User) {
+				assert.That(room.Type != db.RoomsTypeDirect, "DMs not implemented", nil)
+				room.OwnerID = &user.ID
+			},
+			func(dao *db.Queries, reference *db.Room) ([]uint64, uint64, error) {
+				return []uint64{*reference.OwnerID}, reference.ID, nil
+			},
+			func(dao *db.Queries, item *db.Room) (int64, error) {
+				result, err := dao.CreateRoom(context.TODO(), db.CreateRoomParams {
+					OwnerID: item.OwnerID,
+					Name: item.Name,
+					Type: item.Type,
+				})
+				if err != nil {	
+					return 0, err
+				}
+
+				return result.LastInsertId()
+			},
+			getClients,
+		)
+	default:
+		log.Fatal("Unknown event: ", event)
 	}
 }
 

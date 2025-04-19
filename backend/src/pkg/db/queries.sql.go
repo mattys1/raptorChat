@@ -10,6 +10,20 @@ import (
 	"database/sql"
 )
 
+const addUserToRoom = `-- name: AddUserToRoom :exec
+INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?)
+`
+
+type AddUserToRoomParams struct {
+	UserID uint64 `json:"user_id"`
+	RoomID uint64 `json:"room_id"`
+}
+
+func (q *Queries) AddUserToRoom(ctx context.Context, arg AddUserToRoomParams) error {
+	_, err := q.db.ExecContext(ctx, addUserToRoom, arg.UserID, arg.RoomID)
+	return err
+}
+
 const createMessage = `-- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
 `
@@ -22,6 +36,20 @@ type CreateMessageParams struct {
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
+}
+
+const createRoom = `-- name: CreateRoom :execresult
+INSERT INTO rooms (owner_id, name, type) VALUES (?, ?, ?)
+`
+
+type CreateRoomParams struct {
+	OwnerID *uint64   `json:"owner_id"`
+	Name    *string   `json:"name"`
+	Type    RoomsType `json:"type"`
+}
+
+func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createRoom, arg.OwnerID, arg.Name, arg.Type)
 }
 
 const createUser = `-- name: CreateUser :exec
@@ -40,8 +68,17 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
+const deleteRoom = `-- name: DeleteRoom :exec
+DELETE FROM rooms WHERE id = ?
+`
+
+func (q *Queries) DeleteRoom(ctx context.Context, id uint64) error {
+	_, err := q.db.ExecContext(ctx, deleteRoom, id)
+	return err
+}
+
 const getAllRooms = `-- name: GetAllRooms :many
-SELECT id, name FROM rooms
+SELECT id, name, owner_id, type FROM rooms
 `
 
 func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
@@ -53,7 +90,12 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 	var items []Room
 	for rows.Next() {
 		var i Room
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.Type,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -188,6 +230,22 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 		return nil, err
 	}
 	return items, nil
+}
+
+const getRoomById = `-- name: GetRoomById :one
+SELECT id, name, owner_id, type FROM rooms WHERE id = ?
+`
+
+func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
+	row := q.db.QueryRowContext(ctx, getRoomById, id)
+	var i Room
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.OwnerID,
+		&i.Type,
+	)
+	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one

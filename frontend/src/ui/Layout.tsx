@@ -9,7 +9,10 @@ const Layout: React.FC = () => {
 	return (
 		<div className="container">
 			<aside className="sidebar">
-				<Sidebar onSettingsClick={() => {navigate(ROUTES.SETTINGS); console.log("Navigating to settings")}} />
+				<Sidebar 
+					onSettingsClick={() => {navigate(ROUTES.SETTINGS); console.log("Navigating to settings")}} 
+					onCreateRoomClick={() => {navigate(ROUTES.CHATROOM_CREATE); console.log("Navigating to create room")}}
+				/>
 			</aside>
 			<main className="main-content">{<Outlet />}</main>
 		</div>

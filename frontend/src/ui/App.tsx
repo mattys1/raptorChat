@@ -11,6 +11,7 @@ import MainView from "./views/MainView";
 import ChatRoomView from "./views/ChatRoomView"
 
 import { ROUTES } from "./routes";
+import CreateRoomView from "./views/CreateRoomView";
 
 const App: React.FC = () => {
 	// const navigate = useNavigate()
@@ -26,6 +27,7 @@ const App: React.FC = () => {
 				<Route path={ROUTES.MAIN} element={<MainView />} />
 				<Route path={ROUTES.SETTINGS} element={<SettingsMain />} />
 				<Route path={`${ROUTES.CHATROOM}/:chatId`} element={<ChatRoomView />} />
+				<Route path={ROUTES.CHATROOM_CREATE} element={<CreateRoomView />} />
 			</Route>
 		</Routes>
 	);
