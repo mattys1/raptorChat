@@ -236,7 +236,10 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 
 				publish, err := NewMessage(MessageTypeCreate, publishResource)
 
-				go router.Publish(event, publish, roomUserIDs, getClients())
+				// lastInsertID, err := result.LastInsertId()
+				// assert.That(err == nil, "Failed to get last insert ID", err)
+
+				go router.Publish(event, publish, roomUserIDs, []uint64{chatMessage.RoomID}, getClients())
 			}
 			
 

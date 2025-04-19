@@ -50,8 +50,11 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 		assert.That(!slices.Contains(subscribers, nil),
 			fmt.Sprintf("Subscribed with nil: %v", subscribers), nil)
 
+
+		pp.Default.SetExportedOnly(true)
 		log.Println("Connection subscribed to", event)
-		log.Println("Subscribers of", event, ":", router.subscribers[event])
+		log.Println("Subscribers of", event, ":", pp.Sprint(router.subscribers[event]))
+		pp.Default.SetExportedOnly(false)
 	}()
 
 	if _, ok := router.subscribers[event]; !ok {
@@ -151,7 +154,13 @@ func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
 
 }
 
-func (router *MessageRouter) Publish(event MessageEvent, message *message, qualifiedUsers []uint64, allClients map[*db.User]*websocket.Conn) { // FIXME: FIXME: FIXME: FIXME: FIXME: FIXME: 
+func (router *MessageRouter) Publish(
+	event MessageEvent,
+	message *message,
+	qualifiedUsers []uint64,
+	publishedIds []uint64, // should publish multiple messages, each corresponding to a specific set of `interestedAndQualified`. this will work fine if there's a single resource in a message. TODO: needs a big refactor
+	allClients map[*db.User]*websocket.Conn,
+) { // FIXME: allClients sucks 
 	marshalled, err := json.Marshal(message)
 	assert.That(err == nil, "Failed to marshal published message", err)
 
@@ -164,6 +173,22 @@ func (router *MessageRouter) Publish(event MessageEvent, message *message, quali
 			continue
 		}
 
+		log.Println("Event:", event, "User", uid, "Interested Resources:", sub.InterestedIds, "Published Resources:", publishedIds)
+
+		interested := false
+		for _, pid := range publishedIds {
+			for _, iid := range sub.InterestedIds {
+				if int(pid) == iid {
+					interested = true
+					break
+				}
+			}
+		}
+
+		if interested == false {
+			continue
+		}
+		
 		log.Println("Sending message of", event, "to user", uid)
 		log.Println("Contents of published message:", string(marshalled))
 		sub.conn.Write(

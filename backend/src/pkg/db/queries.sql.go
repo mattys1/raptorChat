@@ -7,9 +7,10 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
-const createMessage = `-- name: CreateMessage :exec
+const createMessage = `-- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
 `
 
@@ -19,9 +20,8 @@ type CreateMessageParams struct {
 	Contents string `json:"contents"`
 }
 
-func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
-	return err
+func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
 }
 
 const createUser = `-- name: CreateUser :exec
