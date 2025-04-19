@@ -94,6 +94,93 @@ func handleSubscription(
 	}
 }
 
+func createAndSend[T any](
+	event MessageEvent,
+	resource *Resource,
+	router *MessageRouter,
+	conn *websocket.Conn,
+	matchAuthor func (item *T, user *db.User),
+	getQualified func (dao *db.Queries, reference *T) ([]uint64, uint64, error),
+	saveInDB func (dao *db.Queries, item *T) (int64, error),
+	getClients func () map[*db.User]*websocket.Conn, // TODO: i've mentioned this somewhere else, but this needs to go
+) {
+	items, err := GetResourceContents[T](resource)
+	assert.That(err == nil, "Failed to get resource contents", err)
+	assert.That(len(items) == 1, "More than one item sent, unimplemented", nil)
+
+	item := items[0]
+	dao := db.GetDao()
+
+	for u, c := range(getClients()) {
+		if(c == conn) {
+			matchAuthor(&item, u)
+		}
+	}
+
+	qualified, reference, err := getQualified(dao, &item)
+	assert.That(err == nil, "Failed to get qualified ids", err)
+
+	_, err = saveInDB(dao, &item)
+	assert.That(err == nil, "Failed to save item in DB", err)
+
+	publishResource, err := NewResource(event, []T{item})
+	assert.That(err == nil, "Failed to create publish resource", err)
+	publish, err := NewMessage(MessageTypeCreate, publishResource)
+	assert.That(err == nil, "Failed to create publish message", err)
+
+	go router.Publish(event, publish, qualified, []uint64{reference}, getClients())
+
+}
+
+func handleCreate(
+	message *message,
+	router *MessageRouter,
+	conn *websocket.Conn,
+	getClients func () map[*db.User]*websocket.Conn,
+) {
+	resource, err := GetMessageContents[Resource](message)
+	assert.That(err == nil, "Failed to get resource from message", err)
+	event := MessageEvent(resource.EventName)
+
+	switch MessageEvent(resource.EventName) {
+	case MessageEventChatMessages:
+		createAndSend(
+			event, resource, router, conn,
+			func (item *db.Message, user *db.User) {
+				item.SenderID = user.ID
+			},
+			func (dao *db.Queries, item *db.Message) ([]uint64, uint64, error) {
+				usersInRoom, err := dao.GetUsersByRoom(context.TODO(), item.RoomID)
+				if err != nil {
+					return nil, 0, err
+				}
+				var roomUserIDs []uint64
+
+				for _, user := range usersInRoom {
+					roomUserIDs = append(roomUserIDs, user.ID)
+				}
+
+				return roomUserIDs, item.RoomID, nil
+			},
+			func(dao *db.Queries, item *db.Message) (int64, error) {
+				result, err := dao.CreateMessage(context.TODO(), db.CreateMessageParams{
+					RoomID: item.RoomID,
+					SenderID: item.SenderID,
+					Contents: item.Contents,
+				})
+
+				if err != nil {
+					return 0, err
+				}
+
+				id, err := result.LastInsertId()
+				return id, err
+			},
+			getClients,
+		)
+	}
+}
+
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
 // TODO: also getClients is an unholy abomination
 func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterConn chan *websocket.Conn, getClients func () map[*db.User]*websocket.Conn) {
@@ -126,57 +213,6 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 			// eventName := subscription.EventName
 
 			handleSubscription(message, router, conn)
-			// switch MessageEvent(eventName) {
-			// case MessageEventChatMessages:
-			// 	// test
-			// case MessageEventUsers:
-			// 	router.Subscribe(MessageEventUsers, subscription.Targets, conn)
-			//
-			// 	users, err := db.GetDao().GetAllUsers(context.TODO())
-			// 	assert.That(err == nil, "Failed to get users from db", err)
-			//
-			// 	var sendableUsers []any
-			// 	for _, user := range users {
-			// 		sendableUsers = append(sendableUsers, user.ToSendable())	
-			// 	}
-			//
-			// 	resource, err := NewResource(MessageEventUsers, sendableUsers)
-			// 	assert.That(err == nil, "Failed to create resource", err)
-			//
-			// 	payload, err := NewMessage(MessageTypeCreate, resource)
-			//
-			// 	assert.That(err == nil, "Failed to create message", err)
-			//
-			// 	go router.FillSubInOn(
-			// 		MessageEventUsers,
-			// 		conn,
-			// 		payload,
-			// 	)
-			// case MessageEventRooms:
-			// 	log.Println("Chat subscription")
-			// 	router.Subscribe(MessageEvent(eventName), subscription.Targets, conn)
-			// 	rooms, err := db.GetDao().GetAllRooms(context.TODO())
-			// 	assert.That(err == nil, "Failed to get rooms from db", err)
-			//
-			// 	sendableRooms := make([]any, len(rooms))
-			// 	for i, room := range rooms {
-			// 		sendableRooms[i] = room.ToSendable()
-			// 	}
-			//
-			// 	log.Println("Publishing rooms", sendableRooms)
-			//
-			// 	resource, err := NewResource(MessageEventRooms, sendableRooms)
-			// 	payload, err := NewMessage(MessageTypeCreate, resource)
-			//
-			// 	assert.That(err == nil, "Failed to create message", err)
-			//
-			// 	router.FillSubInOn(
-			// 		MessageEventRooms,
-			// 		conn,
-			// 		payload,
-			// 	)
-			// }
-			//
 		case MessageTypeUnsubscribe:
 			unsubscription, err := GetMessageContents[Subscription](message)
 
@@ -186,63 +222,7 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 			router.Unsubscribe(MessageEvent(unsubscription.EventName), unsubscription.Targets, conn)
 		
 		case MessageTypeCreate:
-			resource, err := GetMessageContents[Resource](message)
-			assert.That(err == nil, "Couldnt parse create message", err)
-			event := MessageEvent(resource.EventName)
-
-			switch event {
-			case MessageEventChatMessages:
-				log.Println("Chat message sent", resource.Contents)
-				chatMessages, err := GetResourceContents[db.Message](resource)
-				assert.That(err == nil, "Couldnt convert contents to db.Message", err)
-				assert.That(len(chatMessages) == 1, "More than one message sent, unimplemented", nil)
-
-				chatMessage := chatMessages[0]
-
-				assert.That(chatMessage.ID == 0, "Message sent with a known ID", nil)
-				assert.That(chatMessage.SenderID == 0, "Message sent with a known sender ID", nil)
-
-				dao := db.GetDao()
-
-				for u, c := range(getClients()) {
-					if(c == conn) {
-						chatMessage.SenderID = u.ID
-					}
-				}
-				log.Println("Chat message sender ID: ", chatMessage.SenderID)
-
-				usersInRoom, err := dao.GetUsersByRoom(context.TODO(), chatMessage.RoomID) 
-				assert.That(err == nil, "Can't get users in room", err)
-				log.Println("Users in room: ", usersInRoom)
-
-				var roomUserIDs []uint64
-
-				for _, user := range usersInRoom {
-					roomUserIDs = append(roomUserIDs, user.ID)
-				}
-
-				dao.CreateMessage(context.TODO(), db.CreateMessageParams{
-					RoomID: chatMessage.RoomID,	
-					SenderID: chatMessage.SenderID,
-					Contents: chatMessage.Contents,
-				})
-
-				publishResource, err := NewResource(
-					MessageEventChatMessages,
-					[]db.Message{chatMessage},
-				)
-
-				assert.That(err == nil, "Failed to create publish resource", err)
-
-				publish, err := NewMessage(MessageTypeCreate, publishResource)
-
-				// lastInsertID, err := result.LastInsertId()
-				// assert.That(err == nil, "Failed to get last insert ID", err)
-
-				go router.Publish(event, publish, roomUserIDs, []uint64{chatMessage.RoomID}, getClients())
-			}
-			
-
+			handleCreate(message, router, conn, getClients)
 		default:
 			log.Println("Unknown message type: ", message.Type)
 		}
