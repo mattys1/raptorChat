@@ -3,8 +3,9 @@ package db
 import (
 	"database/sql"
 	_ "database/sql/driver"
-	"sync"
+	// "fmt"
 	"os"
+	"sync"
 
 	"github.com/go-sql-driver/mysql"
 
@@ -15,12 +16,19 @@ var instance *Queries
 var once sync.Once
 
 func makeConfig() *mysql.Config {
+	var addr string
+	if os.Getenv("IS_DOCKER") == "1" {
+		addr = "mysql:3306"
+	} else {
+		addr = "localhost:3307"
+	}
+
 	cfg := mysql.NewConfig()
 	cfg.User = "root"
 	cfg.Passwd = os.Getenv("DB_ROOT_PASSWORD")
 	cfg.Net = "tcp"
 	cfg.DBName = os.Getenv("DB_NAME")
-	cfg.Addr = "mysql:3306"
+	cfg.Addr = addr
 	cfg.Params = map[string]string{
 		"parseTime": "true",
 		// "ssl-verify-server-cert": "false",
