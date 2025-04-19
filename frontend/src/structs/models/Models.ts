@@ -6,9 +6,18 @@ export interface Message {
 	created_at: Date;
 }
 
+export const RoomsType = {
+  direct: "direct",
+  group: "group",
+} as const;
+
+export type RoomsType = typeof RoomsType[keyof typeof RoomsType];
+
 export interface Room {
 	id: number;
 	name: string | null;
+	owner_id: number | null;
+	type: RoomsType;
 }
 
 export interface User {

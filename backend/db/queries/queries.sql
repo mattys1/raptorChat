@@ -14,6 +14,18 @@ SELECT * FROM rooms;
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW());
 
+-- name: CreateRoom :execresult
+INSERT INTO rooms (owner_id, name, type) VALUES (?, ?, ?);
+
+-- name: DeleteRoom :exec
+DELETE FROM rooms WHERE id = ?;
+
+-- name: GetRoomById :one
+SELECT * FROM rooms WHERE id = ?;
+
+-- name: AddUserToRoom :exec
+INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?);
+
 -- name: GetMessagesByRoom :many
 SELECT * FROM messages WHERE room_id = ?;
 

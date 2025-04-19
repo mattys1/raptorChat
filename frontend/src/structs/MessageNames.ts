@@ -9,6 +9,6 @@ export enum MessageTypes {
 export enum MessageEvents {
 	MESSAGES = "messages",
 	USERS = "users",
-	CHATS = "chats",
+	ROOMS = "rooms",
 	CHAT_MESSAGES = "chat_messages",
 }
