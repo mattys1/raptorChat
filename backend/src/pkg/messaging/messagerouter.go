@@ -177,11 +177,8 @@ func (router *MessageRouter) Publish(
 
 		interested := false
 		for _, pid := range publishedIds {
-			for _, iid := range sub.InterestedIds {
-				if int(pid) == iid {
-					interested = true
-					break
-				}
+			if slices.Contains(sub.InterestedIds, int(pid)) {
+				interested = true
 			}
 		}
 
