@@ -50,9 +50,11 @@ func (hub *Hub) Run() {
 			go msg.ListenForMessages(conn, hub.router, hub.Unregister, func() map[*db.User]*websocket.Conn { return hub.Clients })
 
 		case conn := <-hub.Unregister:
+			assert.That(conn != nil, "Unregistering nil connection", nil)
+			hub.router.UnsubscribeAll(conn)
+
 			for user, c := range hub.Clients {
 				if c == conn {
-					// hub.router.UnsubscribeAll(conn) //TODO: this may not be necessary
 					delete(hub.Clients, user)
 					log.Println("Client unregistered", user, c)
 					conn.Close(websocket.StatusNormalClosure, "Connection closing")

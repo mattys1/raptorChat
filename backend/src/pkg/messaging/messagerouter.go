@@ -3,9 +3,11 @@ package messaging
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/coder/websocket"
+	pp "github.com/k0kubun/pp/v3"
 
 	"slices"
 
@@ -34,6 +36,24 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 
 	log.Println("Connection", conn, "subscribing to", event, "with target IDs", targetIds)
 
+	subsBefore := make([]*Subscriber, len(router.subscribers[event])) 
+	copy(subsBefore, router.subscribers[event])
+	subscribers := router.subscribers[event] //redundant, maybe
+
+	defer func() {
+		assert.That(
+			!slices.Equal(subsBefore, router.subscribers[event]),
+			fmt.Sprintf("New subscribers and old router.subscribers are equal, even after subscribing: %s", pp.Sprint(subscribers)),
+			nil,
+		)
+
+		assert.That(!slices.Contains(subscribers, nil),
+			fmt.Sprintf("Subscribed with nil: %v", subscribers), nil)
+
+		log.Println("Connection subscribed to", event)
+		log.Println("Subscribers of", event, ":", router.subscribers[event])
+	}()
+
 	if _, ok := router.subscribers[event]; !ok {
 		router.subscribers[event] = append(router.subscribers[event], &Subscriber{
 			InterestedIds: targetIds,
@@ -42,7 +62,6 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 		return
 	}
 
-	subscribers := router.subscribers[event]
 	connIdx := slices.IndexFunc(subscribers, func(sub *Subscriber) bool {
 		return sub.conn == conn
 	})
@@ -52,12 +71,6 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 			InterestedIds: targetIds,
 			conn: conn,
 		})
-
-		assert.That(
-			!slices.Equal(subscribers, router.subscribers[event]),
-			"New subscribers and old router.subscribers are equal, even after modification",
-			nil,
-		)
 
 		router.subscribers[event] = subscribers
 		return
@@ -72,16 +85,7 @@ func (router *MessageRouter) Subscribe(event MessageEvent, targetIds []int, conn
 		ids = append(ids, id)
 	}
 
-	assert.That(
-		!slices.Equal(subscribers, router.subscribers[event]),
-		"New subscribers and old router.subscribers are equal, even after modification",
-		nil,
-	)
-
 	router.subscribers[event] = subscribers
-	
-	log.Println("Connection subscribed to", event)
-	log.Println("Subscribers of ", event, ":", router.subscribers[event])
 }
 
 func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, conn *websocket.Conn) {
@@ -96,6 +100,18 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, co
 
 	interested := subs[connIdx].InterestedIds
 
+	defer func() {
+		assert.That(
+			!slices.Equal(subs, router.subscribers[event]),
+			"New subscribers and old router.subscribers are equal, even after unsubscribing -- before:" + pp.Sprint(subs),
+			nil,
+		)
+
+		for _, subs := range router.subscribers {
+			assert.That(!slices.Contains(subs, nil), fmt.Sprintf("nil subscriber in subscribers of %s: %v", event, subs), nil)
+		}
+	}()
+
 	subs[connIdx].InterestedIds = slices.DeleteFunc(interested, func(id int) bool {
 		log.Println("Deleting ID", id, "from", interested, "in", connIdx)
 		return slices.Contains(targetIds, id)
@@ -104,8 +120,7 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, co
 	if len(subs[connIdx].InterestedIds) == 0 {
 		log.Println("Subscriber:", subs[connIdx], "unsubscribed completely. Client:", conn)
 		router.subscribers[event] = slices.Delete(subs, connIdx, connIdx + 1)
-
-		return
+		// return
 	}
 
 	if len(router.subscribers[event]) == 0 {
@@ -114,16 +129,27 @@ func (router *MessageRouter) Unsubscribe(event MessageEvent, targetIds []int, co
 	}
 }
 
-// func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
-// 	for event, subs := range router.subscribers {
-// 		for i, c := range subs {
-// 			if c == conn {
-// 				router.subscribers[event] = slices.Delete(subs, i, i+1)
-// 				break
-// 			}
-// 		}
-// 	}
-// }
+func (router *MessageRouter) UnsubscribeAll(conn *websocket.Conn) {
+	log.Println("UNSUBSCRIBING ALL", router.subscribers)
+	for event, subs := range router.subscribers {
+		assert.That(!slices.Contains(subs, nil), fmt.Sprintf("Subscribers should not contain nil: %v", subs), nil)
+		// subs = slices.DeleteFunc(subs, func(sub *Subscriber) bool {
+		// 	log.Println("Deleting subscriber", sub, "from", subs, "in", conn)
+		// 	return sub.conn == conn
+		// })
+
+		connIdx := slices.IndexFunc(subs, func(sub *Subscriber) bool {
+			return sub.conn == conn
+		})
+
+		if connIdx == -1 {
+			continue
+		}
+
+		router.Unsubscribe(event, subs[connIdx].InterestedIds, conn)
+	}
+
+}
 
 func (router *MessageRouter) Publish(event MessageEvent, message *message, qualifiedUsers []uint64, allClients map[*db.User]*websocket.Conn) { // FIXME: FIXME: FIXME: FIXME: FIXME: FIXME: 
 	marshalled, err := json.Marshal(message)

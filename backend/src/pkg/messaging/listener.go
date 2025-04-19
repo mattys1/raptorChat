@@ -95,7 +95,7 @@ func handleSubscription(
 }
 
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
-// TODO: really have to put this somewhere else
+// TODO: also getClients is an unholy abomination
 func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterConn chan *websocket.Conn, getClients func () map[*db.User]*websocket.Conn) {
 	defer func() {
 		unregisterConn <- conn
@@ -211,7 +211,7 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 				}
 				log.Println("Chat message sender ID: ", chatMessage.SenderID)
 
-				usersInRoom, err := dao.GetUsersByRoom(context.TODO(), chatMessage.SenderID) 
+				usersInRoom, err := dao.GetUsersByRoom(context.TODO(), chatMessage.RoomID) 
 				assert.That(err == nil, "Can't get users in room", err)
 				log.Println("Users in room: ", usersInRoom)
 
