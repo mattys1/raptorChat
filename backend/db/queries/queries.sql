@@ -23,4 +23,17 @@ JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?;
 
 -- name: CreateMessage :execresult
-INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
+INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?);
+
+-- name: GetInviteById :one
+SELECT * FROM invites WHERE id = ?;
+
+-- name: GetInviteSender :one
+SELECT u.* FROM users u
+JOIN invites i ON i.sender_id = u.id
+WHERE i.id = ?;
+
+-- name: GetInviteRecipient :one
+SELECT u.* FROM users u
+JOIN invites i ON i.recipient_id = u.id
+WHERE i.id = ?;

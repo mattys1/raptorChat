@@ -100,6 +100,63 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getInviteById = `-- name: GetInviteById :one
+SELECT id, sender_id, recipient_id, room_id, invite_type, status, created_at FROM invites WHERE id = ?
+`
+
+func (q *Queries) GetInviteById(ctx context.Context, id uint64) (Invite, error) {
+	row := q.db.QueryRowContext(ctx, getInviteById, id)
+	var i Invite
+	err := row.Scan(
+		&i.ID,
+		&i.SenderID,
+		&i.RecipientID,
+		&i.RoomID,
+		&i.InviteType,
+		&i.Status,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getInviteRecipient = `-- name: GetInviteRecipient :one
+SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
+JOIN invites i ON i.recipient_id = u.id
+WHERE i.id = ?
+`
+
+func (q *Queries) GetInviteRecipient(ctx context.Context, id uint64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getInviteRecipient, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.CreatedAt,
+		&i.Password,
+	)
+	return i, err
+}
+
+const getInviteSender = `-- name: GetInviteSender :one
+SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
+JOIN invites i ON i.sender_id = u.id
+WHERE i.id = ?
+`
+
+func (q *Queries) GetInviteSender(ctx context.Context, id uint64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getInviteSender, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.CreatedAt,
+		&i.Password,
+	)
+	return i, err
+}
+
 const getMessagesByRoom = `-- name: GetMessagesByRoom :many
 SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE room_id = ?
 `
