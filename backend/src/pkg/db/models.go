@@ -6,8 +6,105 @@ package db
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 )
+
+type InvitesInviteType string
+
+const (
+	InvitesInviteTypeFriendship InvitesInviteType = "friendship"
+	InvitesInviteTypeRoom       InvitesInviteType = "room"
+)
+
+func (e *InvitesInviteType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InvitesInviteType(s)
+	case string:
+		*e = InvitesInviteType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InvitesInviteType: %T", src)
+	}
+	return nil
+}
+
+type NullInvitesInviteType struct {
+	InvitesInviteType InvitesInviteType `json:"invites_invite_type"`
+	Valid             bool              `json:"valid"` // Valid is true if InvitesInviteType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInvitesInviteType) Scan(value interface{}) error {
+	if value == nil {
+		ns.InvitesInviteType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InvitesInviteType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInvitesInviteType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InvitesInviteType), nil
+}
+
+type InvitesStatus string
+
+const (
+	InvitesStatusPending  InvitesStatus = "pending"
+	InvitesStatusAccepted InvitesStatus = "accepted"
+	InvitesStatusRejected InvitesStatus = "rejected"
+)
+
+func (e *InvitesStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InvitesStatus(s)
+	case string:
+		*e = InvitesStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InvitesStatus: %T", src)
+	}
+	return nil
+}
+
+type NullInvitesStatus struct {
+	InvitesStatus InvitesStatus `json:"invites_status"`
+	Valid         bool          `json:"valid"` // Valid is true if InvitesStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInvitesStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.InvitesStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InvitesStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInvitesStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InvitesStatus), nil
+}
+
+type Invite struct {
+	ID          uint64            `json:"id"`
+	SenderID    uint64            `json:"sender_id"`
+	RecipientID uint64            `json:"recipient_id"`
+	RoomID      sql.NullInt64     `json:"room_id"`
+	InviteType  InvitesInviteType `json:"invite_type"`
+	Status      InvitesStatus     `json:"status"`
+	CreatedAt   time.Time         `json:"created_at"`
+}
 
 type Message struct {
 	ID        uint64    `json:"id"`
