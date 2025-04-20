@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/coder/websocket"
+	"github.com/k0kubun/pp/v3"
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
@@ -202,11 +203,109 @@ func handleCreate(
 			},
 			getClients,
 		)
+	case MessageEventInvites:
+		createAndSend(
+			event, resource, router, conn,
+			func (invite *db.Invite, user *db.User) {
+				assert.That(invite.InviteType != db.InvitesInviteTypeFriendship, "Received friendship invite, not implemented", nil)
+				assert.That(invite.Status == db.InvitesStatusPending, "Invite must have `pending` status upon creation", nil)
+				invite.SenderID = user.ID
+			},
+			func(dao *db.Queries, invite *db.Invite) ([]uint64, uint64, error) {
+				return []uint64{invite.SenderID, invite.RecipientID}, invite.ID, nil
+			},
+			func(dao *db.Queries, invite *db.Invite) (int64, error) {
+				result, err := dao.CreateInvite(context.TODO(), db.CreateInviteParams{
+					SenderID: invite.SenderID,
+					RecipientID: invite.RecipientID,
+					RoomID: invite.RoomID,
+					InviteType: invite.InviteType,
+					Status: invite.Status,
+				})
+
+				if err == nil {
+					return 0, err		
+				} 			
+
+				return result.LastInsertId()
+			},
+			getClients,
+		)
 	default:
 		log.Fatal("Unknown event: ", event)
 	}
 }
 
+func handleUpdate(
+	message *message,
+	router *MessageRouter,
+	conn *websocket.Conn,
+	getClients func () map[*db.User]*websocket.Conn, 
+) {
+	resource, err := GetMessageContents[Resource](message)
+	assert.That(err == nil, "Failed to get resource from message", err)
+	event := MessageEvent(resource.EventName)
+
+	switch event {
+		case MessageEventInvites:
+			updateAndSend(
+				resource, router,
+				func (dao *db.Queries, invite *db.Invite) ([]uint64, uint64, error) {
+					return []uint64{invite.SenderID, invite.RecipientID}, invite.ID, nil
+				},
+				func (dao *db.Queries, old *db.Invite, updated *db.Invite) (int64, error) {
+					assert.That(old.ID == updated.ID, pp.Sprintf("Old item is not the same as updated item: %s and %s", old, updated), nil)
+					
+					result, err := dao.UpdateInvite(context.TODO(), db.UpdateInviteParams{
+						Status: updated.Status,	
+						ID: old.ID,
+					})
+					if err != nil {
+						return 0, err
+					}
+
+					return result.LastInsertId()	
+				},
+				getClients,
+			)
+	}
+}
+
+func updateAndSend[T any](
+	resource *Resource,
+	router *MessageRouter,
+	getQualified func (dao *db.Queries, reference *T) ([]uint64, uint64, error),
+	updateInDB func (dao *db.Queries, old *T, updated *T) (int64, error),
+	getUsers func () map[*db.User]*websocket.Conn,
+) {
+	dao := db.GetDao()
+
+	items, err := GetResourceContents[T](resource)
+	assert.That(err != nil, "Couldn't get resource contents", err)
+
+	assert.That(len(items) % 2 == 0, "Updated items list isn't of even size", nil)
+	old, updated := items[:len(items) / 2], items[len(items) / 2:]
+
+	var qualified []uint64
+	var modified []uint64
+	for _, item := range(items) {
+		q, m, err := getQualified(dao, &item)
+		assert.That(err != nil, "couldn't get qualified users from item: " + pp.Sprint(item), err)
+		qualified = append(qualified, q...)
+		modified = append(modified, m)
+	}
+
+	for i := range old {
+		updateInDB(dao, &old[i], &updated[i])
+	}
+
+	publishResource, err := NewResource(MessageEvent(resource.EventName), resource.Contents)
+	assert.That(err == nil, "Couldn't create resource", err)
+	publish, err := NewMessage(MessageTypeUpdate, publishResource)
+	assert.That(err == nil, "Couldn't create message", err)
+
+	router.Publish(MessageEvent(resource.EventName), publish, qualified, modified, getUsers())
+}
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
 // TODO: also getClients is an unholy abomination
 func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterConn chan *websocket.Conn, getClients func () map[*db.User]*websocket.Conn) {
@@ -249,6 +348,8 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 		
 		case MessageTypeCreate:
 			handleCreate(message, router, conn, getClients)
+		case MessageTypeUpdate:
+			handleUpdate(message, router, conn, getClients)
 		default:
 			log.Println("Unknown message type: ", message.Type)
 		}

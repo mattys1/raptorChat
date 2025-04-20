@@ -24,6 +24,28 @@ func (q *Queries) AddUserToRoom(ctx context.Context, arg AddUserToRoomParams) er
 	return err
 }
 
+const createInvite = `-- name: CreateInvite :execresult
+INSERT INTO invites (sender_id, recipient_id, room_id, invite_type, status) VALUES (?, ?, ?, ?, ?)
+`
+
+type CreateInviteParams struct {
+	SenderID    uint64            `json:"sender_id"`
+	RecipientID uint64            `json:"recipient_id"`
+	RoomID      *uint64           `json:"room_id"`
+	InviteType  InvitesInviteType `json:"invite_type"`
+	Status      InvitesStatus     `json:"status"`
+}
+
+func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createInvite,
+		arg.SenderID,
+		arg.RecipientID,
+		arg.RoomID,
+		arg.InviteType,
+		arg.Status,
+	)
+}
+
 const createMessage = `-- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
 `
@@ -315,4 +337,17 @@ func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, er
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateInvite = `-- name: UpdateInvite :execresult
+UPDATE invites SET status = ? WHERE id = ?
+`
+
+type UpdateInviteParams struct {
+	Status InvitesStatus `json:"status"`
+	ID     uint64        `json:"id"`
+}
+
+func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateInvite, arg.Status, arg.ID)
 }

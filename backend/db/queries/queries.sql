@@ -40,6 +40,12 @@ INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?);
 -- name: GetInviteById :one
 SELECT * FROM invites WHERE id = ?;
 
+-- name: CreateInvite :execresult
+INSERT INTO invites (sender_id, recipient_id, room_id, invite_type, status) VALUES (?, ?, ?, ?, ?);
+
+-- name: UpdateInvite :execresult
+UPDATE invites SET status = ? WHERE id = ?;
+
 -- name: GetInviteSender :one
 SELECT u.* FROM users u
 JOIN invites i ON i.sender_id = u.id

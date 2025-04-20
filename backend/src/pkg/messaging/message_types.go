@@ -16,4 +16,5 @@ const (
 	MessageEventChatMessages MessageEvent = "chat_messages"
 	MessageEventUsers MessageEvent = "users"
 	MessageEventRooms MessageEvent = "rooms"
+	MessageEventInvites MessageEvent = "invites"
 )
