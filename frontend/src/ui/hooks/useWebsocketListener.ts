@@ -15,7 +15,7 @@ export const useWebsocketListener = <T extends { id: number } /*hack*/>(eventNam
 			return;
 		}
 
-		const parsed = parsedResult.value as Message<T>;
+		const parsed = parsedResult.value as unknown as Message<T>;
 		console.log("message received:", parsed)
 
 		const resource = parsed.contents as Resource<T>
@@ -25,7 +25,7 @@ export const useWebsocketListener = <T extends { id: number } /*hack*/>(eventNam
 			case MessageTypes.CREATE: {
 				if (resource.eventName === eventName) {
 					console.log("Received CREATE message:", resource, eventName)
-					setData((prev) => [...prev, ...contents])
+					setData((prev) => [...prev, ...contents || []])
 				}
 				break
 			}

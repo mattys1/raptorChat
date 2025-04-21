@@ -176,9 +176,11 @@ func (router *MessageRouter) Publish(
 		log.Println("Event:", event, "User", uid, "Interested Resources:", sub.InterestedIds, "Published Resources:", publishedIds)
 
 		interested := false
-		for _, pid := range publishedIds {
-			if slices.Contains(sub.InterestedIds, int(pid)) {
-				interested = true
+		if interested = sub.InterestedIds[0] == -1; !interested {
+			for _, pid := range publishedIds {
+				if slices.Contains(sub.InterestedIds, int(pid)) {
+					interested = true
+				}
 			}
 		}
 

@@ -129,7 +129,7 @@ func createAndSend[T any](
 	getQualified func (dao *db.Queries, reference *T) ([]uint64, uint64, error),
 	saveInDB func (dao *db.Queries, item *T) (int64, error),
 	getClients func () map[*db.User]*websocket.Conn, // TODO: i've mentioned this somewhere else, but this needs to go
-) {
+) int64 {
 	items, err := GetResourceContents[T](resource)
 	assert.That(err == nil, "Failed to get resource contents", err)
 	assert.That(len(items) == 1, "More than one item sent, unimplemented", nil)
@@ -146,7 +146,7 @@ func createAndSend[T any](
 	qualified, reference, err := getQualified(dao, &item)
 	assert.That(err == nil, "Failed to get qualified ids", err)
 
-	_, err = saveInDB(dao, &item)
+	inserted, err := saveInDB(dao, &item)
 	assert.That(err == nil, "Failed to save item in DB", err)
 
 	publishResource, err := NewResource(event, []T{item})
@@ -156,6 +156,7 @@ func createAndSend[T any](
 
 	go router.Publish(event, publish, qualified, []uint64{reference}, getClients())
 
+	return inserted
 }
 
 func handleCreate(
@@ -205,29 +206,65 @@ func handleCreate(
 			getClients,
 		)
 	case MessageEventRooms:
-		createAndSend(
-			event, resource, router, conn,
-			func(room *db.Room, user *db.User) {
-				assert.That(room.Type != db.RoomsTypeDirect, "DMs not implemented", nil)
-				room.OwnerID = &user.ID
-			},
-			func(dao *db.Queries, reference *db.Room) ([]uint64, uint64, error) {
-				return []uint64{*reference.OwnerID}, reference.ID, nil
-			},
-			func(dao *db.Queries, item *db.Room) (int64, error) {
-				result, err := dao.CreateRoom(context.TODO(), db.CreateRoomParams {
-					OwnerID: item.OwnerID,
-					Name: item.Name,
-					Type: item.Type,
-				})
-				if err != nil {	
-					return 0, err
-				}
+		// created := createAndSend(
+		// 	event, resource, router, conn,
+		// 	func(room *db.Room, user *db.User) {
+		// 		assert.That(room.Type != db.RoomsTypeDirect, "DMs not implemented", nil)
+		// 		room.OwnerID = &user.ID
+		// 	},
+		// 	func(dao *db.Queries, reference *db.Room) ([]uint64, uint64, error) {
+		// 		return []uint64{*reference.OwnerID}, reference.ID, nil
+		// 	},
+		// 	func(dao *db.Queries, item *db.Room) (int64, error) {
+		// 		result, err := dao.CreateRoom(context.TODO(), db.CreateRoomParams {
+		// 			OwnerID: item.OwnerID,
+		// 			Name: item.Name,
+		// 			Type: item.Type,
+		// 		})
+		// 		if err != nil {	
+		// 			return 0, err
+		// 		}
+		//
+		// 		return result.LastInsertId()
+		// 	},
+		// 	getClients,
+		// )
 
-				return result.LastInsertId()
-			},
-			getClients,
-		)
+		rooms, err := GetResourceContents[db.Room](resource)
+		assert.That(err == nil, "Failed to get resource contents", err)
+		assert.That(len(rooms) == 1, "More than one room sent, unimplemented", nil)
+
+		room := rooms[0]
+		dao := db.GetDao()
+
+		for u, c := range(getClients()) {
+			if(c == conn) {
+				room.OwnerID = &u.ID
+			}
+		}
+
+		inserted, err := dao.CreateRoom(context.TODO(), db.CreateRoomParams{
+			OwnerID: room.OwnerID,
+			Name: room.Name,
+			Type: room.Type,
+		})
+		roomID, err := inserted.LastInsertId()
+		assert.That(err == nil, "Failed to save room in DB", err)
+
+
+		dao.AddUserToRoom(context.TODO(), db.AddUserToRoomParams{
+			UserID: *room.OwnerID,
+			RoomID: uint64(roomID),
+		})
+
+		room, err = dao.GetRoomById(context.TODO(), uint64(roomID))	
+		assert.That(err == nil, "Failed to get room by ID", err)
+		resource, err := NewResource(MessageEventRooms, []db.Room{room})
+		assert.That(err == nil, "Failed to create resource", err)
+		message, err := NewMessage(MessageTypeCreate, resource)
+		assert.That(err == nil, "Failed to create message", err)
+
+		router.Publish(MessageEventRooms, message, []uint64{*room.OwnerID}, []uint64{room.ID}, getClients())
 	case MessageEventInvites:
 		createAndSend(
 			event, resource, router, conn,
