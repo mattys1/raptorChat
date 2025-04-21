@@ -29,6 +29,11 @@ INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?);
 -- name: GetMessagesByRoom :many
 SELECT * FROM messages WHERE room_id = ?;
 
+-- name: GetRoomsByUser :many
+SELECT r.* FROM rooms r
+JOIN users_rooms ur ON ur.room_id = r.id
+WHERE ur.user_id = ?;
+
 -- name: GetUsersByRoom :many
 SELECT u.* FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id

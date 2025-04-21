@@ -270,6 +270,40 @@ func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
 	return i, err
 }
 
+const getRoomsByUser = `-- name: GetRoomsByUser :many
+SELECT r.id, r.name, r.owner_id, r.type FROM rooms r
+JOIN users_rooms ur ON ur.room_id = r.id
+WHERE ur.user_id = ?
+`
+
+func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.Type,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, username, email, created_at, password FROM users WHERE email = ? LIMIT 1
 `

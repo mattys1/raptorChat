@@ -16,24 +16,24 @@ func subscribeAndNotify[T any, U any](
 	subscription *Subscription,
 	router *MessageRouter,
 	conn *websocket.Conn,
-	query func (reference uint64, dao *db.Queries) ([]U, error),
+	convert func (reference int, dao *db.Queries) ([]U, error),
+	qualified func (dao *db.Queries, userId uint64) ([]T, error),
+	itemId func (item *T) uint64,
+	getClients func () map[*db.User]*websocket.Conn,
 ) {
 	router.Subscribe(MessageEvent(subscription.EventName), subscription.Targets, conn)
 
 	// TODO: actually this should be a map that maps target ID to the items of that target. if this is flattened, then  it's not that important 
 	allItems := []U{}
 	for i := range subscription.Targets {
-		itemsOfTarget, err := query(uint64(subscription.Targets[i]), db.GetDao())
+		itemsOfTarget, err := convert(subscription.Targets[i], db.GetDao())
 		assert.That(err == nil, "Failed retrieving items from target" + strconv.Itoa(subscription.Targets[i]), err)
 		allItems = append(allItems, itemsOfTarget...)
 	}
 
-	resource, err := NewResource(MessageEvent(subscription.EventName), allItems)
-	assert.That(err == nil, "Couldn't create resource", err)
-	payload, err := NewMessage(MessageTypeCreate, resource)
-	assert.That(err == nil, "Failed to create message", err)
+	clientId := connToUID(conn, getClients())
 
-	router.SendMessageToSub(MessageEvent(subscription.EventName), conn, payload)
+	FillSubInOn(router, MessageEvent(subscription.EventName), conn, clientId, db.GetDao(), qualified, itemId)
 }
 
 func sliceToSendable[O any, S any](original []O, convert func (org *O) S) []S {
@@ -48,6 +48,7 @@ func handleSubscription(
 	message *message,
 	router *MessageRouter,
 	conn *websocket.Conn,
+	getClients func () map[*db.User]*websocket.Conn,
 ) {
 	subscription, err := GetMessageContents[Subscription](message)
 	assert.That(err == nil, "Failed to get subscription from message", err)
@@ -59,16 +60,21 @@ func handleSubscription(
 				subscription,
 				router,
 				conn,
-				func(reference uint64, dao *db.Queries) ([]db.Message, error) {
+				func(reference int, dao *db.Queries) ([]db.Message, error) {
+					return dao.GetMessagesByRoom(context.TODO(), uint64(reference))
+				},
+				func(dao *db.Queries, reference uint64) ([]db.Message, error) {
 					return dao.GetMessagesByRoom(context.TODO(), reference)
 				},
+				func (room *db.Message) uint64 { return room.RoomID },
+				getClients,
 			)
 		case MessageEventUsers:
 			subscribeAndNotify[db.User](
 				subscription,
 				router,
 				conn,
-				func(reference uint64, dao *db.Queries) ([]*db.UserSendable, error) {
+				func(reference int, dao *db.Queries) ([]*db.UserSendable, error) {
 					users, err := dao.GetAllUsers(context.TODO())
 					if err != nil {
 						return nil, err
@@ -77,21 +83,36 @@ func handleSubscription(
 					sendableUsers := sliceToSendable(users, func(user *db.User) *db.UserSendable { return user.ToSendable() })
 					return sendableUsers, nil
 				},
+				func(dao *db.Queries, userId uint64) ([]db.User, error) {
+					return dao.GetAllUsers(context.TODO())
+				},
+				func (user *db.User) uint64 { return user.ID },
+				getClients,
 			)
 		case MessageEventRooms:
 			subscribeAndNotify[db.Room](
 				subscription,
 				router,
 				conn,
-				func(reference uint64, dao *db.Queries) ([]db.Room, error) {
+				func(reference int, dao *db.Queries) ([]db.Room, error) {
+					if reference == -1 {
+						return dao.GetAllRooms(context.TODO())
+					}
 					// rooms, err := dao.GetAllRooms(context.TODO())
 					// if err != nil {
 					// 	return nil, err
 					// }
 					//
 					// sendableRooms := sliceToSendable(rooms, func(room *db.Room) *db.RoomSendable { return room.ToSendable() }) 
-					return dao.GetAllRooms(context.TODO()) //TODO: make this user dependent
+					result := make([]db.Room, 1)
+					result[0], err = dao.GetRoomById(context.TODO(), uint64(reference))
+					return result, err  //TODO: make this user dependent also this doesn't work
 				},
+				func(dao *db.Queries, userId uint64) ([]db.Room, error) {
+					return dao.GetRoomsByUser(context.TODO(), userId)		
+				},
+				func (room *db.Room) uint64 { return room.ID },
+				getClients,
 			)
 	}
 }
@@ -367,7 +388,7 @@ func ListenForMessages(conn *websocket.Conn, router *MessageRouter, unregisterCo
 			log.Println("Subscription: ", subscription)
 			// eventName := subscription.EventName
 
-			handleSubscription(message, router, conn)
+			handleSubscription(message, router, conn, getClients)
 		case MessageTypeUnsubscribe:
 			unsubscription, err := GetMessageContents[Subscription](message)
 

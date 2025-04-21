@@ -205,6 +205,49 @@ func (router *MessageRouter) Publish(
 	}
 }
 
+// func FillSubInOn[T any](router *MessageRouter, event MessageEvent, conn *websocket.Conn, query func (q *db.Queries) (ctx context.Context, userID uint64) ([]T, error)
+func FillSubInOn[T any](
+	router *MessageRouter,
+	event MessageEvent,
+	conn *websocket.Conn,
+	userId uint64,
+	dao *db.Queries,
+	qualified func(dao *db.Queries, userID uint64) ([]T, error),
+	itemId func(item *T) uint64,
+) {
+	subs := router.subscribers[event]
+	connIdx := slices.IndexFunc(subs, func(sub *Subscriber) bool { return sub.conn == conn })
+	items, err := qualified(dao, userId)
+	assert.That(err == nil, "Failed to get items of subscriber", err)
+
+	itemIds := make([]uint64, len(items))
+	for i, item := range items {
+		itemIds[i] = itemId(&item)
+	}
+
+	var interestedItems []T
+	if subs[connIdx].InterestedIds[0] == -1 {
+		interestedItems = items
+	} else {
+		for _, id := range subs[connIdx].InterestedIds {
+			for j, item := range items {
+				if itemId(&items[j]) == uint64(id) {
+					interestedItems = append(interestedItems, item)
+					break
+				}
+			}
+		}
+	}
+
+	itemsResource, err := NewResource(event, interestedItems)
+	assert.That(err == nil, "Failed to create resource", err)
+	message, err := NewMessage(MessageTypeCreate, itemsResource)
+	assert.That(err == nil, "Failed to create message", err)
+
+	log.Println("Filling in subscriber", conn, "on", event, "with items", items, "\tMessage: ", message)
+	router.SendMessageToSub(event, conn, message)
+}
+
 // TODO: this method will probably become unnecessary, as targetIDs will be more integrated into the client.
 // What did i mean here?
 func (router *MessageRouter) SendMessageToSub(event MessageEvent, conn *websocket.Conn, message *message) {
@@ -224,7 +267,7 @@ func (router *MessageRouter) SendMessageToSub(event MessageEvent, conn *websocke
 		marshalled,
 	)
 
-	log.Println("Fill-in message sent to", conn, "Message:", string(marshalled))
+	log.Println("Message sent to", conn, "\tMessage:", string(marshalled))
 }
 
 // FIXME: FIXME: FIXME:
