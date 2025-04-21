@@ -205,8 +205,9 @@ func (router *MessageRouter) Publish(
 	}
 }
 
-// TODO: this method will probably become unnecessary, as targetIDs will be more integrated into the client. 
-func (router *MessageRouter) FillSubInOn(event MessageEvent, conn *websocket.Conn, message *message) {
+// TODO: this method will probably become unnecessary, as targetIDs will be more integrated into the client.
+// What did i mean here?
+func (router *MessageRouter) SendMessageToSub(event MessageEvent, conn *websocket.Conn, message *message) {
 	assert.That(slices.IndexFunc(router.subscribers[event], func(sub *Subscriber) bool {
 		return sub.conn == conn
 		}) != -1,

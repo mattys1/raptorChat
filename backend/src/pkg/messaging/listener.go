@@ -3,6 +3,7 @@ package messaging
 import (
 	"context"
 	"log"
+	"slices"
 	"strconv"
 
 	"github.com/coder/websocket"
@@ -32,7 +33,7 @@ func subscribeAndNotify[T any, U any](
 	payload, err := NewMessage(MessageTypeCreate, resource)
 	assert.That(err == nil, "Failed to create message", err)
 
-	router.FillSubInOn(MessageEvent(subscription.EventName), conn, payload)
+	router.SendMessageToSub(MessageEvent(subscription.EventName), conn, payload)
 }
 
 func sliceToSendable[O any, S any](original []O, convert func (org *O) S) []S {
@@ -82,14 +83,14 @@ func handleSubscription(
 				subscription,
 				router,
 				conn,
-				func(reference uint64, dao *db.Queries) ([]*db.RoomSendable, error) {
-					rooms, err := dao.GetAllRooms(context.TODO())
-					if err != nil {
-						return nil, err
-					}
-
-					sendableRooms := sliceToSendable(rooms, func(room *db.Room) *db.RoomSendable { return room.ToSendable() }) 
-					return sendableRooms, nil
+				func(reference uint64, dao *db.Queries) ([]db.Room, error) {
+					// rooms, err := dao.GetAllRooms(context.TODO())
+					// if err != nil {
+					// 	return nil, err
+					// }
+					//
+					// sendableRooms := sliceToSendable(rooms, func(room *db.Room) *db.RoomSendable { return room.ToSendable() }) 
+					return dao.GetAllRooms(context.TODO()) //TODO: make this user dependent
 				},
 			)
 	}
@@ -247,27 +248,53 @@ func handleUpdate(
 	event := MessageEvent(resource.EventName)
 
 	switch event {
-		case MessageEventInvites:
-			updateAndSend(
-				resource, router,
-				func (dao *db.Queries, invite *db.Invite) ([]uint64, uint64, error) {
-					return []uint64{invite.SenderID, invite.RecipientID}, invite.ID, nil
-				},
-				func (dao *db.Queries, old *db.Invite, updated *db.Invite) (int64, error) {
-					assert.That(old.ID == updated.ID, pp.Sprintf("Old item is not the same as updated item: %s and %s", old, updated), nil)
-					
-					result, err := dao.UpdateInvite(context.TODO(), db.UpdateInviteParams{
-						Status: updated.Status,	
-						ID: old.ID,
-					})
-					if err != nil {
-						return 0, err
-					}
+	case MessageEventInvites: {
+		updated := updateAndSend(
+			resource, router,
+			func (dao *db.Queries, invite *db.Invite) ([]uint64, uint64, error) {
+				return []uint64{invite.SenderID, invite.RecipientID}, invite.ID, nil
+			},
+			func (dao *db.Queries, old *db.Invite, updated *db.Invite) (int64, error) {
+				assert.That(old.ID == updated.ID, pp.Sprintf("Old item is not the same as updated item: %s and %s", old, updated), nil)
+				assert.That(updated.Status == db.InvitesStatusAccepted, "Invite status not accpeted, unimplemented", nil)
 
-					return result.LastInsertId()	
-				},
-				getClients,
+				result, err := dao.UpdateInvite(context.TODO(), db.UpdateInviteParams{
+					Status: updated.Status,	
+					ID: old.ID,
+				})
+				if err != nil {
+					return 0, err
+				}
+
+				return result.LastInsertId()	
+			},
+			getClients,
 			)
+
+		// currently handling side effects like this. This should be formalized eventually
+
+		assert.That(len(updated) == 1, "Updated more than one invite, unimplemented", nil)
+		newInvite := updated[0]
+
+		roomOfInvite, err := db.GetDao().GetRoomById(context.TODO(), *newInvite.RoomID)
+		assert.That(err == nil, "Failed to get room by ID", err)
+
+		if newInvite.Status == db.InvitesStatusRejected {
+			log.Println("Invite rejected, not sending")
+			return
+		}
+
+		resource, err := NewResource(MessageEventRooms, []db.Room{roomOfInvite})
+		assert.That(err == nil, "Failed to create resource", err)
+		publish, err := NewMessage(MessageTypeUpdate, resource)
+		assert.That(err == nil, "Failed to create message", err)
+
+		router.SendMessageToSub(
+			MessageEventRooms,
+			conn,
+			publish,
+		)
+	}
 	}
 }
 
@@ -277,7 +304,7 @@ func updateAndSend[T any](
 	getQualified func (dao *db.Queries, reference *T) ([]uint64, uint64, error),
 	updateInDB func (dao *db.Queries, old *T, updated *T) (int64, error),
 	getUsers func () map[*db.User]*websocket.Conn,
-) {
+) []T {
 	dao := db.GetDao()
 
 	items, err := GetResourceContents[T](resource)
@@ -295,6 +322,8 @@ func updateAndSend[T any](
 		modified = append(modified, m)
 	}
 
+	qualified = slices.Compact(qualified)
+
 	for i := range old {
 		updateInDB(dao, &old[i], &updated[i])
 	}
@@ -305,6 +334,7 @@ func updateAndSend[T any](
 	assert.That(err == nil, "Couldn't create message", err)
 
 	router.Publish(MessageEvent(resource.EventName), publish, qualified, modified, getUsers())
+	return updated
 }
 //TODO: this for now uses connections, but will switch over to clients once they are properly set up
 // TODO: also getClients is an unholy abomination
