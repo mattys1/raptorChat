@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { SafeUnmarshall } from "../../logic/ProcessJSONResult";
 import { Message, Resource } from "../../structs/Message";
 import { MessageEvents, MessageTypes } from "../../structs/MessageNames";
+import { find } from "rxjs";
 
-export const useWebsocketListener = <T>(eventName: MessageEvents, ws: WebSocket | null) => {
+export const useWebsocketListener = <T extends { id: number } /*hack*/>(eventName: MessageEvents, ws: WebSocket | null) => {
 	const [data, setData] = useState<T[]>([]);
 
 	 const messageHandler = useCallback((message: MessageEvent) => {
@@ -17,15 +18,34 @@ export const useWebsocketListener = <T>(eventName: MessageEvents, ws: WebSocket 
 		const parsed = parsedResult.value as Message<T>;
 		console.log("message received:", parsed)
 
+		const resource = parsed.contents as Resource<T>
+		const contents = resource.contents as T[]
+
 		switch(parsed.type) {
 			case MessageTypes.CREATE: {
-				const resource = parsed.contents as Resource<T>
-				const contents = resource.contents as T[]
-
 				if (resource.eventName === eventName) {
 					console.log("Received CREATE message:", resource, eventName)
 					setData((prev) => [...prev, ...contents])
 				}
+				break
+			}
+			case MessageTypes.UPDATE: {
+				if(resource.eventName !== eventName) {
+					console.error("Received UPDATE message for wrong event:", resource.eventName, eventName)
+					return
+				}
+
+				console.log("Received UPDATE message:", resource, eventName)
+				console.assert(contents.length % 2 == 0, "Update contents lenght is odd", contents)
+
+				const old = contents.slice(0, contents.length / 2)
+				const updated = contents.slice(contents.length / 2)
+
+				setData(prev => prev.map((item) => {
+					const updatedItem = updated.find(update => update.id === item.id);
+					return updatedItem || item;
+				}))
+
 				break
 			}
 			case MessageTypes.SUBSCRIBE: {
