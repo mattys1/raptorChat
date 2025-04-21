@@ -56,19 +56,22 @@ func handleSubscription(
 
 	switch eventName {
 		case MessageEventChatMessages:
-			subscribeAndNotify[db.Message](
-				subscription,
-				router,
-				conn,
-				func(reference int, dao *db.Queries) ([]db.Message, error) {
-					return dao.GetMessagesByRoom(context.TODO(), uint64(reference))
-				},
-				func(dao *db.Queries, reference uint64) ([]db.Message, error) {
-					return dao.GetMessagesByRoom(context.TODO(), reference)
-				},
-				func (room *db.Message) uint64 { return room.RoomID },
-				getClients,
-			)
+				router.Subscribe(MessageEvent(subscription.EventName), subscription.Targets, conn)
+
+				// TODO: actually this should be a map that maps target ID to the items of that target. if this is flattened, then  it's not that important 
+				allMessages := []db.Message{}
+				for i := range subscription.Targets {
+					messagesInRoom, err := db.GetDao().GetMessagesByRoom(context.TODO(), uint64(subscription.Targets[i]))
+					assert.That(err == nil, "Failed retrieving items from target" + strconv.Itoa(subscription.Targets[i]), err)
+					allMessages = append(allMessages, messagesInRoom...)
+				}
+
+				resource, err := NewResource(MessageEvent(subscription.EventName), allMessages)
+				assert.That(err == nil, "Couldn't create resource", err)
+				payload, err := NewMessage(MessageTypeCreate, resource)
+				assert.That(err == nil, "Failed to create message", err)
+
+				router.SendMessageToSub(MessageEvent(subscription.EventName), conn, payload)
 		case MessageEventUsers:
 			subscribeAndNotify[db.User](
 				subscription,
