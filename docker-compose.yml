@@ -21,6 +21,8 @@ services:
         condition: service_started
       db-migrate:
         condition: service_completed_successfully
+      centrifugo:
+        condition: service_started
 
   mysql:
     image: mariadb:lts
@@ -61,6 +63,19 @@ services:
     volumes:
       - ./backend/db/migrations:/migrations
     command: ["sh", "-c", "goose ${MIGRATION_DIRECTION:-up} --dir /migrations ${MIGRATION_VERSION:-}"]
+
+  centrifugo:
+    container_name: centrifugo
+    image: centrifugo/centrifugo:v6
+    volumes:
+      - ./backend/centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    ports:
+      - 8000:8000
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
 
   frontend-build:
     build: 
