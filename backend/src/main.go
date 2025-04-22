@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/login", auth.LoginHandler)
 	// Initialize Centrifugo client
 	var addr string
 	if os.Getenv("IS_DOCKER") == "1" {
@@ -25,12 +24,16 @@ func main() {
 	}
 	client := gocent.New(cfg)
 
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		auth.LoginHandler(w, r)
+
+		err := client.Publish(context.Background(), "test", []byte(`{"text": "Hello from Go!"}`))
+		if err != nil {
+			log.Fatal("Publish error:", err)
+		}
+		log.Println("Message published!")
+	})
 	// Publish a message to channel "chat:demo"
-	err := client.Publish(context.Background(), "test", []byte(`{"text": "Hello from Go!"}`))
-	if err != nil {
-		log.Fatal("Publish error:", err)
-	}
-	log.Println("Message published!")
 
 	http.ListenAndServe(":8080", nil)
 }
