@@ -3,6 +3,7 @@ module github.com/mattys1/raptorChat
 go 1.24.0
 
 require (
+	github.com/centrifugal/gocent v2.2.0+incompatible
 	github.com/coder/websocket v1.8.12
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/k0kubun/pp/v3 v3.4.1
