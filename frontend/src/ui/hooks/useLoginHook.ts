@@ -19,6 +19,10 @@ export function useLoginHook(navigate: NavigateFunction) {
 			});
 
 			if (response.ok) {
+				// temporarily stroing the token in local storage
+				const data = await response.json();
+				console.log("Login successful:", data);
+				localStorage.setItem("token", data.token);
 				navigate(ROUTES.MAIN)
 			} else {
 				alert("Login failed. Server responded with an error.");
