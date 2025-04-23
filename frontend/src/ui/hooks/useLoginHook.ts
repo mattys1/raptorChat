@@ -38,14 +38,14 @@ export function useLoginHook(navigate: NavigateFunction) {
 		} catch (error) {
 			console.error("Error during login:", error);
 		}
+	}
 
-		return {
-			email,
-			password,
-			loading,
-			setEmail,
-			setPassword,
-			handleSubmit
-		}
+	return {
+		email,
+		password,
+		loading,
+		setEmail,
+		setPassword,
+		handleSubmit
 	}
 }

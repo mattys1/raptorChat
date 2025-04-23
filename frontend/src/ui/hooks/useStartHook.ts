@@ -6,6 +6,7 @@ import { User } from "../../structs/models/Models";
 import { MessageEvents } from "../../structs/MessageNames";
 import { useWebsocketListener } from "./useWebsocketListener";
 import { Centrifuge } from "centrifuge";
+import { publish } from "rxjs";
 
 export const useMainHook = () => {
 	// const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -57,6 +58,11 @@ export const useMainHook = () => {
 
 		sub.on("subscribed", (ctx) => {
 			console.log("Subscribed to channel", ctx);
+		})
+
+		sub.on("publication", (ctx) => {
+			console.log("New publication", ctx);
+			setTest(ctx.data);
 		})
 
 		centrifuge.on("connected", (ctx) => {

@@ -5,15 +5,8 @@ go 1.24.0
 require (
 	github.com/centrifugal/gocent v2.2.0+incompatible
 	github.com/coder/websocket v1.8.12
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/k0kubun/pp/v3 v3.4.1
-)
-
-require (
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
 )
 
 require (

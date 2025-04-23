@@ -9,20 +9,12 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/k0kubun/pp/v3"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
 type LoginCredentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-func EnableCors(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
 // LoginHandler godoc
@@ -38,7 +30,6 @@ func EnableCors(w http.ResponseWriter) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	EnableCors(w)
 	log.Println("LoginHandler called")
 
 	if r.Method == http.MethodOptions {
@@ -90,8 +81,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	}
 	http.SetCookie(w, cookie)
-
-	pp.Println(w.Header())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

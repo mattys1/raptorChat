@@ -20,7 +20,7 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 		setLoading(true);
 
 		try {
-			const response = await fetch("http://localhost:8080/register", {
+			const response = await fetch("http://localhost:8080/api/register", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email, username, password }),

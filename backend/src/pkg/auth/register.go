@@ -30,8 +30,6 @@ type RegistrationCredentials struct {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /register [post]
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	EnableCors(w)
-
 	if r.Method == http.MethodOptions {
 		return
 	}
