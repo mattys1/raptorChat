@@ -16,6 +16,7 @@
 	},
 	"dependencies": {
 		"@reactivex/rxjs": "^6.6.7",
+		"centrifuge": "^5.3.4",
 		"jiti": "^2.4.2",
 		"neverthrow": "^8.2.0",
 		"react": "^19.0.0",
