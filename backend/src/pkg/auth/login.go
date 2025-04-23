@@ -3,11 +3,13 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/k0kubun/pp/v3"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 )
 
@@ -16,7 +18,7 @@ type LoginCredentials struct {
 	Password string `json:"password"`
 }
 
-func enableCors(w http.ResponseWriter) {
+func EnableCors(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -36,7 +38,8 @@ func enableCors(w http.ResponseWriter) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	enableCors(w)
+	EnableCors(w)
+	log.Println("LoginHandler called")
 
 	if r.Method == http.MethodOptions {
 		return
@@ -85,6 +88,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	}
 	http.SetCookie(w, cookie)
+
+	pp.Println(w.Header())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

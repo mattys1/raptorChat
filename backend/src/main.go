@@ -8,6 +8,7 @@ import (
 
 	"github.com/centrifugal/gocent"
 	"github.com/mattys1/raptorChat/src/pkg/auth"
+	"github.com/mattys1/raptorChat/src/pkg/endpoints"
 )
 
 func main() {
@@ -24,7 +25,8 @@ func main() {
 	}
 	client := gocent.New(cfg)
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(string(endpoints.EndpointNameLogin), func(w http.ResponseWriter, r *http.Request) {
+		auth.EnableCors(w)
 		auth.LoginHandler(w, r)
 
 		err := client.Publish(context.Background(), "test", []byte(`{"text": "Hello from Go!"}`))
@@ -35,5 +37,7 @@ func main() {
 	})
 	// Publish a message to channel "chat:demo"
 
+	log.Println("Starting server on :8080...")
 	http.ListenAndServe(":8080", nil)
 }
+

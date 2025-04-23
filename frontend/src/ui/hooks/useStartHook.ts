@@ -42,48 +42,35 @@ export const useMainHook = () => {
 	// 	users,//: users.flatMap(usersActualArray => usersActualArray),
 	// 	setUsers,
 	// }
-	const [test, setTest] = useState<unknown>(null)
-    const [isConnected, setIsConnected] = useState(false);
+	const [test, setTest] = useState<unknown>(null);
+	const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-        // Create connection
-        const centrifuge = new Centrifuge("ws://localhost:8000/connection/websocket", {
+	useEffect(() => {
+		// 1. Instantiate client
+		const centrifuge = new Centrifuge("ws://localhost:8000/connection/websocket", {
 			token: localStorage.getItem("token") || "",
+			debug: true,
 		});
-        const sub = centrifuge.newSubscription("test");
 
-        // Setup event handlers
-        sub.on("publication", ctx => {
-            console.log("Received message:", ctx.data);
-            setTest(ctx.data);
-        });
+		// 2. New subscription object
+		const sub = centrifuge.newSubscription("test");
 
-        centrifuge.on("connecting", ctx => {
-            console.log("Connecting to Centrifuge", ctx);
-        });
+		sub.on("subscribed", (ctx) => {
+			console.log("Subscribed to channel", ctx);
+		})
 
-        centrifuge.on("connected", ctx => {
-            console.log("Connected to Centrifuge", ctx);
-            setIsConnected(true);
-        });
-        
-        centrifuge.on("disconnected", ctx => {
-            console.log("Disconnected from Centrifuge", ctx);
-            setIsConnected(false);
-        });
+		centrifuge.on("connected", (ctx) => {
+			console.log("Connected to Centrifuge", ctx);
+			setIsConnected(true);
+			sub.subscribe();
+		});
+		centrifuge.connect();
 
-        // Subscribe and connect
-        sub.subscribe();
-        centrifuge.connect();
+		return () => {
+			sub.unsubscribe();
+			centrifuge.disconnect();
+		};
+	}, []);
 
-        // Cleanup on unmount
-        return () => {
-            centrifuge.disconnect();
-        };
-    }, []);
-
-    return {
-        test,
-        isConnected
-    };
+	return { test, isConnected };
 };

@@ -4,34 +4,35 @@ import { SubscriptionManager } from "../../logic/SubscriptionManager"
 import { MessageEvents } from "../../structs/MessageNames"
 import { Room } from "../../structs/models/Models"
 import { useWebsocketListener } from "./useWebsocketListener"
-
+import { Centrifuge } from "centrifuge"
+//
 export const useSidebarHook = () => {
-	const [socket, setSocket] = useState<WebSocket | null>(null)
-	const [chats, setChats] = useWebsocketListener<Room>(MessageEvents.CHATS, socket)
-
-	const setUpSocket = async () => {
-		const socket = WebsocketService.getInstance().unwrapOr(null)
-		console.log("Socket:", socket)
-		setSocket(socket)
-	}
-
-	useEffect(() => {
-		setUpSocket()
-	}, [])
-
-	useEffect(() => {
-		if (!socket) return;
-
-		const subManager = new SubscriptionManager()
-		subManager.subscribe(MessageEvents.CHATS)
-
-		return () => subManager.cleanup()
-	}, [socket])
-
-	return {
-		socket,
-		chats,
-		setChats
-	}
-
+// 	const [socket, setSocket] = useState<WebSocket | null>(null)
+// 	const [chats, setChats] = useWebsocketListener<Room>(MessageEvents.CHATS, socket)
+//
+// 	const setUpSocket = async () => {
+// 		const socket = WebsocketService.getInstance().unwrapOr(null)
+// 		console.log("Socket:", socket)
+// 		setSocket(socket)
+// 	}
+//
+// 	useEffect(() => {
+// 		setUpSocket()
+// 	}, [])
+//
+// 	useEffect(() => {
+// 		if (!socket) return;
+//
+// 		const subManager = new SubscriptionManager()
+// 		subManager.subscribe(MessageEvents.CHATS)
+//
+// 		return () => subManager.cleanup()
+// 	}, [/*socket*/])
+//
+// 	return {
+// 		socket,
+// 		chats,
+// 		setChats
+// 	}
+//
 }
