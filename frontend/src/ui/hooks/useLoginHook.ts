@@ -8,39 +8,44 @@ export function useLoginHook(navigate: NavigateFunction) {
 	const [loading, setLoading] = useState(false);
 
 	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setLoading(true);
-
 		try {
+			e.preventDefault();
+			setLoading(true);
+
+			console.log("Submitting login form...");
+
 			const response = await fetch("http://localhost:8080/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email, password }),
 			});
 
-			if (response.ok) {
+			console.log(response)
+
+			if(response.ok) {
 				// temporarily stroing the token in local storage
 				const data = await response.json();
 				console.log("Login successful:", data);
 				localStorage.setItem("token", data.token);
+				setLoading(false)	
+
 				navigate(ROUTES.MAIN)
+
 			} else {
+				console.log("Login failed:", response.status);
 				alert("Login failed. Server responded with an error.");
 			}
 		} catch (error) {
-			console.error("Login request failed:", error);
-			alert("Login request failed. Please ensure the server is running.");
-		} finally {
-			setLoading(false);
+			console.error("Error during login:", error);
 		}
-	};
 
-	return {
-		email,
-		password,
-		loading,
-		setEmail,
-		setPassword,
-		handleSubmit
+		return {
+			email,
+			password,
+			loading,
+			setEmail,
+			setPassword,
+			handleSubmit
+		}
 	}
 }

@@ -62,11 +62,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 	user, err := dao.GetUserByEmail(ctx, creds.Email)
 	if err != nil {
+		log.Println("Error fetching user:", err)
 		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)); err != nil {
+		log.Println("Password mismatch")
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
