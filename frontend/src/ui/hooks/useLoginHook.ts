@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
+import { SERVER_URL } from "../../api/routes";
 
 export function useLoginHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
@@ -14,7 +15,7 @@ export function useLoginHook(navigate: NavigateFunction) {
 
 			console.log("Submitting login form...");
 
-			const response = await fetch("http://localhost:8080/api/login", {
+			const response = await fetch(SERVER_URL + "/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email, password }),

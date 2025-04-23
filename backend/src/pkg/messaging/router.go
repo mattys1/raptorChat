@@ -13,10 +13,16 @@ func Router() *chi.Mux {
 	r.Use(middleware.EnableCors)
 	r.Use(middleware.LogRequest)
 
+	r.Post("/login", auth.LoginHandler)
+	r.Post("/register", auth.RegisterHandler)
+
 	r.Route("/api", func(r chi.Router) {
-		r.Post("/login", auth.LoginHandler)
-		r.Post("/register", auth.RegisterHandler)
+	r.Use(middleware.VerifyJWT)
+		r.Route("/user", func(r chi.Router) {
+			r.Get("/me/rooms", middleware.RoomsHandler) // ideally this should be merged into {id} and a middleware should be set up to check whether the user is the same
+		})
 	})
+
 	
 	return r
 }

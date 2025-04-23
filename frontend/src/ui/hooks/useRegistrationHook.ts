@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { ROUTES } from "../routes";
+import { SERVER_URL } from "../../api/routes";
 
 export function useRegistrationHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
@@ -20,7 +21,7 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 		setLoading(true);
 
 		try {
-			const response = await fetch("http://localhost:8080/api/register", {
+			const response = await fetch(SERVER_URL + "/register", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email, username, password }),
@@ -30,9 +31,11 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 				alert("Registration successful!");
 				navigate(ROUTES.MAIN);
 			} else {
+				setLoading(false);
 				alert("Registration failed. Server responded with an error.");
 			}
 		} catch (error) {
+			setLoading(false);
 			console.error("Registration request failed:", error);
 			alert("Registration request failed. Please try again later.");
 		} finally {

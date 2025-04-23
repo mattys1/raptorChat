@@ -5,7 +5,6 @@
 package db
 
 import (
-	"database/sql"
 	"time"
 )
 
@@ -18,8 +17,8 @@ type Message struct {
 }
 
 type Room struct {
-	ID   uint64         `json:"id"`
-	Name sql.NullString `json:"name"`
+	ID   uint64  `json:"id"`
+	Name *string `json:"name"`
 }
 
 type User struct {

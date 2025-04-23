@@ -1,16 +1,17 @@
-package auth
+package middleware
 
 import (
 	"context"
 	"net/http"
 	"strings"
+	"github.com/mattys1/raptorChat/src/pkg/auth"
 )
 
 type contextKey string
 
 const userContextKey contextKey = "userID"
 
-func JWTMiddleware(next http.Handler) http.Handler {
+func VerifyJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var tokenStr string
 
@@ -34,7 +35,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := ValidateToken(tokenStr)
+		claims, err := auth.ValidateToken(tokenStr)
 		if err != nil {
 			http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
 			return

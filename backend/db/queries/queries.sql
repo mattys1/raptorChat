@@ -10,6 +10,11 @@ SELECT * FROM users WHERE email = ? LIMIT 1;
 -- name: GetAllRooms :many
 SELECT * FROM rooms;
 
+-- name: GetRoomsByUser :many
+SELECT r.* FROM rooms r
+JOIN users_rooms ur ON ur.room_id = r.id
+WHERE ur.user_id = ?;
+
 -- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW());

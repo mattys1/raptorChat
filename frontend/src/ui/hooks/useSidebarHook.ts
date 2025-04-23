@@ -1,38 +1,37 @@
 import { useEffect, useState } from "react"
-import { WebsocketService } from "../../logic/websocket"
 import { SubscriptionManager } from "../../logic/SubscriptionManager"
 import { MessageEvents } from "../../structs/MessageNames"
 import { Room } from "../../structs/models/Models"
 import { useWebsocketListener } from "./useWebsocketListener"
 import { Centrifuge } from "centrifuge"
+import { SERVER_URL } from "../../api/routes"
 //
 export const useSidebarHook = () => {
-// 	const [socket, setSocket] = useState<WebSocket | null>(null)
-// 	const [chats, setChats] = useWebsocketListener<Room>(MessageEvents.CHATS, socket)
-//
-// 	const setUpSocket = async () => {
-// 		const socket = WebsocketService.getInstance().unwrapOr(null)
-// 		console.log("Socket:", socket)
-// 		setSocket(socket)
-// 	}
-//
-// 	useEffect(() => {
-// 		setUpSocket()
-// 	}, [])
-//
-// 	useEffect(() => {
-// 		if (!socket) return;
-//
-// 		const subManager = new SubscriptionManager()
-// 		subManager.subscribe(MessageEvents.CHATS)
-//
-// 		return () => subManager.cleanup()
-// 	}, [/*socket*/])
-//
-// 	return {
-// 		socket,
-// 		chats,
-// 		setChats
-// 	}
-//
+	const [rooms, setRooms] = useState<Room[]>([])
+
+	useEffect(() => {
+		console.log("Fetching rooms...")
+		fetch(SERVER_URL + "/api/user/me/rooms", {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${localStorage.getItem("token")}`,
+			},
+		})
+			.then((response) => response.json())
+			.then((data) => {
+				console.log("Fetched rooms:", data)
+				setRooms(data)
+			})
+			.catch((error) => {
+				console.error("Error fetching rooms:", error)
+			})
+	}, [])
+
+	useEffect(() => { console.log("Rooms changed:", rooms) }, [rooms])
+
+	return {
+		rooms,
+		setRooms,
+	}
 }
