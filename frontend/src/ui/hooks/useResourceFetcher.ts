@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react"
-import { SafeUnmarshall } from "./ProcessJSONResult"
 import { err, ok, ResultAsync } from "neverthrow"
 
-export const useResourceFetcher = <T>(endpoint: string, initial: T) => {
+export const useResourceFetcher = <T>(initial: T, endpoint: string) => {
 	const [state, setState] = useState<T>(initial)
 	
 	const payload = {
