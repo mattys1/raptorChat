@@ -9,7 +9,7 @@ const ChatRoomView = () => {
 
 	const props = useChatRoomHook(key)
 	// console.log("ChatRoomView props:", props)
-	console.log("ChatRoomView message", props.messageList)
+	// console.log("ChatRoomView message", props.messageList)
 
 	return (
 		<>
@@ -25,13 +25,6 @@ const ChatRoomView = () => {
 
 			<form action={(input) => {
 				const message = input.get("messageBox")?.toString()
-				props.sender.createResource([{
-						id: 0,
-						sender_id: 0,
-						room_id: key,
-						contents: message ?? "Unknown",
-						created_at: new Date(Date.now())
-				}] as Message[], MessageEvents.CHAT_MESSAGES)
 			}}>
 				<input name="messageBox" />
 				<button>Wyslij pan</button>

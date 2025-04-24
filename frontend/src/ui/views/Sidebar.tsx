@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 					{
 						props.rooms?.map((room) => {
 							return (
-								<li onClick={() => navigate(`${ROUTES.roomROOM}/${room.id}`)} key={room.id}>
+								<li onClick={() => navigate(`${ROUTES.CHATROOM}/${room.id}`)} key={room.id}>
 									{room?.name}
 								</li>
 							)
