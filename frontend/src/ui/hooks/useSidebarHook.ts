@@ -28,8 +28,6 @@ export const useSidebarHook = () => {
 			})
 	}, [])
 
-	useEffect(() => { console.log("Rooms changed:", rooms) }, [rooms])
-
 	return {
 		rooms,
 		setRooms,

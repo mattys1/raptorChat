@@ -7,6 +7,9 @@ import { MessageEvents } from "../../structs/MessageNames";
 import { useWebsocketListener } from "./useWebsocketListener";
 import { Centrifuge } from "centrifuge";
 import { publish } from "rxjs";
+import { CentrifugoService } from "../../logic/CentrifugoService";
+import { Subscription } from "centrifuge";
+import { useEventListener } from "../../logic/useEventListener";
 
 export const useMainHook = () => {
 	// const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -43,40 +46,9 @@ export const useMainHook = () => {
 	// 	users,//: users.flatMap(usersActualArray => usersActualArray),
 	// 	setUsers,
 	// }
-	const [test, setTest] = useState<unknown>(null);
+	const test = useEventListener<string>("test", "test", (setState, incoming) => { setState(incoming) });
 	const [isConnected, setIsConnected] = useState(false);
-
-	useEffect(() => {
-		// 1. Instantiate client
-		const centrifuge = new Centrifuge("ws://localhost:8000/connection/websocket", {
-			token: localStorage.getItem("token") || "",
-			debug: true,
-		});
-
-		// 2. New subscription object
-		const sub = centrifuge.newSubscription("test");
-
-		sub.on("subscribed", (ctx) => {
-			console.log("Subscribed to channel", ctx);
-		})
-
-		sub.on("publication", (ctx) => {
-			console.log("New publication", ctx);
-			setTest(ctx.data);
-		})
-
-		centrifuge.on("connected", (ctx) => {
-			console.log("Connected to Centrifuge", ctx);
-			setIsConnected(true);
-			sub.subscribe();
-		});
-		centrifuge.connect();
-
-		return () => {
-			sub.unsubscribe();
-			centrifuge.disconnect();
-		};
-	}, []);
+	const [sub, setSub] = useState<Subscription | null>(null);
 
 	return { test, isConnected };
 };

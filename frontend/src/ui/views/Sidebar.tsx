@@ -8,7 +8,6 @@ interface SidebarProps {
 	onSettingsClick: () => void;
 }
 
-
 const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 	const navigate = useNavigate()
 
@@ -27,15 +26,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 				<h2>Group chat</h2>
 				<ul>
 					{
-						// props.chats.map((chat) => {
-						// 	console.log("Chat:", chat)
-						// 	console.log(typeof chat?.name)
-						// 	return (
-						// 		<li onClick={() => navigate(`${ROUTES.CHATROOM}/${chat.id}`)} key={chat.id}>
-						// 			{chat?.name}
-						// 		</li>
-						// 	)
-						// })
+						props.rooms?.map((room) => {
+							return (
+								<li onClick={() => navigate(`${ROUTES.roomROOM}/${room.id}`)} key={room.id}>
+									{room?.name}
+								</li>
+							)
+						})
 					}
 				</ul>
 			</div>
