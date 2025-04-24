@@ -1,6 +1,6 @@
 import React from "react";
 import "./Start.css";
-import { useSidebarHook } from "../hooks/useSidebarHook";
+import { useSidebarHook } from "../hooks/views/useSidebarHook";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
 

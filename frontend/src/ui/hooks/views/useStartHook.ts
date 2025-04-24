@@ -1,15 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { WebsocketService } from "../../logic/websocket";
-import { SubscriptionManager } from "../../logic/SubscriptionManager";
-import { User } from "../../structs/models/Models";
-import { MessageEvents } from "../../structs/MessageNames";
-import { useWebsocketListener } from "./useWebsocketListener";
-import { Centrifuge } from "centrifuge";
-import { publish } from "rxjs";
-import { CentrifugoService } from "../../logic/CentrifugoService";
 import { Subscription } from "centrifuge";
-import { useEventListener } from "../../logic/useEventListener";
+import { useEventListener } from "../../hooks/useEventListener";
 
 export const useMainHook = () => {
 	// const [socket, setSocket] = useState<WebSocket | null>(null);

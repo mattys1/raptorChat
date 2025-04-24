@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavigateFunction } from "react-router-dom";
-import { ROUTES } from "../routes";
-import { SERVER_URL } from "../../api/routes";
+import { ROUTES } from "../../routes";
+import { SERVER_URL } from "../../../api/routes";
 
 export function useRegistrationHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");

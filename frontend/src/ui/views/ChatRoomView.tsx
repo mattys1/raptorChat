@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useChatRoomHook } from "../hooks/useChatRoomHook";
+import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import "./Start.css";
 import { MessageEvents } from "../../structs/MessageNames";
 import { Message } from "../../structs/models/Models";

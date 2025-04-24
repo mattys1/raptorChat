@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { CentrifugoService } from "./CentrifugoService"
+import { CentrifugoService } from "../../logic/CentrifugoService"
 
 export const useEventListener = <T>(
 	channel: string,

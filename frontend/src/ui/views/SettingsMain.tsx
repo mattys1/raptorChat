@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-import { useSettingsHook } from "../hooks/useSettingsHook";
+import { useSettingsHook } from "../hooks/views/useSettingsHook";
 import { ROUTES } from "../routes";
 
 const SettingsView = () => {

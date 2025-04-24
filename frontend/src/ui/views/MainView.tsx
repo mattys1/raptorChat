@@ -1,6 +1,6 @@
 import React from "react";
 import "./Start.css";
-import { useMainHook } from "../hooks/useStartHook";
+import { useMainHook } from "../hooks/views/useStartHook";
 
 const MainView: React.FC = () => {
 	const props = useMainHook()

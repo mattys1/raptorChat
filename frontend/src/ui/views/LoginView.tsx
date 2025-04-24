@@ -1,5 +1,5 @@
 import styles from "./Login.module.css";
-import { useLoginHook } from "../hooks/useLoginHook";
+import { useLoginHook } from "../hooks/views/useLoginHook";
 import { Form } from "../components/Form";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
