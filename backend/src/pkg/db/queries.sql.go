@@ -7,9 +7,10 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
-const createMessage = `-- name: CreateMessage :exec
+const createMessage = `-- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
 `
 
@@ -19,9 +20,8 @@ type CreateMessageParams struct {
 	Contents string `json:"contents"`
 }
 
-func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
-	return err
+func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
 }
 
 const createUser = `-- name: CreateUser :exec
@@ -100,6 +100,23 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getMessageById = `-- name: GetMessageById :one
+SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE id = ?
+`
+
+func (q *Queries) GetMessageById(ctx context.Context, id uint64) (Message, error) {
+	row := q.db.QueryRowContext(ctx, getMessageById, id)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.SenderID,
+		&i.RoomID,
+		&i.Contents,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getMessagesByRoom = `-- name: GetMessagesByRoom :many
 SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE room_id = ?
 `
@@ -120,6 +137,35 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 			&i.Contents,
 			&i.CreatedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoomsByUser = `-- name: GetRoomsByUser :many
+SELECT r.id, r.name FROM rooms r
+JOIN users_rooms ur ON ur.room_id = r.id
+WHERE ur.user_id = ?
+`
+
+func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

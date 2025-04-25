@@ -1,13 +1,12 @@
 import React from "react";
 import "./Start.css";
-import { useSidebarHook } from "../hooks/useSidebarHook";
+import { useSidebarHook } from "../hooks/views/useSidebarHook";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
 
 interface SidebarProps {
 	onSettingsClick: () => void;
 }
-
 
 const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 	const navigate = useNavigate()
@@ -27,12 +26,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 				<h2>Group chat</h2>
 				<ul>
 					{
-						props.chats.map((chat) => {
-							console.log("Chat:", chat)
-							console.log(typeof chat?.name)
+						props.rooms?.map((room) => {
 							return (
-								<li onClick={() => navigate(`${ROUTES.CHATROOM}/${chat.id}`)} key={chat.id}>
-									{chat?.name}
+								<li onClick={() => navigate(`${ROUTES.CHATROOM}/${room.id}`)} key={room.id}>
+									{room?.name}
 								</li>
 							)
 						})

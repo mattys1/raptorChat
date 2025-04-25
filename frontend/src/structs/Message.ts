@@ -1,14 +1,6 @@
-export interface Message<T = unknown> {
-	type: string
-	contents: Subscription | Resource<T>
-}
-
-export interface Resource<T> {
-	eventName: string
-	contents: T[]
-}
-
-export interface Subscription {
-	eventName: string
-	targetIds: number[]
+export interface EventResource<T> {
+	channel: string
+	method: "POST" | "GET" | "PUT" | "DELETE" | "PATCH"
+	event_name: string
+	contents: T | T[]
 }

@@ -1,0 +1,46 @@
+import { useState, useEffect, useCallback } from "react";
+import { Message } from "../../structs/Message";
+import { SERVER_URL } from "../../api/routes";
+
+const ResponseStates = {
+	SUCCESS: "SUCCESS",
+	FAILURE: "FAILURE",
+	PENDING: "PENDING",
+} as const
+
+type ResponseStates = typeof ResponseStates[keyof typeof ResponseStates];
+
+export const useSendEventMessage = <T>(
+	endpoint: string,
+): [ResponseStates, string | null, (message: Message<T>) => Promise<Message<T> | null>]=> {
+	const [state, setState] = useState<ResponseStates>(ResponseStates.PENDING);
+	const [error, setError] = useState<string | null>(null);
+
+	const sendMessage = useCallback(async (message: Message<T>,) => {
+		setState(ResponseStates.PENDING);
+		try {
+			const res = await fetch(SERVER_URL + endpoint, {
+				method: message.method,
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${localStorage.getItem("token")}`,
+				},
+				body: JSON.stringify(message),
+			});
+
+			if(!res.ok) {
+				throw new Error(`Error sending message: ${res.statusText}`);
+			}
+
+			const data = await res.json() as Message<T>;
+			setState(ResponseStates.SUCCESS);
+			return data;
+		} catch (err) {
+			setState(ResponseStates.FAILURE);
+			setError(err instanceof Error ? err.message : String(err));
+			return null;
+		}
+	}, [endpoint]);
+
+	return [state, error, sendMessage];
+}

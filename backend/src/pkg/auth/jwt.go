@@ -9,6 +9,12 @@ import (
 
 var jwtKey = []byte("your_secret_key")
 
+type CentrifugoTokenClaims struct {
+	Sub   string                 `json:"sub"`
+	Info  map[string]any `json:"info,omitempty"`
+	Channels []string            `json:"channels,omitempty"`
+}
+
 type Claims struct {
 	UserID uint64 `json:"user_id"`
 	jwt.RegisteredClaims
@@ -30,7 +36,7 @@ func GenerateToken(userID uint64) (string, error) {
 
 func ValidateToken(tokenStr string) (*Claims, error) {
 	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
