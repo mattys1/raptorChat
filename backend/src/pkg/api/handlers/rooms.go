@@ -89,11 +89,17 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messaging.GetCentrifugoService().Publish(
+	err = messaging.GetCentrifugoService().Publish(
 		r.Context(),
 		fmt.Sprintf("room:%d", message.RoomID),
 		newResource,
 	)
+	if err != nil {
+		slog.Error("Error publishing message to Centrifugo", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	// assert.That(err == nil, "Error publishing message to Centrifugo", err)
 
 	w.WriteHeader(http.StatusCreated)
 }

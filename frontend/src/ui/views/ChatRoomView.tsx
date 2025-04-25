@@ -10,16 +10,17 @@ const ChatRoomView = () => {
 
 	const props = useChatRoomHook(key)
 	// console.log("ChatRoomView props:", props)
-	// console.log("ChatRoomView message", props.messageList)
+	console.log("ChatRoomView message", props.messageList)
+	console.log("Rerendered")
 
 	return (
 		<>
 			Chat Room test
 			<p>
-				{props.messageList?.map((message, index) => (
+				{props?.messageList?.map((message, index) => (
 					<li key={index}>
-						{message.contents ?? "Unknown text"} { }
-						Sender: {message.sender_id ?? "Unknown sender"}
+						{message?.contents ?? "Unknown text"} { }
+						Sender: {message?.sender_id ?? "Unknown sender"}
 					</li>
 				))}
 			</p>
@@ -33,7 +34,7 @@ const ChatRoomView = () => {
 				props.sendChatMessage({
 					channel: `room:${key}`,
 					method: "POST",
-					eventName: MessageEvents.MESSAGE_SENT,
+					event_name: MessageEvents.MESSAGE_SENT,
 					contents: {
 						id: 0,
 						room_id: key,

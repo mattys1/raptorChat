@@ -16,7 +16,14 @@
 		"without_namespace": {
 			"allow_subscribe_for_anonymous": true,
 			"allow_subscribe_for_client": true
-		}
+		},
+		"namespaces": [
+			{
+				"allow_subscribe_for_anonymous": true,
+				"allow_subscribe_for_client": true,
+				"name": "room"
+			}
+		]
 	},
 	"http_api": {
 		"key": "http_secret"

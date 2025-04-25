@@ -1,22 +1,26 @@
 import React, { useEffect, useState } from "react"
 import { CentrifugoService } from "../../logic/CentrifugoService"
+import { EventResource } from "../../structs/Message"
 
 export const useEventListener = <T>(
-	initial: T,
+	// initial: T,
 	channel: string,
 	event: string,
-	callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: T) => void
-): [T, React.Dispatch<React.SetStateAction<T>>] => {
-	const [state, setState] = useState<T>(initial)
+	// callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: U) => void
+): [T | null, React.Dispatch<React.SetStateAction<T | null>>] => {
+	const [state, setState] = useState<T | null>(null)
+	console.log("Rerendering useEventListerner", state)
 
 	useEffect(() => {
 		console.log("Attempting to hook into event", event)
 		const sub = CentrifugoService.subscribe(channel).then((sub) => {
-			console.log("executing sub promise")
 			sub.on("publication", (ctx) => {
-				if(ctx.data.event === event) {
+				const incoming = ctx.data as EventResource<T>
+				console.log("Received publication", ctx)
+				if(incoming.event_name === event) {
 					console.log("Published", ctx)
-					callback(setState, ctx.data.data)
+					// callback(setState, ctx.data.data)
+					setState(incoming.contents as T) // TODO: assuming contents is T for now
 				}
 			})
 			.on("subscribed", () => {
@@ -34,7 +38,7 @@ export const useEventListener = <T>(
 				CentrifugoService.unsubscribe(channel)
 			})
 		}
-	}, [channel, event, callback])
+	}, [channel, event])
 
 	return [state, setState]
 }

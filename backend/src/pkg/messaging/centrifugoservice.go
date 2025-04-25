@@ -3,6 +3,7 @@ package messaging
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
 	"sync"
 
@@ -45,6 +46,7 @@ func (cs *CentrifugoService) Publish(
 		return err
 	}
 
+	slog.Info("Publishing message", "channel", channel, "data", string(data))
 	err = cs.client.Publish(ctx, channel, data)
 	if err != nil {
 		return err
