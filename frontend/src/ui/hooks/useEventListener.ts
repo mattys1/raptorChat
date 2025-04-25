@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { CentrifugoService } from "../../logic/CentrifugoService"
 
 export const useEventListener = <T>(
+	initial: T,
 	channel: string,
 	event: string,
-	callback: (setState: React.Dispatch<React.SetStateAction<T | null>>, incoming: T) => void
-) => {
-	const [state, setState] = useState<T | null>(null)
+	callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: T) => void
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+	const [state, setState] = useState<T>(initial)
 
 	useEffect(() => {
 		console.log("Attempting to hook into event", event)
@@ -20,9 +21,6 @@ export const useEventListener = <T>(
 			})
 			.on("subscribed", () => {
 				console.log(`Subscribed to ${channel}`)
-			})
-			.on("subscribing", () => {
-				console.log(`Subscribing to ${channel}`)
 			})
 			.on("error", (ctx) => {
 				console.error("Error subscribing", ctx.error)
@@ -38,5 +36,5 @@ export const useEventListener = <T>(
 		}
 	}, [channel, event, callback])
 
-	return state
+	return [state, setState]
 }

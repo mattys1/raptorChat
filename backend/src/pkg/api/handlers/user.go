@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/mattys1/raptorChat/src/pkg/api"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
 )
@@ -27,7 +26,7 @@ func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.SendResource[[]db.Room](&rooms, []db.Room{}, w)
+	err = SendResource[[]db.Room](&rooms, []db.Room{}, w)
 
 	if err != nil {
 		slog.Error("Error sending rooms", err)

@@ -1,4 +1,4 @@
-package messaging
+package api
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -25,6 +25,7 @@ func Router() *chi.Mux {
 		r.Route("/rooms", func(r chi.Router) {
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/messages", handlers.GetMessagesOfRoomHandler)
+				r.Post("/messages", handlers.SendMessageHandler)
 			})
 		})
 	})

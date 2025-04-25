@@ -100,6 +100,23 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getMessageById = `-- name: GetMessageById :one
+SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE id = ?
+`
+
+func (q *Queries) GetMessageById(ctx context.Context, id uint64) (Message, error) {
+	row := q.db.QueryRowContext(ctx, getMessageById, id)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.SenderID,
+		&i.RoomID,
+		&i.Contents,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getMessagesByRoom = `-- name: GetMessagesByRoom :many
 SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE room_id = ?
 `

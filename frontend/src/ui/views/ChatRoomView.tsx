@@ -3,6 +3,7 @@ import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import "./Start.css";
 import { MessageEvents } from "../../structs/MessageNames";
 import { Message } from "../../structs/models/Models";
+import { EventResource } from "../../structs/Message";
 
 const ChatRoomView = () => {
 	const key = Number(useParams().chatId)
@@ -17,17 +18,37 @@ const ChatRoomView = () => {
 			<p>
 				{props.messageList?.map((message, index) => (
 					<li key={index}>
-						{message.contents ?? "Unknown text"} .
+						{message.contents ?? "Unknown text"} { }
 						Sender: {message.sender_id ?? "Unknown sender"}
 					</li>
 				))}
 			</p>
 
-			<form action={(input) => {
-				const message = input.get("messageBox")?.toString()
+			<form onSubmit={(e) => {
+				e.preventDefault()
+				const formData = new FormData(e.currentTarget)
+				const message = formData.get("messageBox")?.toString() ?? ""
+				console.log("Message:", message)
+
+				props.sendChatMessage({
+					channel: `room:${key}`,
+					method: "POST",
+					eventName: MessageEvents.MESSAGE_SENT,
+					contents: {
+						id: 0,
+						room_id: key,
+						sender_id: 0,
+						contents: message,
+
+					} 
+				} as EventResource<Message>)
+
+				e.currentTarget.reset();
 			}}>
 				<input name="messageBox" />
-				<button>Wyslij pan</button>
+				<button type="submit">
+					Wyslij pan
+				</button>
 			</form> 
 		</>
 	)

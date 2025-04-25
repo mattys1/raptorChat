@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/centrifugal/gocent"
-	"github.com/mattys1/raptorChat/src/pkg/messaging"
+	"github.com/mattys1/raptorChat/src/pkg/api"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 		log.Println("Message published!")
 	}()
 
-	router := messaging.Router()
+	router := api.Router()
 
 	log.Println("Starting server on :8080...")
 	http.ListenAndServe(":8080", router)

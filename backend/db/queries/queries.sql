@@ -27,5 +27,9 @@ SELECT u.* FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?;
 
+-- name: GetMessageById :one
+SELECT * FROM messages WHERE id = ?;
+
 -- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
+
