@@ -1,7 +1,11 @@
-import { useEffect, useState } from "react"
-import { err, ok, ResultAsync } from "neverthrow"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
+import { err, ok, Result, ResultAsync } from "neverthrow"
+import { SERVER_URL } from "../../api/routes"
 
-export const useResourceFetcher = <T>(initial: T, endpoint: string) => {
+export const useResourceFetcher = <T>(
+	initial: T,
+	endpoint: string
+): [T, Dispatch<SetStateAction<T>>] => {
 	const [state, setState] = useState<T>(initial)
 	
 	const payload = {
@@ -13,23 +17,32 @@ export const useResourceFetcher = <T>(initial: T, endpoint: string) => {
 	}
 
 	useEffect(() => {
-		fetch(endpoint, payload).then( async response => {
+		console.log("Fetching resource from:", endpoint)
+		fetch(SERVER_URL + endpoint, payload).then( async response => {
 			if(!response.ok) {
+				console.error(`HTTP error! status: ${response.status}`)
 				return err(new Error(`HTTP error! status: ${response.status}`))
 			}
-			return ok(await response.json())
-		}).then(value => {
-				value.match(
-					async (okValue) => {
-						const data = await okValue as T
-						setState(data)
+			console.log("Response:", response)
+			try {
+				const data = await response.json()
+				console.log("Response JSON:", data)
+				return ok(data)
+			} catch (error) {
+				console.error("Error parsing JSON:", error)
+				return err(new Error(`JSON parsing error: ${error}`))
+			}
+		}).then(result => {
+				result.match(
+					(okValue) => {
+						setState(okValue as T)
 					},
 					(errValue) => {
 						console.error("Fetch error:", errValue)
 					}
 				)
 			})
-	}, [])
+	}, [endpoint])
 
 	return [
 		state,
