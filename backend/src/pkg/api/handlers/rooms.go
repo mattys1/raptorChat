@@ -63,7 +63,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message.SenderID = senderID
-	createdId, err := dao.CreateMessage(r.Context(), db.CreateMessageParams{
+	newMessageIdx, err := dao.CreateMessage(r.Context(), db.CreateMessageParams{
 		SenderID: message.SenderID,
 		RoomID:   message.RoomID,
 		Contents: message.Contents,
@@ -73,12 +73,27 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+	id, err := newMessageIdx.LastInsertId()
+	assert.That(err == nil, "Error getting last insert ID from just inserted message", err)
+	newMessage, err := dao.GetMessageById(r.Context(), uint64(id))
+	if err != nil {
+		slog.Error("Error getting message by ID", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
-	testmsgid, err := createdId.LastInsertId()
-	assert.That(err == nil, "Error getting last insert id", err)
+	newResource, err := messaging.ReassembleResource(&eventResource, newMessage)
+	if err != nil {
+		slog.Error("Error reassembling resource", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
-	testmsg, err := dao.GetMessageById(r.Context(), uint64(testmsgid))
-	slog.Info("Message created", "message", testmsg)
+	messaging.GetCentrifugoService().Publish(
+		r.Context(),
+		fmt.Sprintf("room:%d", message.RoomID),
+		newResource,
+	)
 
 	w.WriteHeader(http.StatusCreated)
 }

@@ -35,6 +35,20 @@ func GetEventResourceContents[T any](resource *EventResource) (*T, error) {
 	return &contents, nil
 }
 
+func ReassembleResource(oldResource *EventResource, newItem any) (*EventResource, error) {
+	itemData, err := json.Marshal(newItem)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EventResource{
+		Channel: oldResource.Channel,
+		Method: oldResource.Method,
+		EventName: oldResource.EventName,
+		Contents: itemData,
+	}, nil
+}
+
 // func NewMessage[T Resource | Subscription](mType MessageType, contents *T) (*EventResource, error) {
 // 	assert.That(contents != nil, "Resource is nil during message creation", nil)
 //
