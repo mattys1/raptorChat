@@ -103,3 +103,23 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request, ) {
+	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
+		return
+	}
+
+	dao := db.GetDao()
+	users, err := dao.GetUsersByRoom(r.Context(), uint64(roomid))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Internal Server Error, couldn't retrieve users of id: %d", roomid), http.StatusInternalServerError)
+	}
+
+	err = SendResource(users, w)
+	if err != nil {
+		slog.Error("Error sending users of room", "roomid", roomid, "error", err)
+	}
+
+}

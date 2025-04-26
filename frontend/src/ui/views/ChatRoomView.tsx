@@ -1,12 +1,14 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import "./Start.css";
 import { MessageEvents } from "../../structs/MessageNames";
 import { Message } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
+import { ROUTES } from "../routes";
 
 const ChatRoomView = () => {
 	const key = Number(useParams().chatId)
+	const navigate = useNavigate()
 
 	const props = useChatRoomHook(key)
 	// console.log("ChatRoomView props:", props)
@@ -15,6 +17,9 @@ const ChatRoomView = () => {
 
 	return (
 		<>
+			<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
+				Invite user to chatroom...
+			</button>
 			Chat Room test
 			<p>
 				{props?.messageList?.map((message, index) => (

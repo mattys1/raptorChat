@@ -1,9 +1,12 @@
 import React from "react";
 import "./Start.css";
 import { useMainHook } from "../hooks/views/useStartHook";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../routes";
 
 const MainView: React.FC = () => {
 	const props = useMainHook()
+	const navigate = useNavigate()
 	// const users = props.users
 
 	// return (
@@ -26,7 +29,7 @@ const MainView: React.FC = () => {
 
 	return <>
 		test <br/>
-		{String(props.test)}
+		<button onClick={() => navigate(`${ROUTES.MAIN}/invites`)}>See invites</button>
 	</>
 };
 

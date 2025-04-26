@@ -1,31 +1,18 @@
-import { useEffect, useState } from "react"
-import { WebsocketService } from "../../logic/websocket"
-import { SubscriptionManager } from "../../logic/SubscriptionManager"
-import { MessageEvents } from "../../structs/MessageNames"
-import { useWebsocketListener } from "./useWebsocketListener"
+import { useResourceFetcher } from "../useResourceFetcher"
+import { Invite, User } from "../../../structs/models/Models"
+import { useSendEventMessage } from "../useSendEventMessage"
 
-export const useInviteToChatroomHook = () => {
-	const [socket, setSocket] = useState<WebSocket | null>(null)
-	const invites, setInvites] = useWebsocketListener<>
+export const useInviteToChatroomHook = (roomId: number) => {
+	const [allUsers] = useResourceFetcher<User[]>([], "/api/user")
+	const [usersInRoom] = useResourceFetcher<User[]>([], `/api/rooms/${roomId}/user`)
+	const [ownId] = useResourceFetcher<number>(0, "/api/user/me")
+	const [inviteSendStatus, err, sendInvite] = useSendEventMessage<Invite>("/api/invites")
 
-	const setUpSocket = async () => {
-		const socket = WebsocketService.getInstance().unwrapOr(null)
-		console.log("Socket:", socket)
-		setSocket(socket)
+	return {
+		usersNotInRoom: allUsers.filter(user => !usersInRoom.some(u => u.id === user.id)),
+		inviteSendStatus,
+		err,
+		sendInvite,
+		ownId
 	}
-
-	useEffect(() => {
-		setUpSocket()
-	}, [])
-
-	useEffect(() => {
-		if (!socket) return;
-
-		const subManager = new SubscriptionManager()
-		subManager.subscribe(MessageEvents.INVITES)
-
-		return () => {
-			subManager.cleanup()
-		}
-	})
 }
