@@ -10,6 +10,20 @@ import (
 	"database/sql"
 )
 
+const addUserToRoom = `-- name: AddUserToRoom :exec
+INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?)
+`
+
+type AddUserToRoomParams struct {
+	UserID uint64 `json:"user_id"`
+	RoomID uint64 `json:"room_id"`
+}
+
+func (q *Queries) AddUserToRoom(ctx context.Context, arg AddUserToRoomParams) error {
+	_, err := q.db.ExecContext(ctx, addUserToRoom, arg.UserID, arg.RoomID)
+	return err
+}
+
 const createInvite = `-- name: CreateInvite :execresult
 INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?)
 `
@@ -222,6 +236,17 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 		return nil, err
 	}
 	return items, nil
+}
+
+const getRoomById = `-- name: GetRoomById :one
+SELECT id, name FROM rooms WHERE id = ?
+`
+
+func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
+	row := q.db.QueryRowContext(ctx, getRoomById, id)
+	var i Room
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
 }
 
 const getRoomsByUser = `-- name: GetRoomsByUser :many

@@ -15,6 +15,9 @@ SELECT r.* FROM rooms r
 JOIN users_rooms ur ON ur.room_id = r.id
 WHERE ur.user_id = ?;
 
+-- name: GetRoomById :one
+SELECT * FROM rooms WHERE id = ?;
+
 -- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW());
@@ -26,6 +29,9 @@ SELECT * FROM messages WHERE room_id = ?;
 SELECT u.* FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?;
+
+-- name: AddUserToRoom :exec
+INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?);
 
 -- name: GetMessageById :one
 SELECT * FROM messages WHERE id = ?;

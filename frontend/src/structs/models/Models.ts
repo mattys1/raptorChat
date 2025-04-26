@@ -23,7 +23,7 @@ export interface UsersRoom {
 	room_id: number;
 }
 
-const InvitesState = {
+export const InvitesState = {
 	Pending: "pending",
 	Accepted: "accepted",
 	Declined: "declined"

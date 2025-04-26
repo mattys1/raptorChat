@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -109,6 +110,40 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Error("Error publishing invite", "error", err)
 		http.Error(w, "Error publishing invite", http.StatusInternalServerError)
 		return
+	}
+
+	if invite.State == db.InvitesStateAccepted {
+		err := dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
+			UserID: invite.ReceiverID,
+			RoomID: *invite.RoomID,
+		})
+		if err != nil {
+			http.Error(w, "Error adding user to room", http.StatusInternalServerError)
+			return
+		}
+
+		room, err := dao.GetRoomById(r.Context(), *invite.RoomID)
+		if err != nil {
+			http.Error(w, "Error getting room by ID", http.StatusInternalServerError)
+			return
+		}
+
+		roomData, err := json.Marshal(room)
+		if err != nil {
+			http.Error(w, "Error marshalling room data", http.StatusInternalServerError)
+			return
+		}
+
+		err = messaging.GetCentrifugoService().Publish(
+			r.Context(),
+			fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
+			&messaging.EventResource{
+				Channel: fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
+				Method: "POST",
+				EventName: "joined_room",
+				Contents: roomData,
+			},
+		)
 	}
 	
 	err = SendResource(invite, w)
