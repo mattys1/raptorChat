@@ -321,3 +321,17 @@ func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, er
 	}
 	return items, nil
 }
+
+const updateInvite = `-- name: UpdateInvite :exec
+UPDATE invites SET state = ? WHERE id = ?
+`
+
+type UpdateInviteParams struct {
+	State InvitesState `json:"state"`
+	ID    uint64       `json:"id"`
+}
+
+func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) error {
+	_, err := q.db.ExecContext(ctx, updateInvite, arg.State, arg.ID)
+	return err
+}

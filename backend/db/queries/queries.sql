@@ -39,5 +39,8 @@ SELECT * FROM invites WHERE id = ?;
 -- name: CreateInvite :execresult
 INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?);
 
+-- name: UpdateInvite :exec
+UPDATE invites SET state = ? WHERE id = ?;
+
 -- name: GetInvitesToUser :many
 SELECT * FROM invites i WHERE i.receiver_id = ?;

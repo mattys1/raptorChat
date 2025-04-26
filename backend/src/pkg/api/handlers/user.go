@@ -3,6 +3,7 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -82,6 +83,10 @@ func GetInvitesOfUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
+	invites = slices.DeleteFunc(invites, func(i db.Invite) bool {
+		return i.State != db.InvitesStatePending
+	})
 
 	slog.Info("Invites", "invites", invites)
 	err = SendResource(invites, w)
