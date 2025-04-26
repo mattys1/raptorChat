@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/mattys1/raptorChat/src/pkg/assert"
@@ -57,11 +58,16 @@ func CreateInviteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = SendResource(newInvite, w)
+	err = messaging.GetCentrifugoService().Publish(r.Context(), fmt.Sprintf("user:%d:invites", invite.ReceiverID), newResource)
 	if err != nil {
-		http.Error(w, "Error sending invite", http.StatusInternalServerError)
+		slog.Error("Error publishing invite", "error", err)
+		http.Error(w, "Error publishing invite", http.StatusInternalServerError)
 		return
 	}
-
-	err = messaging.GetCentrifugoService().Publish(r.Context(), fmt.Sprintf("user:%d:invites", invite.ReceiverID), newResource)
+	
+	err = SendResource(newInvite, w)
+	if err != nil {
+		slog.Error("Error sending invite response", "error", err)
+		return
+	}
 }
