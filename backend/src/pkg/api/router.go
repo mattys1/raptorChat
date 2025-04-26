@@ -18,9 +18,13 @@ func Router() *chi.Mux {
 	r.Post("/register", auth.RegisterHandler)
 
 	r.Route("/api", func(r chi.Router) {
-	r.Use(middleware.VerifyJWT)
+		r.Use(middleware.VerifyJWT)
+		r.Post("/invites", handlers.CreateInviteHandler)
 		r.Route("/user", func(r chi.Router) {
 			r.Get("/me/rooms", handlers.GetRoomsOfUserHandler) // ideally this should be merged into {id} and a middleware should be set up to check whether the user is the same
+			r.Get("/me", handlers.GetOwnIDHandler)
+			r.Get("/", handlers.GetAllUsersHandler)
+			r.Get("/{id}/invites", handlers.GetInvitesOfUserHandler)
 		})
 		r.Route("/rooms", func(r chi.Router) {
 			r.Route("/{id}", func(r chi.Router) {

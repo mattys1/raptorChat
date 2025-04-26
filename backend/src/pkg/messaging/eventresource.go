@@ -2,7 +2,9 @@ package messaging
 
 import (
 	"encoding/json"
+	"io"
 	"log"
+	"net/http"
 )
 
 type EventResource struct {
@@ -48,6 +50,24 @@ func ReassembleResource(oldResource *EventResource, newItem any) (*EventResource
 		Contents: itemData,
 	}, nil
 }
+
+func GetEventResourceFromRequest(r *http.Request) (*EventResource, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	var eventResource EventResource	
+	err = json.Unmarshal(body, &eventResource)
+	if err != nil {
+		return nil, err
+	}
+
+	return &eventResource, nil
+}
+
+	
 
 // func NewMessage[T Resource | Subscription](mType MessageType, contents *T) (*EventResource, error) {
 // 	assert.That(contents != nil, "Resource is nil during message creation", nil)

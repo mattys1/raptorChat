@@ -28,7 +28,7 @@ func GetMessagesOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Internal Server Error, couldn't retrieve messages of id: %d", roomid), http.StatusInternalServerError)
 	}
 
-	err = SendResource[[]db.Message](&messages, []db.Message{}, w)
+	err = SendResource[[]db.Message](messages, w)
 	if err != nil {
 		slog.Error("Error sending messages of room", "roomid", roomid, "error", err)
 	}

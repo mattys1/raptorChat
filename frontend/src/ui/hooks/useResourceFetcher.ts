@@ -27,6 +27,10 @@ export const useResourceFetcher = <T>(
 			try {
 				const data = await response.json()
 				console.log("Response JSON:", data)
+
+				if(data === null) {
+					return ok(initial)
+				}
 				return ok(data)
 			} catch (error) {
 				console.error("Error parsing JSON:", error)

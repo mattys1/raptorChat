@@ -26,4 +26,3 @@ sql:
               type: "uint64"
               pointer: true
 
-# TODO: https://www.reddit.com/r/golang/comments/wnnwi0/help_cleaning_up_json_response_of_sqlnullstring/

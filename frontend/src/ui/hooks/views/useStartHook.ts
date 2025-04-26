@@ -38,9 +38,8 @@ export const useMainHook = () => {
 	// 	users,//: users.flatMap(usersActualArray => usersActualArray),
 	// 	setUsers,
 	// }
-	const test = useEventListener<string>("test", "test", (setState, incoming) => { setState(incoming) });
 	const [isConnected, setIsConnected] = useState(false);
 	const [sub, setSub] = useState<Subscription | null>(null);
 
-	return { test, isConnected };
+	return { isConnected };
 };

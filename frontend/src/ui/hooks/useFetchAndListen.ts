@@ -7,7 +7,9 @@ export const useFetchAndListen = <T, U>(
 	endpoint: string,
 	channel: string,
 	event: string,
-	callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: U) => void 
+	callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: U) => void,
+	shouldFetch: boolean = true,
+	shouldListen: boolean = true
 ): [T, React.Dispatch<React.SetStateAction<T>>] => {
 	const [state, setState] = useState<T>(initial)
 	const [fetched, setFetched] = useState(false)
@@ -15,9 +17,10 @@ export const useFetchAndListen = <T, U>(
 	const [eventData, setEventData] =  useEventListener<U>(channel, event)	
 
 	useEffect(() => {
+		if (!shouldFetch) return
 		setState(fetchedData)
 		setFetched(true)
-	}, [fetchedData])
+	}, [fetchedData, shouldFetch])
 
 	// useEffect(() => {
 	// 	if(!fetched) return
@@ -25,12 +28,11 @@ export const useFetchAndListen = <T, U>(
 	// }, [fetched])
 
 	useEffect(() => {
-		// Only process events after initial fetch completes
 		if (!fetched && eventData) return
+		if (!shouldListen) return
 
-		// Call the callback with setState and the new event data
 		callback(setState, eventData!)
-	}, [eventData, fetched, callback, channel, event])
+	}, [eventData, fetched, callback, channel, event, shouldListen])
 
 	return [state, setState]
 }

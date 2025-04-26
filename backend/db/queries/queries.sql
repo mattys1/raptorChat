@@ -31,5 +31,13 @@ WHERE ur.room_id = ?;
 SELECT * FROM messages WHERE id = ?;
 
 -- name: CreateMessage :execresult
-INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
+INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?);
 
+-- name: GetInviteById :one
+SELECT * FROM invites WHERE id = ?;
+
+-- name: CreateInvite :execresult
+INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?);
+
+-- name: GetInvitesToUser :many
+SELECT * FROM invites i WHERE i.receiver_id = ?;

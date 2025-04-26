@@ -5,8 +5,104 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
 )
+
+type InvitesState string
+
+const (
+	InvitesStatePending  InvitesState = "pending"
+	InvitesStateAccepted InvitesState = "accepted"
+	InvitesStateDeclined InvitesState = "declined"
+)
+
+func (e *InvitesState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InvitesState(s)
+	case string:
+		*e = InvitesState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InvitesState: %T", src)
+	}
+	return nil
+}
+
+type NullInvitesState struct {
+	InvitesState InvitesState `json:"invites_state"`
+	Valid        bool         `json:"valid"` // Valid is true if InvitesState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInvitesState) Scan(value interface{}) error {
+	if value == nil {
+		ns.InvitesState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InvitesState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInvitesState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InvitesState), nil
+}
+
+type InvitesType string
+
+const (
+	InvitesTypeDirect InvitesType = "direct"
+	InvitesTypeGroup  InvitesType = "group"
+)
+
+func (e *InvitesType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InvitesType(s)
+	case string:
+		*e = InvitesType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InvitesType: %T", src)
+	}
+	return nil
+}
+
+type NullInvitesType struct {
+	InvitesType InvitesType `json:"invites_type"`
+	Valid       bool        `json:"valid"` // Valid is true if InvitesType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInvitesType) Scan(value interface{}) error {
+	if value == nil {
+		ns.InvitesType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InvitesType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInvitesType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InvitesType), nil
+}
+
+type Invite struct {
+	ID         uint64       `json:"id"`
+	Type       InvitesType  `json:"type"`
+	State      InvitesState `json:"state"`
+	RoomID     *uint64      `json:"room_id"`
+	IssuerID   uint64       `json:"issuer_id"`
+	ReceiverID uint64       `json:"receiver_id"`
+}
 
 type Message struct {
 	ID        uint64    `json:"id"`

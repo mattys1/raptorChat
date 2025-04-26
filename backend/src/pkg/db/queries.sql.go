@@ -10,6 +10,28 @@ import (
 	"database/sql"
 )
 
+const createInvite = `-- name: CreateInvite :execresult
+INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?)
+`
+
+type CreateInviteParams struct {
+	IssuerID   uint64       `json:"issuer_id"`
+	ReceiverID uint64       `json:"receiver_id"`
+	RoomID     *uint64      `json:"room_id"`
+	Type       InvitesType  `json:"type"`
+	State      InvitesState `json:"state"`
+}
+
+func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createInvite,
+		arg.IssuerID,
+		arg.ReceiverID,
+		arg.RoomID,
+		arg.Type,
+		arg.State,
+	)
+}
+
 const createMessage = `-- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
 `
@@ -86,6 +108,58 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getInviteById = `-- name: GetInviteById :one
+SELECT id, type, state, room_id, issuer_id, receiver_id FROM invites WHERE id = ?
+`
+
+func (q *Queries) GetInviteById(ctx context.Context, id uint64) (Invite, error) {
+	row := q.db.QueryRowContext(ctx, getInviteById, id)
+	var i Invite
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.State,
+		&i.RoomID,
+		&i.IssuerID,
+		&i.ReceiverID,
+	)
+	return i, err
+}
+
+const getInvitesToUser = `-- name: GetInvitesToUser :many
+SELECT id, type, state, room_id, issuer_id, receiver_id FROM invites i WHERE i.receiver_id = ?
+`
+
+func (q *Queries) GetInvitesToUser(ctx context.Context, receiverID uint64) ([]Invite, error) {
+	rows, err := q.db.QueryContext(ctx, getInvitesToUser, receiverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Invite
+	for rows.Next() {
+		var i Invite
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.State,
+			&i.RoomID,
+			&i.IssuerID,
+			&i.ReceiverID,
 		); err != nil {
 			return nil, err
 		}

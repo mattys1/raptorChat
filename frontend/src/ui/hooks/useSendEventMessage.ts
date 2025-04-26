@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Message } from "../../structs/Message";
+import { EventResource } from "../../structs/Message";
 import { SERVER_URL } from "../../api/routes";
 
 const ResponseStates = {
@@ -12,11 +12,11 @@ type ResponseStates = typeof ResponseStates[keyof typeof ResponseStates];
 
 export const useSendEventMessage = <T>(
 	endpoint: string,
-): [ResponseStates, string | null, (message: Message<T>) => Promise<Message<T> | null>]=> {
+): [ResponseStates, string | null, (message: EventResource<T>) => Promise<EventResource<T> | null>]=> {
 	const [state, setState] = useState<ResponseStates>(ResponseStates.PENDING);
 	const [error, setError] = useState<string | null>(null);
 
-	const sendMessage = useCallback(async (message: Message<T>,) => {
+	const sendMessage = useCallback(async (message: EventResource<T>,) => {
 		setState(ResponseStates.PENDING);
 		try {
 			const res = await fetch(SERVER_URL + endpoint, {
@@ -32,7 +32,7 @@ export const useSendEventMessage = <T>(
 				throw new Error(`Error sending message: ${res.statusText}`);
 			}
 
-			const data = await res.json() as Message<T>;
+			const data = await res.json() as EventResource<T>;
 			setState(ResponseStates.SUCCESS);
 			return data;
 		} catch (err) {
