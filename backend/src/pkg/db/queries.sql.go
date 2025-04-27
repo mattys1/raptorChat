@@ -60,6 +60,20 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (s
 	return q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Contents)
 }
 
+const createRoom = `-- name: CreateRoom :execresult
+INSERT INTO rooms (name, owner_id, type) VALUES (?, ?, ?)
+`
+
+type CreateRoomParams struct {
+	Name    *string   `json:"name"`
+	OwnerID *uint64   `json:"owner_id"`
+	Type    RoomsType `json:"type"`
+}
+
+func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createRoom, arg.Name, arg.OwnerID, arg.Type)
+}
+
 const createUser = `-- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW())
@@ -77,7 +91,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 }
 
 const getAllRooms = `-- name: GetAllRooms :many
-SELECT id, name FROM rooms
+SELECT id, name, owner_id, type FROM rooms
 `
 
 func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
@@ -89,7 +103,12 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 	var items []Room
 	for rows.Next() {
 		var i Room
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.Type,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -239,18 +258,23 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 }
 
 const getRoomById = `-- name: GetRoomById :one
-SELECT id, name FROM rooms WHERE id = ?
+SELECT id, name, owner_id, type FROM rooms WHERE id = ?
 `
 
 func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
 	row := q.db.QueryRowContext(ctx, getRoomById, id)
 	var i Room
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.OwnerID,
+		&i.Type,
+	)
 	return i, err
 }
 
 const getRoomsByUser = `-- name: GetRoomsByUser :many
-SELECT r.id, r.name FROM rooms r
+SELECT r.id, r.name, r.owner_id, r.type FROM rooms r
 JOIN users_rooms ur ON ur.room_id = r.id
 WHERE ur.user_id = ?
 `
@@ -264,7 +288,12 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 	var items []Room
 	for rows.Next() {
 		var i Room
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.Type,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

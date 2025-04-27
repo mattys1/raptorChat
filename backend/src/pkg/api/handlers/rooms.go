@@ -123,3 +123,39 @@ func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request, ) {
 	}
 
 }
+
+func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	var room db.Room
+	err = json.Unmarshal(body, &room)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body into db.Room", http.StatusBadRequest)
+		return
+	}
+
+	roomID, err := dao.CreateRoom(r.Context(), db.CreateRoomParams{
+		Name: room.Name,
+		OwnerID: room.OwnerID,
+		Type: room.Type,
+	})
+
+	if err != nil {
+		slog.Error("Error creating room", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	err = SendResource(roomID, w)
+	if err != nil {
+		slog.Error("Error sending room ID", "error", err)
+	}
+}

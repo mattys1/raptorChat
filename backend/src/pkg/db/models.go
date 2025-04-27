@@ -95,6 +95,48 @@ func (ns NullInvitesType) Value() (driver.Value, error) {
 	return string(ns.InvitesType), nil
 }
 
+type RoomsType string
+
+const (
+	RoomsTypeDirect RoomsType = "direct"
+	RoomsTypeGroup  RoomsType = "group"
+)
+
+func (e *RoomsType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RoomsType(s)
+	case string:
+		*e = RoomsType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RoomsType: %T", src)
+	}
+	return nil
+}
+
+type NullRoomsType struct {
+	RoomsType RoomsType `json:"rooms_type"`
+	Valid     bool      `json:"valid"` // Valid is true if RoomsType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRoomsType) Scan(value interface{}) error {
+	if value == nil {
+		ns.RoomsType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RoomsType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRoomsType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RoomsType), nil
+}
+
 type Invite struct {
 	ID         uint64       `json:"id"`
 	Type       InvitesType  `json:"type"`
@@ -113,8 +155,10 @@ type Message struct {
 }
 
 type Room struct {
-	ID   uint64  `json:"id"`
-	Name *string `json:"name"`
+	ID      uint64    `json:"id"`
+	Name    *string   `json:"name"`
+	OwnerID *uint64   `json:"owner_id"`
+	Type    RoomsType `json:"type"`
 }
 
 type User struct {
