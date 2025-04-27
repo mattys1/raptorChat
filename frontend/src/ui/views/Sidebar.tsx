@@ -43,6 +43,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 			>
 				<p>Settings</p>
 			</div>
+
+			<div
+				className="styles-settings"
+				onClick={() => navigate(`${ROUTES.CHATROOM}/create`)}
+				style={{ cursor: "pointer" }}
+			>
+				<p>Create room</p>
+			</div>
 		</>
 	);
 };

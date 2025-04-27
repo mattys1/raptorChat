@@ -134,27 +134,69 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var room db.Room
-	err = json.Unmarshal(body, &room)
+	var eventResource messaging.EventResource	
+	err = json.Unmarshal(body, &eventResource)
 	if err != nil {
-		http.Error(w, "Error unmarshalling request body into db.Room", http.StatusBadRequest)
+		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+	}
+
+	room, err := messaging.GetEventResourceContents[db.Room](&eventResource)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 		return
 	}
 
-	roomID, err := dao.CreateRoom(r.Context(), db.CreateRoomParams{
+	slog.Info("Creating room", "room", room)
+	roomResult, err := dao.CreateRoom(r.Context(), db.CreateRoomParams{
 		Name: room.Name,
 		OwnerID: room.OwnerID,
 		Type: room.Type,
 	})
-
 	if err != nil {
 		slog.Error("Error creating room", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
+	roomID, err := roomResult.LastInsertId()
+	assert.That(err == nil, "Error getting last insert ID from just inserted room", err)
+	newResource, err := messaging.ReassembleResource(&eventResource, db.Room{
+		ID: uint64(roomID),
+		Name: room.Name,
+		OwnerID: room.OwnerID,
+		Type: room.Type,
+	})
+
+	err = dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
+		UserID: *room.OwnerID,
+		RoomID: uint64(roomID),
+	})
+	if err != nil {
+		slog.Error("Error adding user to room", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// FIXME: hack
+	messaging.GetCentrifugoService().Publish(
+		r.Context(),
+		newResource.Channel,
+		&messaging.EventResource{
+			Channel: newResource.Channel,
+			Method: newResource.Method,
+			EventName: "joined_room",
+			Contents: newResource.Contents,
+		},
+	)
+
+	err = messaging.GetCentrifugoService().Publish(
+		r.Context(),
+		newResource.Channel,
+		newResource,
+	)
+
 	w.WriteHeader(http.StatusCreated)
-	err = SendResource(roomID, w)
+	err = SendResource(newResource, w)
 	if err != nil {
 		slog.Error("Error sending room ID", "error", err)
 	}
