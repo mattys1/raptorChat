@@ -9,6 +9,8 @@ import RegistrationView from "./views/RegistrationView";
 import SettingsMain from "./views/SettingsMain";
 import MainView from "./views/MainView";
 import ChatRoomView from "./views/ChatRoomView"
+import { AdminPanelView } from './views/AdminPanelView';
+import { AdminRoute } from './components/AdminRoute';
 
 import { ROUTES } from "./routes";
 
@@ -26,6 +28,7 @@ const App: React.FC = () => {
 				<Route path={ROUTES.MAIN} element={<MainView />} />
 				<Route path={ROUTES.SETTINGS} element={<SettingsMain />} />
 				<Route path={`${ROUTES.CHATROOM}/:chatId`} element={<ChatRoomView />} />
+				<Route path={ROUTES.ADMIN} element={<AdminRoute><AdminPanelView/></AdminRoute>} />
 			</Route>
 		</Routes>
 	);

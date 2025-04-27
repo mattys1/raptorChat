@@ -16,6 +16,21 @@ type Message struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Permission struct {
+	ID   uint64 `json:"id"`
+	Name string `json:"name"`
+}
+
+type Role struct {
+	ID   uint64 `json:"id"`
+	Name string `json:"name"`
+}
+
+type RolesPermission struct {
+	RoleID       uint64 `json:"role_id"`
+	PermissionID uint64 `json:"permission_id"`
+}
+
 type Room struct {
 	ID   uint64  `json:"id"`
 	Name *string `json:"name"`
@@ -27,6 +42,11 @@ type User struct {
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 	Password  string    `json:"password"`
+}
+
+type UsersRole struct {
+	UserID uint64 `json:"user_id"`
+	RoleID uint64 `json:"role_id"`
 }
 
 type UsersRoom struct {

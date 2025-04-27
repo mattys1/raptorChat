@@ -17,6 +17,7 @@
 	"dependencies": {
 		"@reactivex/rxjs": "^6.6.7",
 		"centrifuge": "^5.3.4",
+		"jwt-decode": "^4.0.0",
 		"neverthrow": "^8.2.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",

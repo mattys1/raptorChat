@@ -1,16 +1,25 @@
 import { useNavigate } from "react-router-dom";
 
 import { useSettingsHook } from "../hooks/useSettingsHook";
+import { useAuth } from '../contexts/AuthContext';
 import { ROUTES } from "../routes";
 
 const SettingsView = () => {
 	const navigate = useNavigate()
 	const { handleChangeUsername, handleChangePassword } = useSettingsHook(navigate);
+	const { permissions } = useAuth();
 
 	return (
 		<div>
 			<h1>Settings</h1>
 			<ul style={{ listStyle: "none", padding: 0 }}>
+				{permissions.includes('view_admin_panel') && (
+          			<li>
+            			<button onClick={() => navigate(ROUTES.ADMIN)}>
+              				Admin Panel
+            				</button>
+          			</li>
+        		)}
 				<li>
 					<button onClick={handleChangeUsername}>Change Username</button>
 				</li>
