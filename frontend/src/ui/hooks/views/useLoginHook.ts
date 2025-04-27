@@ -28,13 +28,28 @@ export function useLoginHook(navigate: NavigateFunction) {
 				const data = await response.json();
 				console.log("Login successful:", data);
 				localStorage.setItem("token", data.token);
-				setLoading(false)	
 
-				navigate(ROUTES.MAIN)
+				const idResponse = await fetch(SERVER_URL + "/api/user/me", {
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": `Bearer ${data.token}`
+					}
+				})
 
-			} else {
-				console.log("Login failed:", response.status);
-				alert("Login failed. Server responded with an error.");
+				if(idResponse.ok) {
+					const idData = await idResponse.json();
+					console.log("User ID:", idData);
+					localStorage.setItem('uID', idData);
+
+					setLoading(false)	
+
+					navigate(ROUTES.MAIN)
+
+				} else {
+					console.log("Login failed:", response.status);
+					alert("Login failed. Server responded with an error.");
+				}
 			}
 		} catch (error) {
 			console.error("Error during login:", error);
