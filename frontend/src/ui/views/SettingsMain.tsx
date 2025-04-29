@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useSettingsHook } from "../hooks/views/useSettingsHook";
-import { useSettingsHook } from "../hooks/useSettingsHook";
 import { useAuth } from "../contexts/AuthContext";
 import { ROUTES } from "../routes";
 

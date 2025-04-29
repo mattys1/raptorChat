@@ -2,9 +2,7 @@ import { useState } from "react";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
-import { ROUTES } from "../routes";
-import { SERVER_URL } from "../../api/routes";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function useLoginHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
@@ -46,7 +44,8 @@ export function useLoginHook(navigate: NavigateFunction) {
 					console.log("User ID:", idData);
 					localStorage.setItem('uID', idData);
 
-					setLoading(false)	
+					setLoading(false)
+					login(data.token);
 
 					navigate(ROUTES.MAIN)
 
@@ -57,17 +56,11 @@ export function useLoginHook(navigate: NavigateFunction) {
 			}
 		} catch (error) {
 			console.error("Error during login:", error);
-		}
-  
-		const data = await response.json();
-		login(data.token);
-		navigate(ROUTES.MAIN);
-	  } catch (err) {
-		console.error(err);
-		alert("Login error");
-	  } finally {
-		setLoading(false);
-	  }
+			console.error(error);
+			alert("Login error");
+		} finally {
+			setLoading(false);
+		  }
 	};
   
 	return { email, password, loading, setEmail, setPassword, handleSubmit };

@@ -24,26 +24,6 @@ func (q *Queries) AddUserToRoom(ctx context.Context, arg AddUserToRoomParams) er
 	return err
 }
 
-const createInvite = `-- name: CreateInvite :execresult
-INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?)
-`
-
-type CreateInviteParams struct {
-	IssuerID   uint64       `json:"issuer_id"`
-	ReceiverID uint64       `json:"receiver_id"`
-	RoomID     *uint64      `json:"room_id"`
-	Type       InvitesType  `json:"type"`
-	State      InvitesState `json:"state"`
-}
-
-func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createInvite,
-		arg.IssuerID,
-		arg.ReceiverID,
-		arg.RoomID,
-		arg.Type,
-		arg.State,
-	)
 const assignPermissionToRole = `-- name: AssignPermissionToRole :exec
 INSERT INTO roles_permissions (role_id, permission_id) VALUES (?, ?)
 `
@@ -70,6 +50,28 @@ type AssignRoleToUserParams struct {
 func (q *Queries) AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error {
 	_, err := q.db.ExecContext(ctx, assignRoleToUser, arg.UserID, arg.RoleID)
 	return err
+}
+
+const createInvite = `-- name: CreateInvite :execresult
+INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?)
+`
+
+type CreateInviteParams struct {
+	IssuerID   uint64       `json:"issuer_id"`
+	ReceiverID uint64       `json:"receiver_id"`
+	RoomID     *uint64      `json:"room_id"`
+	Type       InvitesType  `json:"type"`
+	State      InvitesState `json:"state"`
+}
+
+func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createInvite,
+		arg.IssuerID,
+		arg.ReceiverID,
+		arg.RoomID,
+		arg.Type,
+		arg.State,
+	)
 }
 
 const createMessage = `-- name: CreateMessage :execresult
@@ -292,20 +294,6 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 	return items, nil
 }
 
-const getRoomById = `-- name: GetRoomById :one
-SELECT id, name, owner_id, type FROM rooms WHERE id = ?
-`
-
-func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
-	row := q.db.QueryRowContext(ctx, getRoomById, id)
-	var i Room
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.OwnerID,
-		&i.Type,
-	)
-	return i, err
 const getPermissions = `-- name: GetPermissions :many
 SELECT id, name FROM permissions
 `
@@ -451,6 +439,22 @@ func (q *Queries) GetRolesByUser(ctx context.Context, userID uint64) ([]Role, er
 	return items, nil
 }
 
+const getRoomById = `-- name: GetRoomById :one
+SELECT id, name, owner_id, type FROM rooms WHERE id = ?
+`
+
+func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
+	row := q.db.QueryRowContext(ctx, getRoomById, id)
+	var i Room
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.OwnerID,
+		&i.Type,
+	)
+	return i, err
+}
+
 const getRoomsByUser = `-- name: GetRoomsByUser :many
 SELECT r.id, r.name, r.owner_id, r.type FROM rooms r
 JOIN users_rooms ur ON ur.room_id = r.id
@@ -554,17 +558,6 @@ func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, er
 	return items, nil
 }
 
-const updateInvite = `-- name: UpdateInvite :exec
-UPDATE invites SET state = ? WHERE id = ?
-`
-
-type UpdateInviteParams struct {
-	State InvitesState `json:"state"`
-	ID    uint64       `json:"id"`
-}
-
-func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) error {
-	_, err := q.db.ExecContext(ctx, updateInvite, arg.State, arg.ID)
 const removePermissionFromRole = `-- name: RemovePermissionFromRole :exec
 DELETE FROM roles_permissions WHERE role_id = ? AND permission_id = ?
 `
@@ -590,5 +583,19 @@ type RemoveRoleFromUserParams struct {
 
 func (q *Queries) RemoveRoleFromUser(ctx context.Context, arg RemoveRoleFromUserParams) error {
 	_, err := q.db.ExecContext(ctx, removeRoleFromUser, arg.UserID, arg.RoleID)
+	return err
+}
+
+const updateInvite = `-- name: UpdateInvite :exec
+UPDATE invites SET state = ? WHERE id = ?
+`
+
+type UpdateInviteParams struct {
+	State InvitesState `json:"state"`
+	ID    uint64       `json:"id"`
+}
+
+func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) error {
+	_, err := q.db.ExecContext(ctx, updateInvite, arg.State, arg.ID)
 	return err
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/go-chi/chi/v5"
 
+	"github.com/mattys1/raptorChat/src/pkg/admin"
 	"github.com/mattys1/raptorChat/src/pkg/api/handlers"
 	"github.com/mattys1/raptorChat/src/pkg/auth"
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
@@ -39,8 +40,14 @@ func Router() *chi.Mux {
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
 			})
 		})
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(middleware.RequirePermission("view_admin_panel"))
+
+			r.Get("/users", admin.ListUsers)
+			r.Delete("/users/{userID}", admin.DeleteUser)
+			// TODO: add role/permission assignment endpoints
+		})
 	})
 
-	
 	return r
 }

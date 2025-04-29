@@ -1,16 +1,16 @@
 -- +goose Up
 
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
   id   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(50)     NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE permissions (
+CREATE TABLE IF NOT EXISTS permissions (
   id   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100)    NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE roles_permissions (
+CREATE TABLE IF NOT EXISTS roles_permissions (
   role_id       BIGINT UNSIGNED NOT NULL,
   permission_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (role_id, permission_id),
@@ -18,7 +18,7 @@ CREATE TABLE roles_permissions (
   FOREIGN KEY (permission_id) REFERENCES permissions(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE users_roles (
+CREATE TABLE IF NOT EXISTS users_roles (
   user_id BIGINT UNSIGNED NOT NULL,
   role_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (user_id, role_id),
