@@ -6,7 +6,7 @@
 	},
 	"client": {
 		"token": {
-			"hmac_secret_key": "your_secret_key"
+			"hmac_secret_key": "secret_key"
 		},
 		"allowed_origins": [
 			"http://localhost:3000"
