@@ -44,6 +44,32 @@ func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (sql
 		arg.Type,
 		arg.State,
 	)
+const assignPermissionToRole = `-- name: AssignPermissionToRole :exec
+INSERT INTO roles_permissions (role_id, permission_id) VALUES (?, ?)
+`
+
+type AssignPermissionToRoleParams struct {
+	RoleID       uint64 `json:"role_id"`
+	PermissionID uint64 `json:"permission_id"`
+}
+
+func (q *Queries) AssignPermissionToRole(ctx context.Context, arg AssignPermissionToRoleParams) error {
+	_, err := q.db.ExecContext(ctx, assignPermissionToRole, arg.RoleID, arg.PermissionID)
+	return err
+}
+
+const assignRoleToUser = `-- name: AssignRoleToUser :exec
+INSERT INTO users_roles (user_id, role_id) VALUES (?, ?)
+`
+
+type AssignRoleToUserParams struct {
+	UserID uint64 `json:"user_id"`
+	RoleID uint64 `json:"role_id"`
+}
+
+func (q *Queries) AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error {
+	_, err := q.db.ExecContext(ctx, assignRoleToUser, arg.UserID, arg.RoleID)
+	return err
 }
 
 const createMessage = `-- name: CreateMessage :execresult
@@ -87,6 +113,15 @@ type CreateUserParams struct {
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	_, err := q.db.ExecContext(ctx, createUser, arg.Username, arg.Email, arg.Password)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users WHERE id = ?
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id uint64) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err
 }
 
@@ -271,6 +306,149 @@ func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
 		&i.Type,
 	)
 	return i, err
+const getPermissions = `-- name: GetPermissions :many
+SELECT id, name FROM permissions
+`
+
+func (q *Queries) GetPermissions(ctx context.Context) ([]Permission, error) {
+	rows, err := q.db.QueryContext(ctx, getPermissions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Permission
+	for rows.Next() {
+		var i Permission
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPermissionsByRole = `-- name: GetPermissionsByRole :many
+SELECT p.id, p.name
+FROM permissions p
+JOIN roles_permissions rp ON p.id = rp.permission_id
+WHERE rp.role_id = ?
+`
+
+func (q *Queries) GetPermissionsByRole(ctx context.Context, roleID uint64) ([]Permission, error) {
+	rows, err := q.db.QueryContext(ctx, getPermissionsByRole, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Permission
+	for rows.Next() {
+		var i Permission
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPermissionsByUser = `-- name: GetPermissionsByUser :many
+SELECT DISTINCT p.id, p.name
+FROM permissions p
+JOIN roles_permissions rp ON p.id = rp.permission_id
+JOIN users_roles ur ON ur.role_id = rp.role_id
+WHERE ur.user_id = ?
+`
+
+func (q *Queries) GetPermissionsByUser(ctx context.Context, userID uint64) ([]Permission, error) {
+	rows, err := q.db.QueryContext(ctx, getPermissionsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Permission
+	for rows.Next() {
+		var i Permission
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoles = `-- name: GetRoles :many
+SELECT id, name FROM roles
+`
+
+func (q *Queries) GetRoles(ctx context.Context) ([]Role, error) {
+	rows, err := q.db.QueryContext(ctx, getRoles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Role
+	for rows.Next() {
+		var i Role
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRolesByUser = `-- name: GetRolesByUser :many
+SELECT r.id, r.name
+FROM roles r
+JOIN users_roles ur ON r.id = ur.role_id
+WHERE ur.user_id = ?
+`
+
+func (q *Queries) GetRolesByUser(ctx context.Context, userID uint64) ([]Role, error) {
+	rows, err := q.db.QueryContext(ctx, getRolesByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Role
+	for rows.Next() {
+		var i Role
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getRoomsByUser = `-- name: GetRoomsByUser :many
@@ -387,5 +565,30 @@ type UpdateInviteParams struct {
 
 func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) error {
 	_, err := q.db.ExecContext(ctx, updateInvite, arg.State, arg.ID)
+const removePermissionFromRole = `-- name: RemovePermissionFromRole :exec
+DELETE FROM roles_permissions WHERE role_id = ? AND permission_id = ?
+`
+
+type RemovePermissionFromRoleParams struct {
+	RoleID       uint64 `json:"role_id"`
+	PermissionID uint64 `json:"permission_id"`
+}
+
+func (q *Queries) RemovePermissionFromRole(ctx context.Context, arg RemovePermissionFromRoleParams) error {
+	_, err := q.db.ExecContext(ctx, removePermissionFromRole, arg.RoleID, arg.PermissionID)
+	return err
+}
+
+const removeRoleFromUser = `-- name: RemoveRoleFromUser :exec
+DELETE FROM users_roles WHERE user_id = ? AND role_id = ?
+`
+
+type RemoveRoleFromUserParams struct {
+	UserID uint64 `json:"user_id"`
+	RoleID uint64 `json:"role_id"`
+}
+
+func (q *Queries) RemoveRoleFromUser(ctx context.Context, arg RemoveRoleFromUserParams) error {
+	_, err := q.db.ExecContext(ctx, removeRoleFromUser, arg.UserID, arg.RoleID)
 	return err
 }

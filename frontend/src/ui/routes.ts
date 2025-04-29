@@ -6,4 +6,6 @@ export enum ROUTES {
 	MAIN = "/app/main",
 	SETTINGS = "/app/settings",
 	CHATROOM = "/app/chatroom",
+	roomROOM = "roomROOM",
+	ADMIN = '/app/admin',
 }

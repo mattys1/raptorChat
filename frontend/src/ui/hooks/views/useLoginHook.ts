@@ -2,12 +2,16 @@ import { useState } from "react";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
+import { ROUTES } from "../routes";
+import { SERVER_URL } from "../../api/routes";
+import { useAuth } from "../contexts/AuthContext";
 
 export function useLoginHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
-
+	const { login } = useAuth();
+  
 	const handleSubmit = async (e: React.FormEvent) => {
 		try {
 			e.preventDefault();
@@ -54,14 +58,17 @@ export function useLoginHook(navigate: NavigateFunction) {
 		} catch (error) {
 			console.error("Error during login:", error);
 		}
-	}
-
-	return {
-		email,
-		password,
-		loading,
-		setEmail,
-		setPassword,
-		handleSubmit
-	}
-}
+  
+		const data = await response.json();
+		login(data.token);
+		navigate(ROUTES.MAIN);
+	  } catch (err) {
+		console.error(err);
+		alert("Login error");
+	  } finally {
+		setLoading(false);
+	  }
+	};
+  
+	return { email, password, loading, setEmail, setPassword, handleSubmit };
+  }
