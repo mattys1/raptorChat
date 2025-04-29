@@ -29,7 +29,7 @@ export function useLoginHook(navigate: NavigateFunction) {
 				// temporarily stroing the token in local storage
 				const data = await response.json();
 				console.log("Login successful:", data);
-				localStorage.setItem("token", data.token);
+				// localStorage.setItem("token", data.token);
 
 				const idResponse = await fetch(SERVER_URL + "/api/user/me", {
 					method: "GET",
