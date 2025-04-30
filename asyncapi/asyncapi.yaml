@@ -1,0 +1,111 @@
+asyncapi: 3.0.0
+info:
+  title: RaptorChat Real-Time API
+  version: 1.0.0
+servers:
+  development:
+    host: 'localhost:8080'
+    protocol: ws
+channels:
+  room.{id}:
+    address: 'room:{id}'
+    messages:
+      MessageSent:
+        $ref: '#/components/messages/MessageSentEvent'
+      UserJoined:
+        $ref: '#/components/messages/UserJoinedEvent'
+    description: Events for a single chat room
+    parameters:
+      id:
+        description: Identifier of the chatroom
+operations:
+  'room/{id}.publish':
+    action: receive
+    channel:
+      $ref: '#/channels/room.{id}'
+    summary: Publish room‐level events
+    messages:
+      - $ref: '#/channels/room.{id}/messages/MessageSent'
+      - $ref: '#/channels/room.{id}/messages/UserJoined'
+components:
+  schemas:
+    EventResourceBase:
+      type: object
+      properties:
+        channel:
+          type: string
+          description: event channel
+        method:
+          enum: ["POST", "PUT", "GET", "DELETE"]
+          description: action method, follow http conventions
+        event_name:
+          type: string
+          description: name of the event
+        contents:
+          description: 'event payload, varies by event_name'
+      required:
+        - channel
+        - method
+        - event_name
+        - contents
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+        sender_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - content
+        - sender_id
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        display_name:
+          type: string
+      required:
+        - id
+        - username
+  messages:
+    MessageSentEvent:
+      name: MessageSentEvent
+      title: Message Sent Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - message_sent
+              contents:
+                $ref: '#/components/schemas/Message'
+            required:
+              - event_name
+              - contents
+    UserJoinedEvent:
+      name: UserJoinedEvent
+      title: User Joined Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - user_joined
+              contents:
+                $ref: '#/components/schemas/User'
+            required:
+              - event_name
+              - contents
