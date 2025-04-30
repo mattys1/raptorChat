@@ -12,21 +12,36 @@ channels:
     messages:
       MessageSent:
         $ref: '#/components/messages/MessageSentEvent'
-      UserJoined:
-        $ref: '#/components/messages/UserJoinedEvent'
     description: Events for a single chat room
     parameters:
       id:
         description: Identifier of the chatroom
+
+  user.{id}.invites:
+    address: user:{id}:invites
+    parameters:
+      id:
+        description: Id of the user.
+    messages:
+      InviteReceived:
+        $ref: '#/components/messages/InviteReceivedEvent'
+    description: Events for the invites of a user
+        
 operations:
-  'room/{id}.publish':
+  'room.{id}.receive':
     action: receive
     channel:
       $ref: '#/channels/room.{id}'
     summary: Publish room‐level events
     messages:
       - $ref: '#/channels/room.{id}/messages/MessageSent'
-      - $ref: '#/channels/room.{id}/messages/UserJoined'
+  'user.{id}.invites.receive':
+    action: receive
+    channel:
+      $ref: '#/channels/user.{id}.invites'
+    summary: Publish user invite events
+    messages:
+      - $ref: '#/channels/user.{id}.invites/messages/InviteReceived'
 components:
   schemas:
     EventResourceBase:
@@ -76,6 +91,121 @@ components:
       required:
         - id
         - username
+
+    InvitesType:
+      type: string
+      enum:
+        - direct
+        - group
+
+    InvitesState:
+      type: string
+      enum:
+        - pending
+        - accepted
+        - declined
+
+    Invite:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/InvitesType'
+        state:
+          $ref: '#/components/schemas/InvitesState'
+        room_id:
+          type: integer
+          nullable: true
+        issuer_id:
+          type: integer
+        receiver_id:
+          type: integer
+      required:
+        - id
+        - type
+        - state
+        - issuer_id
+        - receiver_id
+
+    RoomsType:
+      type: string
+      enum:
+        - direct
+        - group
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        owner_id:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/RoomsType'
+      required:
+        - id
+        - type
+
+    Permission:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    RolesPermission:
+      type: object
+      properties:
+        role_id:
+          type: integer
+        permission_id:
+          type: integer
+      required:
+        - role_id
+        - permission_id
+
+    UsersRole:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        role_id:
+          type: integer
+      required:
+        - user_id
+        - role_id
+
+    UsersRoom:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        room_id:
+          type: integer
+      required:
+        - user_id
+        - room_id
+
   messages:
     MessageSentEvent:
       name: MessageSentEvent
@@ -93,9 +223,9 @@ components:
             required:
               - event_name
               - contents
-    UserJoinedEvent:
-      name: UserJoinedEvent
-      title: User Joined Event
+    InviteReceivedEvent:
+      name: InviteReceivedEvent
+      title: Invite Received Event
       payload:
         allOf:
           - $ref: '#/components/schemas/EventResourceBase'
@@ -103,9 +233,9 @@ components:
             properties:
               event_name:
                 enum:
-                  - user_joined
+                  - invite_received
               contents:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/Invite'
             required:
               - event_name
               - contents
