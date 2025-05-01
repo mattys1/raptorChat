@@ -1,84 +1,65 @@
 asyncapi: 3.0.0
 info:
-  title: RaptorChat Real-Time API
+  title: RaptorChat
   version: 1.0.0
 servers:
-  development:
-    host: 'localhost:8080'
-    protocol: ws
-channels:
-  room.{id}:
-    address: 'room:{id}'
-    messages:
-      MessageSent:
-        $ref: '#/components/messages/MessageSentEvent'
-    description: Events for a single chat room
-    parameters:
-      id:
-        description: Identifier of the chatroom
-
-  user.{id}.invites:
-    address: user:{id}:invites
-    parameters:
-      id:
-        description: Id of the user.
-    messages:
-      InviteReceived:
-        $ref: '#/components/messages/InviteReceivedEvent'
-    description: Events for the invites of a user
-        
-operations:
-  'room.{id}.receive':
-    action: receive
-    channel:
-      $ref: '#/channels/room.{id}'
-    summary: Publish room‐level events
-    messages:
-      - $ref: '#/channels/room.{id}/messages/MessageSent'
-  'user.{id}.invites.receive':
-    action: receive
-    channel:
-      $ref: '#/channels/user.{id}.invites'
-    summary: Publish user invite events
-    messages:
-      - $ref: '#/channels/user.{id}.invites/messages/InviteReceived'
+  server:
+    host: localhost:8080
+    protocol: wss
+    description: The main server
 components:
   schemas:
     EventResourceBase:
       type: object
       properties:
-        channel:
+        timestamp:
           type: string
-          description: event channel
-        method:
-          enum: ["POST", "PUT", "GET", "DELETE"]
-          description: action method, follow http conventions
-        event_name:
+        id:
           type: string
-          description: name of the event
-        contents:
-          description: 'event payload, varies by event_name'
       required:
-        - channel
-        - method
-        - event_name
-        - contents
+        - timestamp
+        - id
     Message:
       type: object
       properties:
         id:
           type: string
-        content:
-          type: string
         sender_id:
           type: string
-        timestamp:
+        room_id:
           type: string
-          format: date-time
+        contents:
+          type: string
+        created_at:
+          type: string
       required:
         - id
-        - content
         - sender_id
+        - room_id
+        - contents
+        - created_at
+    Invite:
+      type: object
+      properties:
+        id:
+          type: string
+        issuer_id:
+          type: string
+        receiver_id:
+          type: string
+        room_id:
+          type: string
+        accepted:
+          type: boolean
+        created_at:
+          type: string
+      required:
+        - id
+        - issuer_id
+        - receiver_id
+        - room_id
+        - accepted
+        - created_at
     User:
       type: object
       properties:
@@ -88,124 +69,87 @@ components:
           type: string
         display_name:
           type: string
+        created_at:
+          type: string
       required:
         - id
         - username
-
-    InvitesType:
-      type: string
-      enum:
-        - direct
-        - group
-
-    InvitesState:
-      type: string
-      enum:
-        - pending
-        - accepted
-        - declined
-
-    Invite:
-      type: object
-      properties:
-        id:
-          type: integer
-        type:
-          $ref: '#/components/schemas/InvitesType'
-        state:
-          $ref: '#/components/schemas/InvitesState'
-        room_id:
-          type: integer
-          nullable: true
-        issuer_id:
-          type: integer
-        receiver_id:
-          type: integer
-      required:
-        - id
-        - type
-        - state
-        - issuer_id
-        - receiver_id
-
-    RoomsType:
-      type: string
-      enum:
-        - direct
-        - group
-
+        - display_name
+        - created_at
     Room:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+        type:
+          type: string
+          enum:
+            - direct
+            - group
         name:
           type: string
-          nullable: true
-        owner_id:
-          type: integer
-          nullable: true
-        type:
-          $ref: '#/components/schemas/RoomsType'
+        creator_id:
+          type: string
+        created_at:
+          type: string
       required:
         - id
         - type
-
-    Permission:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-      required:
-        - id
-        - name
-
-    Role:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-      required:
-        - id
-        - name
-
-    RolesPermission:
-      type: object
-      properties:
-        role_id:
-          type: integer
-        permission_id:
-          type: integer
-      required:
-        - role_id
-        - permission_id
-
-    UsersRole:
-      type: object
-      properties:
-        user_id:
-          type: integer
-        role_id:
-          type: integer
-      required:
-        - user_id
-        - role_id
-
+        - creator_id
+        - created_at
     UsersRoom:
       type: object
       properties:
         user_id:
-          type: integer
+          type: string
         room_id:
-          type: integer
+          type: string
       required:
         - user_id
         - room_id
-
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    Permission:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    UsersRole:
+      type: object
+      properties:
+        user_id:
+          type: string
+        role_id:
+          type: string
+        room_id:
+          type: string
+      required:
+        - user_id
+        - role_id
+        - room_id
+    RolesPermission:
+      type: object
+      properties:
+        role_id:
+          type: string
+        permission_id:
+          type: string
+      required:
+        - role_id
+        - permission_id
   messages:
     MessageSentEvent:
       name: MessageSentEvent
@@ -233,9 +177,118 @@ components:
             properties:
               event_name:
                 enum:
-                  - invite_received
+                  - invite_sent
               contents:
                 $ref: '#/components/schemas/Invite'
             required:
               - event_name
               - contents
+    InviteAcceptedEvent:
+      name: InviteAcceptedEvent
+      title: Invite Accepted Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - invite_accepted
+              contents:
+                $ref: '#/components/schemas/Invite'
+            required:
+              - event_name
+              - contents
+    InviteDeclinedEvent:
+      name: InviteDeclinedEvent
+      title: Invite Declined Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - invite_declined
+              contents:
+                $ref: '#/components/schemas/Invite'
+            required:
+              - event_name
+              - contents
+    JoinedRoomEvent:
+      name: JoinedRoomEvent
+      title: Room Joined Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - joined_room
+              contents:
+                $ref: '#/components/schemas/Room'
+            required:
+              - event_name
+              - contents
+channels:
+  room.{id}:
+    address: 'room:{id}'
+    parameters:
+      id:
+        description: Identifier of the chatroom
+    messages:
+      MessageSent:
+        $ref: '#/components/messages/MessageSentEvent'
+    description: Events happening in a chatroom
+        
+  user.{id}.invites:
+    address: 'user:{id}:invites'
+    parameters:
+      id:
+        description: Id of the user
+    messages:
+      InviteReceived:
+        $ref: '#/components/messages/InviteReceivedEvent'
+      InviteAccepted:
+        $ref: '#/components/messages/InviteAcceptedEvent' 
+      InviteDeclined:
+        $ref: '#/components/messages/InviteDeclinedEvent'
+    description: Events for the invites of a user
+    
+  user.{id}.rooms:
+    address: 'user:{id}:rooms'
+    parameters:
+      id:
+        description: ID of the user
+    messages:
+      JoinedRoom:
+        $ref: '#/components/messages/JoinedRoomEvent'
+    description: Events for rooms the user is part of
+
+operations:
+  'room.{id}.receive':
+    action: receive
+    channel:
+      $ref: '#/channels/room.{id}'
+    summary: Publish room‐level events
+    messages:
+      - $ref: '#/channels/room.{id}/messages/MessageSent'
+  
+  'user.{id}.invites.receive':
+    action: receive
+    channel:
+      $ref: '#/channels/user.{id}.invites'
+    summary: Publish user invite events
+    messages:
+      - $ref: '#/channels/user.{id}.invites/messages/InviteReceived'
+      - $ref: '#/channels/user.{id}.invites/messages/InviteAccepted'
+      - $ref: '#/channels/user.{id}.invites/messages/InviteDeclined'
+  
+  'user.{id}.rooms.receive':
+    action: receive
+    channel:
+      $ref: '#/channels/user.{id}.rooms'
+    summary: Receive room subscription events
+    messages:
+      - $ref: '#/channels/user.{id}.rooms/messages/JoinedRoom'
