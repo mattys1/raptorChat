@@ -16,11 +16,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 		<>
 			<div className="friends-section">
 				<h2>Friends</h2>
-				<button onClick={ () => navigate(ROUTES.INVITE_FRIENDS)}></button>
+				<button onClick={ () => navigate(ROUTES.INVITE_FRIENDS)}>
+					Invite Friends
+				</button>
 				<ul>
-					<li>Friend name</li>
-					<li>Friend name</li>
-					<li>Friend name</li>
+					{
+						props.rooms?.map(room => {
+							if(room?.type === "direct") {
+								return (
+									<li onClick={() => navigate(`${ROUTES.CHATROOM}/${room?.id}`)} key={room?.id}>
+										{room?.name}
+									</li>
+								)
+							}
+						})
+					}
 				</ul>
 			</div>
 			<div className="groups-section">
@@ -28,11 +38,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 				<ul>
 					{
 						props.rooms?.map((room) => {
-							return (
-								<li onClick={() => navigate(`${ROUTES.CHATROOM}/${room?.id}`)} key={room?.id}>
-									{room?.name}
-								</li>
-							)
+							if(room?.type === "group") {
+								return (
+									<li onClick={() => navigate(`${ROUTES.CHATROOM}/${room?.id}`)} key={room?.id}>
+										{room?.name}
+									</li>
+								)
+							}
 						})
 					}
 				</ul>
