@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom"
 import { EventResource } from "../../structs/Message"
 import { Invite } from "../../structs/models/Models"
-import { useInviteToChatroomHook } from "../hooks/views/userInviteToChatroomHook"
+import { useInviteToChatroomHook } from "../hooks/views/useInviteToChatroomHook"
 
 const InviteToChatroomView = () => {
 	const roomId = Number(useParams().chatId)

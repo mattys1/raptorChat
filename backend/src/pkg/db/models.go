@@ -5,6 +5,7 @@
 package db
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -135,6 +136,14 @@ func (ns NullRoomsType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.RoomsType), nil
+}
+
+type Friendship struct {
+	ID        uint64       `json:"id"`
+	FirstID   uint64       `json:"first_id"`
+	SecondID  uint64       `json:"second_id"`
+	DmID      uint64       `json:"dm_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
 }
 
 type Invite struct {
