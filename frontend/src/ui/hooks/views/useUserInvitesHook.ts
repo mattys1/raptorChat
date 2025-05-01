@@ -10,8 +10,7 @@ type InviteUpdateCallback = (
 ) => void;
 
 export const useUserInvitesHook = () => {
-	const [uid] = useResourceFetcher<number>(0, "/api/user/me") // TODO: uid should be gotten in the beggining of the session
-
+	const uid = localStorage.getItem("uID")
 	const handleNewInvites = useCallback<InviteUpdateCallback>((setInvites, incoming) => {
 		setInvites((prev) => [...prev ?? [], incoming]);
 	}, [])

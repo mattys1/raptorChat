@@ -24,7 +24,7 @@ func CreateInviteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 		return
 	}
-	assert.That(invite.Type == db.InvitesTypeGroup, "Only group invites are implemented", nil)
+	// assert.That(invite.Type == db.InvitesTypeGroup, "Only group invites are implemented", nil)
 
 	dao := db.GetDao()
 	senderId, ok := middleware.RetrieveUserIDFromContext(r.Context())
@@ -85,7 +85,7 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 		return
 	}
-	assert.That(invite.Type == db.InvitesTypeGroup, "Only group invites are implemented", nil)
+	// assert.That(invite.Type == db.InvitesTypeGroup, "Only group invites are implemented", nil)
 
 	dao := db.GetDao()
 
@@ -113,39 +113,114 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if invite.State == db.InvitesStateAccepted {
-		err := dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
-			UserID: invite.ReceiverID,
-			RoomID: *invite.RoomID,
-		})
-		if err != nil {
-			http.Error(w, "Error adding user to room", http.StatusInternalServerError)
-			return
-		}
+		if invite.Type == db.InvitesTypeDirect {
+			dmName := fmt.Sprintf("DM: %d and %d", invite.IssuerID, invite.ReceiverID)
+			dmResult, err := dao.CreateRoom(r.Context(), db.CreateRoomParams{
+				Name: &dmName,
+				OwnerID: nil,
+				Type: db.RoomsTypeDirect,
+			})
+			if err != nil {
+				http.Error(w, "Error creating DM room", http.StatusInternalServerError)
+				return
+			}
 
-		room, err := dao.GetRoomById(r.Context(), *invite.RoomID)
-		if err != nil {
-			http.Error(w, "Error getting room by ID", http.StatusInternalServerError)
-			return
-		}
+			dmID, err := dmResult.LastInsertId()
+			assert.That(err == nil, "Error getting last insert ID from just inserted room", err)
 
-		roomData, err := json.Marshal(room)
-		if err != nil {
-			http.Error(w, "Error marshalling room data", http.StatusInternalServerError)
-			return
-		}
+			_, err = dao.CreateFriendship(r.Context(), db.CreateFriendshipParams{
+				FirstID: invite.IssuerID,
+				SecondID: invite.ReceiverID,
+				DmID: uint64(dmID),
+			})
+			if err != nil {
+				http.Error(w, "Error creating friendship", http.StatusInternalServerError)
+				return
+			}
 
-		err = messaging.GetCentrifugoService().Publish(
-			r.Context(),
-			fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
-			&messaging.EventResource{
-				Channel: fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
-				Method: "POST",
-				EventName: "joined_room",
-				Contents: roomData,
-			},
-		)
+			err = dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
+				UserID: invite.IssuerID,
+				RoomID: uint64(dmID),
+			})
+			err = dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
+				UserID: invite.ReceiverID,
+				RoomID: uint64(dmID),
+			})
+			if err != nil {
+				http.Error(w, "Error adding user to DM room", http.StatusInternalServerError)
+				return
+			}
+
+			dm, err := dao.GetRoomById(r.Context(), uint64(dmID))
+			if err != nil {
+				http.Error(w, "Error getting DM room by ID", http.StatusInternalServerError)
+				return
+			}
+
+			dmData, err := json.Marshal(dm)
+			if err != nil {
+				http.Error(w, "Error marshalling room data", http.StatusInternalServerError)
+				return
+			}
+
+			err = messaging.GetCentrifugoService().Publish(
+				r.Context(),
+				fmt.Sprintf("user:%d:rooms", invite.IssuerID),
+				&messaging.EventResource{
+					Channel: fmt.Sprintf("user:%d:rooms", invite.IssuerID),
+					Method: "POST",
+					EventName: "joined_room",
+					Contents: dmData,
+				},
+			)
+
+			err = messaging.GetCentrifugoService().Publish(
+				r.Context(),
+				fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
+				&messaging.EventResource{
+					Channel: fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
+					Method: "POST",
+					EventName: "joined_room",
+					Contents: dmData,
+				},
+			)
+		}
 	}
-	
+
+		if invite.Type == db.InvitesTypeGroup {
+			err := dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
+				UserID: invite.ReceiverID,
+				RoomID: *invite.RoomID,
+			})
+			if err != nil {
+				http.Error(w, "Error adding user to room", http.StatusInternalServerError)
+				return
+			}
+
+			room, err := dao.GetRoomById(r.Context(), *invite.RoomID)
+			if err != nil {
+				http.Error(w, "Error getting room by ID", http.StatusInternalServerError)
+				return
+			}
+
+			roomData, err := json.Marshal(room)
+			if err != nil {
+				http.Error(w, "Error marshalling room data", http.StatusInternalServerError)
+				return
+			}
+
+			err = messaging.GetCentrifugoService().Publish(
+				r.Context(),
+				fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
+				&messaging.EventResource{
+					Channel: fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
+					Method: "POST",
+					EventName: "joined_room",
+					Contents: roomData,
+				},
+			)
+	}
+
 	err = SendResource(invite, w)
 	if err != nil {
 		slog.Error("Error sending invite response", "error", err)

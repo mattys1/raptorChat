@@ -52,6 +52,20 @@ func (q *Queries) AssignRoleToUser(ctx context.Context, arg AssignRoleToUserPara
 	return err
 }
 
+const createFriendship = `-- name: CreateFriendship :execresult
+INSERT INTO friendships (first_id, second_id, dm_id) VALUES (?, ?, ?)
+`
+
+type CreateFriendshipParams struct {
+	FirstID  uint64 `json:"first_id"`
+	SecondID uint64 `json:"second_id"`
+	DmID     uint64 `json:"dm_id"`
+}
+
+func (q *Queries) CreateFriendship(ctx context.Context, arg CreateFriendshipParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createFriendship, arg.FirstID, arg.SecondID, arg.DmID)
+}
+
 const createInvite = `-- name: CreateInvite :execresult
 INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?)
 `
@@ -118,6 +132,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
+const deleteFriendship = `-- name: DeleteFriendship :exec
+DELETE FROM friendships WHERE id = ?
+`
+
+func (q *Queries) DeleteFriendship(ctx context.Context, id uint64) error {
+	_, err := q.db.ExecContext(ctx, deleteFriendship, id)
+	return err
+}
+
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users WHERE id = ?
 `
@@ -165,6 +188,45 @@ SELECT id, username, email, created_at, password FROM users
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	rows, err := q.db.QueryContext(ctx, getAllUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.CreatedAt,
+			&i.Password,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFriendsOfUser = `-- name: GetFriendsOfUser :many
+SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password FROM users u 
+NATURAL JOIN friendships f
+WHERE ? OR f.second_id = ?
+`
+
+type GetFriendsOfUserParams struct {
+	UserID uint64 `json:"user_id"`
+}
+
+func (q *Queries) GetFriendsOfUser(ctx context.Context, arg GetFriendsOfUserParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getFriendsOfUser, arg.UserID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}

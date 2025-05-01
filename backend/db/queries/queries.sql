@@ -92,3 +92,14 @@ DELETE FROM roles_permissions WHERE role_id = ? AND permission_id = ?;
 
 -- name: DeleteUser :exec
 DELETE FROM users WHERE id = ?;
+
+-- name: CreateFriendship :execresult
+INSERT INTO friendships (first_id, second_id, dm_id) VALUES (?, ?, ?);
+
+-- name: DeleteFriendship :exec
+DELETE FROM friendships WHERE id = ?;
+
+-- name: GetFriendsOfUser :many
+SELECT DISTINCT u.* FROM users u 
+NATURAL JOIN friendships f
+WHERE sqlc.arg(user_id) OR f.second_id = sqlc.arg(user_id);

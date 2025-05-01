@@ -16,6 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 		<>
 			<div className="friends-section">
 				<h2>Friends</h2>
+				<button onClick={ () => navigate(ROUTES.INVITE_FRIENDS)}></button>
 				<ul>
 					<li>Friend name</li>
 					<li>Friend name</li>

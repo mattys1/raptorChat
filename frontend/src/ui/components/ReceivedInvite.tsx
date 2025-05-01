@@ -39,7 +39,7 @@ export const InviteReceived = (invite: Invite) => {
 	}, [invite, rejectInvite])
 
 	return <div>
-		{`Invite from ${invite.issuer_id} to ${invite.receiver_id} for room ${invite.room_id}`}
+		{`Invite from ${invite.issuer_id} to ${invite.receiver_id}`} {invite.room_id? `for room ${invite.room_id}` : ""}
 		<br />
 		<button onClick={handleAccept}>Accept</button>
 		<button onClick={handleReject}>Reject</button>

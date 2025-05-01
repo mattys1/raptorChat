@@ -38,6 +38,11 @@ func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 	ctx := r.Context()
+	uid, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+		return
+	}
 
 	users, err := dao.GetAllUsers(ctx)
 	if err != nil {
@@ -46,7 +51,11 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = SendResource[[]db.User](users,  w)
+	usersWithoutSender := slices.DeleteFunc(users, func (u db.User) bool {
+		return u.ID == uid
+	})
+
+	err = SendResource(usersWithoutSender, w)
 
 	if err != nil {
 		slog.Error("Error sending users", err)
@@ -94,4 +103,28 @@ func GetInvitesOfUserHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Error("Error sending invites", "err", err.Error())
 	}
 	slog.Info("Sent invites", "invites", invites)
+}
+
+func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	ctx := r.Context()
+	uid, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	friends, err := dao.GetFriendsOfUser(ctx, db.GetFriendsOfUserParams{
+		UserID: uint64(uid),
+	})
+	if err != nil {
+		slog.Error("Error fetching friends", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = SendResource(friends, w)
+	if err != nil {
+		slog.Error("Error sending friends", "err", err.Error())
+	}
 }

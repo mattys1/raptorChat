@@ -1,4 +1,4 @@
-import { InviteReceived } from "../components/Invite";
+import { InviteReceived } from "../components/ReceivedInvite";
 import { useUserInvitesHook } from "../hooks/views/useUserInvitesHook";
 
 const UserInvitesView = () => {

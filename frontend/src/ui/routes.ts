@@ -8,4 +8,5 @@ export enum ROUTES {
 	CHATROOM = "/app/chatroom",
 	roomROOM = "roomROOM",
 	ADMIN = '/app/admin',
+	INVITE_FRIENDS = `${ROUTES.MAIN}/invite`
 }

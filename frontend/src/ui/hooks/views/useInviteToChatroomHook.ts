@@ -6,13 +6,9 @@ export const useInviteToChatroomHook = (roomId: number) => {
 	const [allUsers] = useResourceFetcher<User[]>([], "/api/user")
 	const [usersInRoom] = useResourceFetcher<User[]>([], `/api/rooms/${roomId}/user`)
 	const [ownId] = useResourceFetcher<number>(0, "/api/user/me")
-	const [inviteSendStatus, err, sendInvite] = useSendEventMessage<Invite>("/api/invites")
 
 	return {
 		usersNotInRoom: allUsers.filter(user => !usersInRoom.some(u => u.id === user.id)),
-		inviteSendStatus,
-		err,
-		sendInvite,
 		ownId
 	}
 }
