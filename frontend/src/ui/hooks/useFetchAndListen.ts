@@ -6,15 +6,15 @@ export const useFetchAndListen = <T, U>(
 	initial: T,
 	endpoint: string,
 	channel: string,
-	event: string,
-	callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: U) => void,
+	events: string[],
+	callback: (setState: React.Dispatch<React.SetStateAction<T>>, incoming: U, event: string) => void,
 	shouldFetch: boolean = true,
 	shouldListen: boolean = true
 ): [T, React.Dispatch<React.SetStateAction<T>>] => {
 	const [state, setState] = useState<T>(initial)
 	const [fetched, setFetched] = useState(false)
-	const [fetchedData, setFetchedData] = useResourceFetcher<T>(initial, endpoint)
-	const [eventData, setEventData] =  useEventListener<U>(channel, event)	
+	const [fetchedData] = useResourceFetcher<T>(initial, endpoint)
+	const [newest] = useEventListener<U>(channel, events)
 
 	useEffect(() => {
 		if (!shouldFetch) return
@@ -28,11 +28,17 @@ export const useFetchAndListen = <T, U>(
 	// }, [fetched])
 
 	useEffect(() => {
-		if (!fetched && eventData) return
-		if (!shouldListen) return
+		if(
+			!fetched && 
+			newest.event === "" ||
+			newest.item === null 
+		) {return}
+		if(!shouldListen) return
 
-		callback(setState, eventData!)
-	}, [eventData, fetched, callback, channel, event, shouldListen])
+		console.log("New event", newest)
+
+		callback(setState, newest.item!, newest.event)
+	}, [fetched, shouldListen, newest])
 
 	return [state, setState]
 }

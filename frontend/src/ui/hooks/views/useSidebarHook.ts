@@ -2,24 +2,34 @@ import { Room } from "../../../structs/models/Models"
 import { SERVER_URL } from "../../../api/routes"
 import { useResourceFetcher } from "../useResourceFetcher"
 import { useFetchAndListen } from "../useFetchAndListen"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 //
 export const useSidebarHook = () => {
-	const onNewRoom = useCallback((setRooms: React.Dispatch<React.SetStateAction<Room[]>>, incoming: Room) => {
-		setRooms((prev: Room[] | null) => [...prev ?? [], incoming])
+	const onRoomEvent = useCallback((setRooms: React.Dispatch<React.SetStateAction<Room[]>>, incoming: Room, event: String) => {
+		switch(event) {
+			case "joined_room":
+				setRooms((prev: Room[] | null) => [...prev ?? [], incoming])
+				break
+			case "left_room", "room_deleted":
+				setRooms(prev => {
+					return prev.filter(room => {
+						return room?.id !== incoming?.id
+					})
+				})
+				break
+			default:
+				console.log("Unknown event", event)
+		} 
 	}, [])
 
-	const [ownId] = useResourceFetcher<number>(0, "/api/user/me")
+	const ownId = localStorage.getItem("uID")
 	const [rooms, setRooms] = useFetchAndListen<Room[], Room>(
 		[],
 		"/api/user/me/rooms",
 		`user:${ownId}:rooms`,
-		"joined_room",
-		onNewRoom,
-		Boolean(ownId),
-		Boolean(ownId)
+		["joined_room", "left_room"],
+		onRoomEvent,
 	)
-
 
 	return {
 		rooms,
