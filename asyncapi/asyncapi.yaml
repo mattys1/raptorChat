@@ -12,13 +12,10 @@ components:
     EventResourceBase:
       type: object
       properties:
-        timestamp:
+        channel:
           type: string
-        id:
+        event_name:
           type: string
-      required:
-        - timestamp
-        - id
     Message:
       type: object
       properties:
