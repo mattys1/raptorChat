@@ -23,6 +23,8 @@ services:
         condition: service_completed_successfully
       centrifugo:
         condition: service_started
+      asyncapi-ui:
+        condition: service_started
 
   mysql:
     image: mariadb:lts
@@ -92,6 +94,21 @@ services:
       - "8081:8080"
     volumes:
       - ./swagger:/swagger
+    networks:
+      - app-network
+
+  asyncapi-ui:
+    image: asyncapi/cli
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./asyncapi/asyncapi.yaml:/app/asyncapi/asyncapi.yaml
+    # environment:
+      # - ASYNCAPI_FILE=/app/asyncapi/asyncapi.yaml
+      # - STUDIO_DEFAULT_FILE_PATH=/app/asyncapi/asyncapi.yaml
+      # - ASYNCAPI_TEMPLATE=@asyncapi/html-template
+    command:
+      [start, studio, /app/asyncapi/asyncapi.yaml, --port=9001]
     networks:
       - app-network
 
