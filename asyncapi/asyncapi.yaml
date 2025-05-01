@@ -16,137 +16,99 @@ components:
           type: string
         event_name:
           type: string
-    Message:
-      type: object
-      properties:
-        id:
-          type: string
-        sender_id:
-          type: string
-        room_id:
-          type: string
-        contents:
-          type: string
-        created_at:
-          type: string
-      required:
-        - id
-        - sender_id
-        - room_id
-        - contents
-        - created_at
-    Invite:
-      type: object
-      properties:
-        id:
-          type: string
-        issuer_id:
-          type: string
-        receiver_id:
-          type: string
-        room_id:
-          type: string
-        accepted:
-          type: boolean
-        created_at:
-          type: string
-      required:
-        - id
-        - issuer_id
-        - receiver_id
-        - room_id
-        - accepted
-        - created_at
     User:
       type: object
       properties:
         id:
-          type: string
+          type: integer
+          format: uint64
         username:
           type: string
-        display_name:
+        email:
           type: string
         created_at:
           type: string
-      required:
-        - id
-        - username
-        - display_name
-        - created_at
+          format: date-time
+        password:
+          type: string
+
     Room:
       type: object
       properties:
         id:
-          type: string
-        type:
-          type: string
-          enum:
-            - direct
-            - group
+          type: integer
+          format: uint64
         name:
           type: string
-        creator_id:
+          nullable: true
+        owner_id:
+          type: integer
+          format: uint64
+          nullable: true
+        type:
+          type: string
+          enum: ["direct", "group"]
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+        sender_id:
+          type: integer
+          format: uint64
+        room_id:
+          type: integer
+          format: uint64
+        contents:
           type: string
         created_at:
           type: string
-      required:
-        - id
-        - type
-        - creator_id
-        - created_at
-    UsersRoom:
-      type: object
-      properties:
-        user_id:
-          type: string
-        room_id:
-          type: string
-      required:
-        - user_id
-        - room_id
-    Role:
+          format: date-time
+
+    Invite:
       type: object
       properties:
         id:
+          type: integer
+          format: uint64
+        type:
           type: string
-        name:
+          enum: ["direct", "group"]
+        state:
           type: string
-      required:
-        - id
-        - name
-    Permission:
+          enum: ["pending", "accepted", "declined"]
+        room_id:
+          type: integer
+          format: uint64
+          nullable: true
+        issuer_id:
+          type: integer
+          format: uint64
+        receiver_id:
+          type: integer
+          format: uint64
+
+    Friendship:
       type: object
       properties:
         id:
+          type: integer
+          format: uint64
+        first_id:
+          type: integer
+          format: uint64
+        second_id:
+          type: integer
+          format: uint64
+        dm_id:
+          type: integer
+          format: uint64
+        created_at:
           type: string
-        name:
-          type: string
-      required:
-        - id
-        - name
-    UsersRole:
-      type: object
-      properties:
-        user_id:
-          type: string
-        role_id:
-          type: string
-        room_id:
-          type: string
-      required:
-        - user_id
-        - role_id
-        - room_id
-    RolesPermission:
-      type: object
-      properties:
-        role_id:
-          type: string
-        permission_id:
-          type: string
-      required:
-        - role_id
-        - permission_id
+          format: date-time
+          nullable: true
   messages:
     MessageSentEvent:
       name: MessageSentEvent
