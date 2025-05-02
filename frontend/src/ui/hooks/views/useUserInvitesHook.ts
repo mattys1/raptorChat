@@ -6,54 +6,37 @@ import { useEventListener } from "../useEventListener";
 
 type InviteUpdateCallback = (
 	setState: React.Dispatch<React.SetStateAction<Invite[]>>, 
-	incoming: Invite
+	incoming: Invite,
+	event: string
 ) => void;
 
 export const useUserInvitesHook = () => {
 	const uid = localStorage.getItem("uID")
-	const handleNewInvites = useCallback<InviteUpdateCallback>((setInvites, incoming) => {
-		setInvites((prev) => [...prev ?? [], incoming]);
+	const handleInviteUpdates = useCallback<InviteUpdateCallback>((setInvites, incoming, event) => {
+		switch(event) {
+			case "invite_sent":
+				setInvites((prev) => [...prev ?? [], incoming]);
+				break;
+			case "invite_accepted": 
+			case "invite_declined":
+				setInvites((prev) => {
+					return prev?.filter(invite => invite.id !== incoming.id)
+				});
+				break;
+		}
 	}, [])
 	const [invites, setInvites] = useFetchAndListen<Invite[], Invite>(
 		[],
 		`/api/user/${uid}/invites`,
 		`user:${uid}:invites`,
-		"invite_sent",
-		handleNewInvites,
+		["invite_sent", "invite_accepted", "invite_declined"],
+		handleInviteUpdates,
 		Boolean(uid),
 		Boolean(uid)
 	)
-	const [invitesAccepted] = useEventListener<Invite>(
-		// [],
-		// `/api/user/${uid}/invites`,
-		`user:${uid}:invites`,
-		"invite_accepted",
-		// handleNewInvites,
-		// Boolean(uid),
-		// Boolean(uid)
-	)
-	const [invitesRejected] = useEventListener<Invite>(
-		// [],
-		// `/api/user/${uid}/invites`,
-		`user:${uid}:invites`,
-		"invite_declined",
-		// handleNewInvites,
-		// Boolean(uid),
-		// Boolean(uid)
-	)
-
-	useEffect(() => {
-		console.log("Invites accepted", invitesAccepted)
-		console.log("Invites rejected", invitesRejected)
-		setInvites((prev) => {
-			return prev.filter(inv => {
-				return inv?.id !== invitesAccepted?.id && inv?.id !== invitesRejected?.id
-			})
-		})
-	}, [invitesAccepted, invitesRejected])
 
 	return {
 		invites,
-		handleNewInvites
+		handleNewInvites: handleInviteUpdates
 	}
 }
