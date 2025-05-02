@@ -49,7 +49,7 @@ export const useEventListener = <T>(
 				CentrifugoService.unsubscribe(channel)
 			})
 		}
-	}, [])
+	}, [channel])
 
 	return [state, setState]
 }
