@@ -182,10 +182,7 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 					Contents: dmData,
 				},
 			)
-		}
-	}
-
-		if invite.Type == db.InvitesTypeGroup {
+		} else {
 			err := dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
 				UserID: invite.ReceiverID,
 				RoomID: *invite.RoomID,
@@ -215,7 +212,8 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 					EventName: "joined_room",
 					Contents: roomData,
 				},
-			)
+				)
+		}
 	}
 
 	err = SendResource(invite, w)
