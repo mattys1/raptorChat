@@ -64,13 +64,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setToken(newToken);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-	localStorage.removeItem("uID");
-	localStorage.removeItem("centrifugoToken");
-	CentrifugoService.disconnect();
-    setToken(null);
-  };
+	const logout = () => {
+		localStorage.removeItem("token");
+		localStorage.removeItem("uID");
+		localStorage.removeItem("centrifugoToken");
+		CentrifugoService.disconnect();
+		setToken(null);
+	};
 
   return (
     <AuthContext.Provider value={{ ...auth, login, logout }}>

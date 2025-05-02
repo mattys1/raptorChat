@@ -6,6 +6,7 @@ import { useCallback, useEffect } from "react"
 import { useEventListener } from "../useEventListener"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "../../routes"
+import { usePresence } from "../usePresence"
 
 type MessageUpdateCallback = (
   setState: React.Dispatch<React.SetStateAction<Message[]>>, 
@@ -16,6 +17,7 @@ export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
 	const chatId = key
 	console.log("ChatRoomHook key:", chatId)
+	usePresence(`room:${chatId}`)	
 
 	const handleNewMessage = useCallback<MessageUpdateCallback>((setState, incoming) => {
 		console.log("New message", incoming)

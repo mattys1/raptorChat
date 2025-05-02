@@ -68,6 +68,7 @@ export class CentrifugoService {
 	}
 
 	public static async unsubscribe(channel: string) {
+		console.log("Unsubscribing from channel", channel)
 		if(this.subs.has(channel)) {
 			let subscribed = this.subs.get(channel)!
 			subscribed.count--
@@ -81,5 +82,22 @@ export class CentrifugoService {
 			this.subs.delete(channel)
 		}
 
+	}
+
+	public static async fetchPresence(channel: string) {
+		const instance = await this.getInstance()
+		return instance.presence(channel).then((presence) => {
+			console.log(presence.clients)
+			return presence.clients
+		}) 
+	}
+
+	public static async disconnect() {
+		if(this.instance) {
+			this.instance.disconnect()
+			this.instance = null
+		}
+		this.subs.clear()
+		console.log("Disconnected from Centrifuge")
 	}
 }

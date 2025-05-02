@@ -3,6 +3,7 @@ import { NavigateFunction, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
 import { useAuth } from "../../contexts/AuthContext";
+import { CentrifugoService } from "../../../logic/CentrifugoService";
 
 export function useLoginHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
@@ -62,6 +63,7 @@ export function useLoginHook(navigate: NavigateFunction) {
 					const centrifugoToken = await centrifugoTokenResponse.json();
 					console.log("Centrifugo token:", centrifugoToken);
 					localStorage.setItem("centrifugoToken", centrifugoToken);
+					CentrifugoService.disconnect()
 
 					navigate(ROUTES.MAIN)
 

@@ -128,3 +128,25 @@ func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Error("Error sending friends", "err", err.Error())
 	}
 }
+
+func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	ctx := r.Context()
+	targetId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	user, err := dao.GetUserById(ctx, uint64(targetId))
+	if err != nil {
+		slog.Error("Error fetching user", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = SendResource(user, w)
+	if err != nil {
+		slog.Error("Error sending user", "err", err.Error())
+	}
+}

@@ -31,6 +31,7 @@ type Claims struct {
 
 func GenerateCentrifugoToken(userID uint64) (string, error) {
 	userIDStr := fmt.Sprintf("%d", userID)
+	slog.Info("Generating Centrifugo token", "userID", userIDStr)
 	
 	claims := jwt.MapClaims{
 		"sub": userIDStr,

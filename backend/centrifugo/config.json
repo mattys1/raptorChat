@@ -19,7 +19,11 @@
 		"namespaces": [
 			{
 				"name": "room",
-				"allow_subscribe_for_client": true
+				"allow_subscribe_for_client": true,
+				"presence": true,
+				"allow_presence_for_subscriber": true,
+				"join_leave": true,
+				"force_push_join_leave": true
 			},
 			{
 				"name": "user",
