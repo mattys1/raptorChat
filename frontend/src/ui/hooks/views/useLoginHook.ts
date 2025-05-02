@@ -47,6 +47,22 @@ export function useLoginHook(navigate: NavigateFunction) {
 					setLoading(false)
 					login(data.token);
 
+					const centrifugoTokenResponse = await fetch(SERVER_URL + "/centrifugo/token", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Authorization": `Bearer ${data.token}`
+						},
+						body: localStorage.getItem("uID")
+					})
+					if(!centrifugoTokenResponse.ok) {
+						throw new Error("Failed to fetch Centrifugo token");
+					}
+
+					const centrifugoToken = await centrifugoTokenResponse.json();
+					console.log("Centrifugo token:", centrifugoToken);
+					localStorage.setItem("centrifugoToken", centrifugoToken);
+
 					navigate(ROUTES.MAIN)
 
 				} else {

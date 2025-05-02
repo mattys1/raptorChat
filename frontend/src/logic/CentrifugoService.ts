@@ -3,7 +3,7 @@ import { createSessionStorage } from "react-router-dom";
 
 export class CentrifugoService {
 	private static instance: Centrifuge | null = null
-	private static tokenName = "token"
+	private static tokenName = "centrifugoToken"
 	private static subs = new Map<string, {sub: Subscription; count: number}>()
 
 	private static async getInstance(): Promise<Centrifuge> {

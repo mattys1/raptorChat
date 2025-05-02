@@ -7,12 +7,6 @@ require (
 	github.com/coder/websocket v1.8.12
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/segmentio/encoding v0.4.1
-)
-
-require (
-	github.com/segmentio/asm v1.1.3 // indirect
-	golang.org/x/sys v0.31.0 // indirect
 )
 
 require (

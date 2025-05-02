@@ -14,18 +14,15 @@
 	},
 	"channel": {
 		"without_namespace": {
-			"allow_subscribe_for_anonymous": true,
 			"allow_subscribe_for_client": true
 		},
 		"namespaces": [
 			{
 				"name": "room",
-				"allow_subscribe_for_anonymous": true,
 				"allow_subscribe_for_client": true
 			},
 			{
 				"name": "user",
-				"allow_subscribe_for_anonymous": true,
 				"allow_subscribe_for_client": true
 			}
 		]

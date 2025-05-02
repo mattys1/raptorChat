@@ -2,7 +2,13 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -21,6 +27,19 @@ type Claims struct {
 	UserID      uint64   `json:"user_id"`
 	Permissions []string `json:"permissions"`
 	jwt.RegisteredClaims
+}
+
+func GenerateCentrifugoToken(userID uint64) (string, error) {
+	userIDStr := fmt.Sprintf("%d", userID)
+	
+	claims := jwt.MapClaims{
+		"sub": userIDStr,
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
+	}
+	
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(jwtKey)
 }
 
 func GenerateToken(userID uint64) (string, error) {
@@ -64,4 +83,40 @@ func ValidateToken(tokenStr string) (*Claims, error) {
 		return nil, errors.New("invalid token")
 	}
 	return claims, nil
+}
+
+func CentrifugoTokenHandler(w http.ResponseWriter, r *http.Request) {
+	// uidstr, ok := r.Context().Value("userID").(uint64)
+	uidstr, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		slog.Error("Error reading user ID", "body", uidstr, "error", err)
+		http.Error(w, "Error reading user ID", http.StatusBadRequest)
+		return
+	}
+	uid, err := strconv.Atoi(string(uidstr))
+	if err != nil {
+		slog.Error("Invalid user ID", "userID", uidstr, "error", err)
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	token, err := GenerateCentrifugoToken(uint64(uid))
+	if err != nil {
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("Generated Centrifugo token", "token", token)
+	w.Header().Set("Content-Type", "application/json")
+
+	tokenResponse, err := json.Marshal(token)
+	if err != nil {
+		slog.Error("Error marshalling token response", "error", err)
+		http.Error(w, "Error generating token response", http.StatusInternalServerError)
+		return
+	}
+	slog.Info("Token response", "response", string(tokenResponse))
+
+	w.Write(tokenResponse)
 }
