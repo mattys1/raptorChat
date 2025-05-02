@@ -59,7 +59,7 @@ func CreateInviteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = messaging.GetCentrifugoService().Publish(r.Context(), fmt.Sprintf("user:%d:invites", invite.ReceiverID), newResource)
+	err = messaging.GetCentrifugoService().Publish(r.Context(), newResource)
 	if err != nil {
 		slog.Error("Error publishing invite", "error", err)
 		http.Error(w, "Error publishing invite", http.StatusInternalServerError)
@@ -105,7 +105,7 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = messaging.GetCentrifugoService().Publish(r.Context(), fmt.Sprintf("user:%d:invites", invite.ReceiverID), newResource)
+	err = messaging.GetCentrifugoService().Publish(r.Context(), newResource)
 	if err != nil {
 		slog.Error("Error publishing invite", "error", err)
 		http.Error(w, "Error publishing invite", http.StatusInternalServerError)
@@ -165,7 +165,6 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 
 			err = messaging.GetCentrifugoService().Publish(
 				r.Context(),
-				fmt.Sprintf("user:%d:rooms", invite.IssuerID),
 				&messaging.EventResource{
 					Channel: fmt.Sprintf("user:%d:rooms", invite.IssuerID),
 					Method: "POST",
@@ -176,7 +175,6 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 
 			err = messaging.GetCentrifugoService().Publish(
 				r.Context(),
-				fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
 				&messaging.EventResource{
 					Channel: fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
 					Method: "POST",
@@ -211,7 +209,6 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 
 			err = messaging.GetCentrifugoService().Publish(
 				r.Context(),
-				fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
 				&messaging.EventResource{
 					Channel: fmt.Sprintf("user:%d:rooms", invite.ReceiverID),
 					Method: "POST",

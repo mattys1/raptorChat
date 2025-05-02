@@ -39,15 +39,15 @@ func GetCentrifugoService() *CentrifugoService {
 
 //TODO: there should probably be a way to send an event not tied to a resource
 func (cs *CentrifugoService) Publish(
-	ctx context.Context, channel string, resource *EventResource,
+	ctx context.Context, resource *EventResource,
 ) error {
 	data, err := json.Marshal(resource)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("Publishing message", "channel", channel, "data", string(data))
-	err = cs.client.Publish(ctx, channel, data)
+	slog.Info("Publishing message", "channel", resource.Channel, "data", string(data))
+	err = cs.client.Publish(ctx, resource.Channel, data)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import "./Start.css";
 import { MessageEvents } from "../../structs/MessageNames";
-import { Message } from "../../structs/models/Models";
+import { Message, Room, RoomsType } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
 
@@ -17,10 +17,22 @@ const ChatRoomView = () => {
 
 	return (
 		<>
-			<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
-				Invite user to chatroom...
+			{
+				props.room?.type === RoomsType.Group &&
+				<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
+					Invite user to chatroom...
+				</button>
+			}
+
+			<button onClick={() => props.deleteRoom({
+				channel: `room:${key}`,
+				method: "DELETE",
+				event_name: "room_deleted",
+				contents: props?.room
+			} as EventResource<Room>) /**this deletes the friendship as well (unintentional but works)**/}> 
+				{props.room?.type === RoomsType.Group ? "Delete groupchat" : "Unfriend user"}
 			</button>
-			Chat Room test
+			{`${props.room?.type === RoomsType.Group ? "Group Chat" : ""} ${props.room?.name}`}
 			<p>
 				{props?.messageList?.map((message, index) => (
 					<li key={index}>

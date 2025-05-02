@@ -21,6 +21,9 @@ SELECT * FROM rooms WHERE id = ?;
 -- name: CreateRoom :execresult
 INSERT INTO rooms (name, owner_id, type) VALUES (?, ?, ?);
 
+-- name: DeleteRoom :exec
+DELETE FROM rooms WHERE id = ?;
+
 -- name: CreateUser :exec
 INSERT INTO users (username, email, password, created_at)
 VALUES (?, ?, ?, NOW());

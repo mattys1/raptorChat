@@ -141,6 +141,15 @@ func (q *Queries) DeleteFriendship(ctx context.Context, id uint64) error {
 	return err
 }
 
+const deleteRoom = `-- name: DeleteRoom :exec
+DELETE FROM rooms WHERE id = ?
+`
+
+func (q *Queries) DeleteRoom(ctx context.Context, id uint64) error {
+	_, err := q.db.ExecContext(ctx, deleteRoom, id)
+	return err
+}
+
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users WHERE id = ?
 `

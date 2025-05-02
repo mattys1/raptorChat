@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/db"
 	"github.com/mattys1/raptorChat/src/pkg/messaging"
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
-	"github.com/segmentio/encoding/json"
 )
 
 func GetMessagesOfRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -37,20 +35,12 @@ func GetMessagesOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	var eventResource messaging.EventResource	
-	err = json.Unmarshal(body, &eventResource)
+	eventResource, err := messaging.GetEventResourceFromRequest(r)
 	if err != nil {
 		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 	}
 
-	message, err := messaging.GetEventResourceContents[db.Message](&eventResource)
+	message, err := messaging.GetEventResourceContents[db.Message](eventResource)
 	if err != nil {
 		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 		return
@@ -82,7 +72,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newResource, err := messaging.ReassembleResource(&eventResource, newMessage)
+	newResource, err := messaging.ReassembleResource(eventResource, newMessage)
 	if err != nil {
 		slog.Error("Error reassembling resource", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -91,7 +81,6 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = messaging.GetCentrifugoService().Publish(
 		r.Context(),
-		fmt.Sprintf("room:%d", message.RoomID),
 		newResource,
 	)
 	if err != nil {
@@ -127,20 +116,13 @@ func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request, ) {
 func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	var eventResource messaging.EventResource	
-	err = json.Unmarshal(body, &eventResource)
+	eventResource, err := messaging.GetEventResourceFromRequest(r)
 	if err != nil {
 		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 	}
 
-	room, err := messaging.GetEventResourceContents[db.Room](&eventResource)
+
+	room, err := messaging.GetEventResourceContents[db.Room](eventResource)
 	if err != nil {
 		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
 		return
@@ -160,7 +142,7 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	roomID, err := roomResult.LastInsertId()
 	assert.That(err == nil, "Error getting last insert ID from just inserted room", err)
-	newResource, err := messaging.ReassembleResource(&eventResource, db.Room{
+	newResource, err := messaging.ReassembleResource(eventResource, db.Room{
 		ID: uint64(roomID),
 		Name: room.Name,
 		OwnerID: room.OwnerID,
@@ -180,7 +162,6 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	// FIXME: hack
 	messaging.GetCentrifugoService().Publish(
 		r.Context(),
-		newResource.Channel,
 		&messaging.EventResource{
 			Channel: newResource.Channel,
 			Method: newResource.Method,
@@ -191,7 +172,6 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = messaging.GetCentrifugoService().Publish(
 		r.Context(),
-		newResource.Channel,
 		newResource,
 	)
 
@@ -199,5 +179,80 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	err = SendResource(newResource, w)
 	if err != nil {
 		slog.Error("Error sending room ID", "error", err)
+	}
+}
+
+func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	eventResource, err := messaging.GetEventResourceFromRequest(r)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		return
+	}
+
+	room, err := messaging.GetEventResourceContents[db.Room](eventResource)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		return
+	}
+
+	newResource, err := messaging.ReassembleResource(eventResource, room)
+	if err != nil {
+		slog.Error("Error reassembling resource", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = messaging.GetCentrifugoService().Publish(
+		r.Context(),
+		newResource,
+	)
+
+	useresInRoom, err := dao.GetUsersByRoom(r.Context(), room.ID)
+	if err != nil {
+		slog.Error("Error getting users in room", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// for clearing the sidbar of other room members
+	for _, user := range useresInRoom {
+		messaging.GetCentrifugoService().Publish(
+			r.Context(),
+			&messaging.EventResource{
+				Channel: fmt.Sprintf("user:%d:rooms", user.ID),
+				Method: "DELETE",
+				EventName: "room_deleted",
+				Contents: newResource.Contents,
+			},
+		)
+	}
+
+	err = dao.DeleteRoom(r.Context(), room.ID)
+	if err != nil {
+		slog.Error("Error deleting room", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
+	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
+		return
+	}
+
+	dao := db.GetDao()
+	room, err := dao.GetRoomById(r.Context(), uint64(roomid))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Internal Server Error, couldn't retrieve room of id: %d", roomid), http.StatusInternalServerError)
+	}
+
+	err = SendResource(room, w)
+	if err != nil {
+		slog.Error("Error sending room", "roomid", roomid, "error", err)
 	}
 }

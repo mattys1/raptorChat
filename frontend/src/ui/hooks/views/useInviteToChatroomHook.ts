@@ -1,5 +1,5 @@
 import { useResourceFetcher } from "../useResourceFetcher"
-import { Invite, User } from "../../../structs/models/Models"
+import { Invite, Room, User } from "../../../structs/models/Models"
 import { useSendEventMessage } from "../useSendEventMessage"
 
 export const useInviteToChatroomHook = (roomId: number) => {
@@ -9,6 +9,6 @@ export const useInviteToChatroomHook = (roomId: number) => {
 
 	return {
 		usersNotInRoom: allUsers.filter(user => !usersInRoom.some(u => u.id === user.id)),
-		ownId
+		ownId,
 	}
 }

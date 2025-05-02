@@ -10,7 +10,8 @@ export const useSidebarHook = () => {
 			case "joined_room":
 				setRooms((prev: Room[] | null) => [...prev ?? [], incoming])
 				break
-			case "left_room", "room_deleted":
+			case "room_deleted":
+				console.log("Room deleted", incoming)
 				setRooms(prev => {
 					return prev.filter(room => {
 						return room?.id !== incoming?.id
@@ -27,7 +28,7 @@ export const useSidebarHook = () => {
 		[],
 		"/api/user/me/rooms",
 		`user:${ownId}:rooms`,
-		["joined_room", "left_room"],
+		["joined_room", "room_deleted"],
 		onRoomEvent,
 	)
 

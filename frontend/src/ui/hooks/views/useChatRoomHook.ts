@@ -30,21 +30,27 @@ export const useChatRoomHook = (key: number) => {
 		["message_sent"],	
 		handleNewMessage
 	)
-	// const [latest] = useEventListener<Room>(
-	// 	`room:${chatId}`,
-	// 	["room_deleted"]
-	// )
+	const [latest] = useEventListener<any>(
+		`room:${chatId}`,
+		["room_deleted"]
+	)
 
-	// useEffect(() => {
-	// 	navigate(ROUTES.MAIN)
-	// }, [latest])
+	useEffect(() => {
+		if(latest.event === "room_deleted") { //FIXME: somehow this can be not a room_deleted event
+			navigate(ROUTES.MAIN)
+		}
+	}, [latest])
 
+	const [response, roomDelErr, deleteRoom] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
+	const [room] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`)
 	const [sentMessageStatus, error, sendChatMessage] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
 
 	return {
 		messageList,
 		sentMessageStatus,
 		sendChatMessage,
+		deleteRoom,
+		room,
 	}
 }
 
