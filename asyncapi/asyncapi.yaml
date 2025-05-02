@@ -190,6 +190,44 @@ components:
             required:
               - event_name
               - contents
+    RoomDeletedEvent:
+      name: RoomDeletedEvent
+      title: Room Deleted Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - room_deleted
+              contents:
+                $ref: '#/components/schemas/Room'
+            required:
+              - event_name
+              - contents
+    # FriendshipAcceptedEvent:
+    #   name: FriendshipAcceptedEvent
+    #   title: Accepted a friend request
+    #   payload:
+    #     allOf:
+    #       - $ref: '#/components/schemas/EventResourceBase'
+    #       - type: object
+    #         properties: 
+    #           event_name:
+    #             enum:
+    #               - friendship_accepted
+    #           contents:
+    #             allOf:
+    #               - $ref: '#/components/schemas/Invite'
+    #               - type: object
+    #                 properties:
+    #                   type:
+    #                     type: string
+    #                     enum:
+    #                       - direct 
+
+
 channels:
   room.{id}:
     address: 'room:{id}'
@@ -199,6 +237,8 @@ channels:
     messages:
       MessageSent:
         $ref: '#/components/messages/MessageSentEvent'
+      RoomDeleted:
+        $ref: '#/components/messages/RoomDeletedEvent'
     description: Events happening in a chatroom
         
   user.{id}.invites:
@@ -223,6 +263,8 @@ channels:
     messages:
       JoinedRoom:
         $ref: '#/components/messages/JoinedRoomEvent'
+      RoomDeleted:
+        $ref: '#/components/messages/RoomDeletedEvent'
     description: Events for rooms the user is part of
 
 operations:
@@ -233,6 +275,7 @@ operations:
     summary: Publish room‐level events
     messages:
       - $ref: '#/channels/room.{id}/messages/MessageSent'
+      - $ref: '#/channels/room.{id}/messages/RoomDeleted'
   
   'user.{id}.invites.receive':
     action: receive
@@ -251,3 +294,4 @@ operations:
     summary: Receive room subscription events
     messages:
       - $ref: '#/channels/user.{id}.rooms/messages/JoinedRoom'
+      - $ref: '#/channels/user.{id}.rooms/messages/RoomDeleted'
