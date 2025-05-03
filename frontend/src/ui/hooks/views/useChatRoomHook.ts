@@ -16,9 +16,8 @@ type MessageUpdateCallback = (
 export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
 	const chatId = key
-	console.log("ChatRoomHook key:", chatId)
-	usePresence(`room:${chatId}`)	
 
+	// usePresence(`room:${chatId}`)
 	const handleNewMessage = useCallback<MessageUpdateCallback>((setState, incoming) => {
 		console.log("New message", incoming)
 		setState((prev) => [...prev, incoming]);
