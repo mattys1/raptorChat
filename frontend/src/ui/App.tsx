@@ -17,6 +17,7 @@ import InviteToChatroomView from "./views/InviteToChatroomview";
 import UserInvitesView from "./views/UserInvitesView";
 import CreateRoomView from "./views/CreateRoomView";
 import InviteFriendsView from "./views/InviteFriendsView";
+import VideoChat from "./views/VideoChatView";
 
 const App: React.FC = () => {
 	// const navigate = useNavigate()
@@ -37,6 +38,7 @@ const App: React.FC = () => {
 				<Route path={`${ROUTES.MAIN}/invites`} element={<UserInvitesView />} />
 				<Route path={ROUTES.ADMIN} element={<AdminRoute><AdminPanelView/></AdminRoute>} />
 				<Route path={ROUTES.INVITE_FRIENDS} element={<InviteFriendsView />}></Route>
+				<Route path={`${ROUTES.CHATROOM}/:chatId/call`} element={<VideoChat />}></Route>
 			</Route>
 		</Routes>
 	);
