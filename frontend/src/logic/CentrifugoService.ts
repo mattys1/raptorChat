@@ -37,7 +37,7 @@ export class CentrifugoService {
 		const instance = await this.getInstance()
 		console.log("Calling subscribe service on channel", channel)
 		if(this.subs.has(channel)) {
-			console.warn(`Tried to subscribe to channel ${channel} but it was already subscribed. This may be due to react strict mode.`)
+			console.warn(`Tried to subscribe to channel ${channel} but it was already subscribed. This may be due to react strict mode. If this is intentional, all subscription consumers should unsubscribe at the same time`)
 			return this.subs.get(channel)!
 		}
 
