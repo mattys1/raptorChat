@@ -23,6 +23,8 @@ services:
         condition: service_completed_successfully
       centrifugo:
         condition: service_started
+      livekit:
+        condition: service_started
       # asyncapi-ui:
       #   condition: service_started
 
@@ -81,6 +83,19 @@ services:
     networks:
     - app-network
 
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: livekit
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    ports:
+      - "7880:7880"   
+      - "7881:7881"   
+    volumes:
+      - ./backend/livekit/config.yaml:/etc/livekit/config.yaml:ro
+    networks:
+      - app-network
+
   frontend-build:
     build: 
       context: ./frontend
@@ -103,12 +118,7 @@ services:
       - "9001:9001"
     volumes:
       - ./asyncapi/asyncapi.yaml:/app/asyncapi/asyncapi.yaml
-    # environment:
-      # - ASYNCAPI_FILE=/app/asyncapi/asyncapi.yaml
-      # - STUDIO_DEFAULT_FILE_PATH=/app/asyncapi/asyncapi.yaml
-      # - ASYNCAPI_TEMPLATE=@asyncapi/html-template
-    command:
-      [start, studio, /app/asyncapi/asyncapi.yaml, --port=9001]
+    command: [start, studio, /app/asyncapi/asyncapi.yaml, --port=9001]
     networks:
       - app-network
 
