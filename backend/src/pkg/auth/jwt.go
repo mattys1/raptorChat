@@ -13,6 +13,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
+	// lksdk "github.com/livekit/server-sdk-go/v2"
+	lkauth "github.com/livekit/protocol/auth"
 )
 
 var jwtKey = []byte("secret_key")
@@ -120,4 +122,17 @@ func CentrifugoTokenHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Token response", "response", string(tokenResponse))
 
 	w.Write(tokenResponse)
+}
+
+func GenerateLivekitRoomToken(apiKey, apiSecret, room, identity string) (string, error) {
+	at := lkauth.NewAccessToken(apiKey, apiSecret)
+	grant := &lkauth.VideoGrant{
+		RoomJoin: true,
+		Room:     room,
+	}
+	at.SetVideoGrant(grant).
+		SetIdentity(identity).
+		SetValidFor(time.Hour)
+
+	return at.ToJWT()
 }
