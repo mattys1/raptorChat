@@ -8,11 +8,14 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
+
 	// lksdk "github.com/livekit/server-sdk-go/v2"
 	lkauth "github.com/livekit/protocol/auth"
 )
@@ -125,14 +128,37 @@ func CentrifugoTokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateLivekitRoomToken(apiKey, apiSecret, room, identity string) (string, error) {
-	at := lkauth.NewAccessToken(apiKey, apiSecret)
+	accesToken := lkauth.NewAccessToken(apiKey, apiSecret)
 	grant := &lkauth.VideoGrant{
 		RoomJoin: true,
 		Room:     room,
 	}
-	at.SetVideoGrant(grant).
-		SetIdentity(identity).
-		SetValidFor(time.Hour)
+	accesToken.SetVideoGrant(grant).
+		SetIdentity(identity)
 
-	return at.ToJWT()
+	return accesToken.ToJWT()
+}
+
+func LivekitTokenHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("uid")
+	roomId := chi.URLParam(r, "chatId")
+
+	slog.Info("livekit api key", "key", os.Getenv("LIVEKIT_API_KEY"), "livekit secret key", os.Getenv("LIVEKIT_API_SECRET"))
+	token, err := GenerateLivekitRoomToken(os.Getenv("LIVEKIT_API_KEY"), os.Getenv("LIVEKIT_API_SECRET"), roomId, userID)
+	if err != nil {
+		slog.Error("Error generating Livekit token", "error", err)
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("Generated Livekit token", "token", token)
+	w.Header().Set("Content-Type", "application/json")
+	tokenResponse, err := json.Marshal(token)
+	if err != nil {
+		slog.Error("Error marshalling token response", "error", err)
+		http.Error(w, "Error generating token response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(tokenResponse)
 }

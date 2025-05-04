@@ -17,7 +17,7 @@ const ChatRoomView = () => {
 
 	return (
 		<>
-			<button onClick={() => navigate(`${ROUTES.CHATROOM}/:chatId/call`)}>
+			<button onClick={() => { console.log("navigating to call", key); navigate(`${ROUTES.CHATROOM}/${key}/call`) }}>
 				Call
 			</button>
 			{

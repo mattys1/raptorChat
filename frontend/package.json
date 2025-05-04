@@ -15,9 +15,11 @@
 		"dist:linux": "npm run transpile:electron && npm run build && electron-builder --linux --x64"
 	},
 	"dependencies": {
+		"@livekit/components-react": "^2.9.3",
 		"@reactivex/rxjs": "^6.6.7",
 		"centrifuge": "^5.3.4",
 		"jwt-decode": "^4.0.0",
+		"livekit-client": "^2.11.4",
 		"neverthrow": "^8.2.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",

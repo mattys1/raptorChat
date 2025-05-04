@@ -18,7 +18,8 @@ func Router() *chi.Mux {
 	r.Post("/login", auth.LoginHandler)
 	r.Post("/register", auth.RegisterHandler)
 
-	r.Post("/centrifugo/token", auth.CentrifugoTokenHandler)
+	r.With(middleware.VerifyJWT).Post("/centrifugo/token", auth.CentrifugoTokenHandler)
+	r.With(middleware.VerifyJWT).Get("/livekit/{chatId}/token", auth.LivekitTokenHandler) //hack with the url
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middleware.VerifyJWT)
