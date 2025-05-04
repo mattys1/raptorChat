@@ -2,74 +2,71 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import "./Start.css";
 import { MessageEvents } from "../../structs/MessageNames";
-import { Message, Room, RoomsType } from "../../structs/models/Models";
+import { Message, RoomsType } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
+import { useRoomRoles } from "../hooks/useRoomRoles";
 
-const ChatRoomView = () => {
-	const key = Number(useParams().chatId)
-	const navigate = useNavigate()
+const ChatRoomView: React.FC = () => {
+  const chatId   = Number(useParams().chatId);
+  const navigate = useNavigate();
+  const { room, messageList, sendChatMessage } = useChatRoomHook(chatId);
 
-	const props = useChatRoomHook(key)
-	// console.log("ChatRoomView props:", props)
-	console.log("ChatRoomView message", props.messageList)
-	console.log("Rerendered")
+  const { isOwner, isModerator } = useRoomRoles(chatId);
 
-	return (
-		<>
-			{
-				props.room?.type === RoomsType.Group &&
-				<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
-					Invite user to chatroom...
-				</button>
-			}
+  return (
+    <>
+      {room?.type === RoomsType.Group && (
+        <button onClick={() => navigate(`${ROUTES.CHATROOM}/${chatId}/invite`)}>
+          Invite user to chatroom
+        </button>
+      )}
 
-			<button onClick={() => props.deleteRoom({
-				channel: `room:${key}`,
-				method: "DELETE",
-				event_name: "room_deleted",
-				contents: props?.room
-			} as EventResource<Room>) /**this deletes the friendship as well (unintentional but works)**/}> 
-				{props.room?.type === RoomsType.Group ? "Delete groupchat" : "Unfriend user"}
-			</button>
-			{`${props.room?.type === RoomsType.Group ? "Group Chat" : ""} ${props.room?.name}`}
-			<p>
-				{props?.messageList?.map((message, index) => (
-					<li key={index}>
-						{message?.contents ?? "Unknown text"} { }
-						Sender: {message?.sender_id ?? "Unknown sender"}
-					</li>
-				))}
-			</p>
+      {(isOwner || isModerator) && (
+        <button onClick={() => navigate(`${ROUTES.CHATROOM}/${chatId}/manage`)}>
+          Manage room
+        </button>
+      )}
 
-			<form onSubmit={(e) => {
-				e.preventDefault()
-				const formData = new FormData(e.currentTarget)
-				const message = formData.get("messageBox")?.toString() ?? ""
-				console.log("Message:", message)
+      <h3>
+        {room?.type === RoomsType.Group ? "Group Chat" : ""} {room?.name}
+      </h3>
 
-				props.sendChatMessage({
-					channel: `room:${key}`,
-					method: "POST",
-					event_name: MessageEvents.MESSAGE_SENT,
-					contents: {
-						id: 0,
-						room_id: key,
-						sender_id: 0,
-						contents: message,
+      <ul>
+        {messageList.map((m, i) => (
+          <li key={i}>
+            {m.contents}{" "}
+            <span style={{ opacity: 0.6 }}>from {m.sender_id}</span>
+          </li>
+        ))}
+      </ul>
 
-					} 
-				} as EventResource<Message>)
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const fd  = new FormData(e.currentTarget);
+          const txt = fd.get("messageBox")?.toString() ?? "";
 
-				e.currentTarget.reset();
-			}}>
-				<input name="messageBox" />
-				<button type="submit">
-					Wyslij pan
-				</button>
-			</form> 
-		</>
-	)
-}
+          sendChatMessage({
+            channel:   `room:${chatId}`,
+            method:    "POST",
+            event_name: MessageEvents.MESSAGE_SENT,
+            contents: {
+              id: 0,
+              room_id: chatId,
+              sender_id: 0,
+              contents: txt,
+            } as Message,
+          } as EventResource<Message>);
 
-export default ChatRoomView
+          e.currentTarget.reset();
+        }}
+      >
+        <input name="messageBox" />
+        <button type="submit">send</button>
+      </form>
+    </>
+  );
+};
+
+export default ChatRoomView;

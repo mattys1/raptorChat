@@ -25,7 +25,7 @@ func Router() *chi.Mux {
 		r.Put("/invites/{id}", handlers.UpdateInviteHandler)
 
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/me/rooms", handlers.GetRoomsOfUserHandler) // ideally this should be merged into {id} and a middleware should be set up to check whether the user is the same
+			r.Get("/me/rooms", handlers.GetRoomsOfUserHandler)
 			r.Get("/me", handlers.GetOwnIDHandler)
 			r.Get("/", handlers.GetAllUsersHandler)
 
@@ -34,6 +34,7 @@ func Router() *chi.Mux {
 				r.Get("/friends", handlers.GetFriendsOfUserHandler)
 			})
 		})
+
 		r.Route("/rooms", func(r chi.Router) {
 			r.Post("/", handlers.CreateRoomHandler)
 
@@ -43,16 +44,19 @@ func Router() *chi.Mux {
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
 
+				r.Get("/myroles", handlers.GetMyRolesHandler)
+				r.Post("/moderators/{userID}", handlers.DesignateModeratorHandler)
+
 				r.Get("/", handlers.GetRoomHandler)
 				r.Delete("/", handlers.DeleteRoomHandler)
 			})
 		})
+
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(middleware.RequirePermission("view_admin_panel"))
 
 			r.Get("/users", admin.ListUsers)
 			r.Delete("/users/{userID}", admin.DeleteUser)
-			// TODO: add role/permission assignment endpoints
 		})
 	})
 
