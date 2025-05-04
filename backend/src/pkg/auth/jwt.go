@@ -128,6 +128,7 @@ func CentrifugoTokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateLivekitRoomToken(apiKey, apiSecret, room, identity string) (string, error) {
+	slog.Info("Generating Livekit token", "apiKey", apiKey, "apiSecret", apiSecret, "room", room, "identity", identity)
 	accesToken := lkauth.NewAccessToken(apiKey, apiSecret)
 	grant := &lkauth.VideoGrant{
 		RoomJoin: true,
@@ -143,7 +144,6 @@ func LivekitTokenHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("uid")
 	roomId := chi.URLParam(r, "chatId")
 
-	slog.Info("livekit api key", "key", os.Getenv("LIVEKIT_API_KEY"), "livekit secret key", os.Getenv("LIVEKIT_API_SECRET"))
 	token, err := GenerateLivekitRoomToken(os.Getenv("LIVEKIT_API_KEY"), os.Getenv("LIVEKIT_API_SECRET"), roomId, userID)
 	if err != nil {
 		slog.Error("Error generating Livekit token", "error", err)
