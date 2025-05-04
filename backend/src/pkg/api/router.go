@@ -45,6 +45,7 @@ func Router() *chi.Mux {
 
 				r.Get("/", handlers.GetRoomHandler)
 				r.Delete("/", handlers.DeleteRoomHandler)
+				r.Put("/", handlers.UpdateRoomHandler)
 			})
 		})
 		r.Route("/admin", func(r chi.Router) {

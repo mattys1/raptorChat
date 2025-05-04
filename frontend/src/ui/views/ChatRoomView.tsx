@@ -19,12 +19,39 @@ const ChatRoomView = () => {
 		<>
 			{
 				props.room?.type === RoomsType.Group &&
-				<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
-					Invite user to chatroom...
-				</button>
+					<div>
+						<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
+							Invite user to chatroom...
+						</button>
+
+						<form onSubmit={(e) => {
+							e.preventDefault()
+							const formData = new FormData(e.currentTarget)
+							const newName = formData.get("roomRename")?.toString() ?? ""
+
+							props.modifyRoom({
+								channel: `room:${key}`,
+								method: "PUT",
+								event_name: "room_updated",
+								contents: {
+									id: props.room?.id,
+									name: newName,
+									owner_id: props.room?.owner_id,
+									type: props.room?.type,
+								} 
+							} as EventResource<Room>)
+
+							e.currentTarget.reset();
+						}}>
+							<input name="roomRename" />
+							<button type="submit">
+								Rename room
+							</button>
+						</form> 
+					</div>
 			}
 
-			<button onClick={() => props.deleteRoom({
+			<button onClick={() => props.modifyRoom({
 				channel: `room:${key}`,
 				method: "DELETE",
 				event_name: "room_deleted",

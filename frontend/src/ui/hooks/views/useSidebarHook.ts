@@ -18,6 +18,16 @@ export const useSidebarHook = () => {
 					})
 				})
 				break
+			case "room_updated":
+				setRooms(prev => {
+					return prev.map(room => {
+						if(room?.id === incoming?.id) {
+							return incoming
+						}
+						return room
+					})
+				})
+				break
 			default:
 				console.log("Unknown event", event)
 		} 
@@ -28,7 +38,7 @@ export const useSidebarHook = () => {
 		[],
 		"/api/user/me/rooms",
 		`user:${ownId}:rooms`,
-		["joined_room", "room_deleted"],
+		["joined_room", "room_deleted", "room_updated"],
 		onRoomEvent,
 	)
 

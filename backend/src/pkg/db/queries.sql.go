@@ -670,3 +670,24 @@ func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) erro
 	_, err := q.db.ExecContext(ctx, updateInvite, arg.State, arg.ID)
 	return err
 }
+
+const updateRoom = `-- name: UpdateRoom :exec
+UPDATE rooms SET name = ?, type = ?, owner_id = ? WHERE id = ?
+`
+
+type UpdateRoomParams struct {
+	Name    *string   `json:"name"`
+	Type    RoomsType `json:"type"`
+	OwnerID *uint64   `json:"owner_id"`
+	ID      uint64    `json:"id"`
+}
+
+func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
+	_, err := q.db.ExecContext(ctx, updateRoom,
+		arg.Name,
+		arg.Type,
+		arg.OwnerID,
+		arg.ID,
+	)
+	return err
+}

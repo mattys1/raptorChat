@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -208,25 +209,7 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 		newResource,
 	)
 
-	useresInRoom, err := dao.GetUsersByRoom(r.Context(), room.ID)
-	if err != nil {
-		slog.Error("Error getting users in room", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	// for clearing the sidbar of other room members
-	for _, user := range useresInRoom {
-		messaging.GetCentrifugoService().Publish(
-			r.Context(),
-			&messaging.EventResource{
-				Channel: fmt.Sprintf("user:%d:rooms", user.ID),
-				Method: "DELETE",
-				EventName: "room_deleted",
-				Contents: newResource.Contents,
-			},
-		)
-	}
+	publishToRoomMembers(*newResource, dao, r.Context())
 
 	err = dao.DeleteRoom(r.Context(), room.ID)
 	if err != nil {
@@ -255,4 +238,75 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("Error sending room", "roomid", roomid, "error", err)
 	}
+}
+
+func UpdateRoomHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	eventResource, err := messaging.GetEventResourceFromRequest(r)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		return
+	}
+
+	room, err := messaging.GetEventResourceContents[db.Room](eventResource)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		return
+	}
+	if room.Type != db.RoomsTypeGroup {
+		http.Error(w, "Only group rooms can be updated", http.StatusBadRequest)
+		return	
+	}
+
+	newResource, err := messaging.ReassembleResource(eventResource, room)
+	if err != nil {
+		slog.Error("Error reassembling resource", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = dao.UpdateRoom(r.Context(), db.UpdateRoomParams{
+		ID: room.ID,
+		Name: room.Name,
+		Type: room.Type,
+		OwnerID: room.OwnerID,
+	})
+	if err != nil {
+		slog.Error("Error updating room", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = messaging.GetCentrifugoService().Publish(
+		r.Context(),
+		newResource,
+	)
+
+	publishToRoomMembers(*newResource, dao, r.Context())
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func publishToRoomMembers(resource messaging.EventResource, dao *db.Queries, ctx context.Context) (error) {
+	room, err := messaging.GetEventResourceContents[db.Room](&resource)
+	useresInRoom, err := dao.GetUsersByRoom(ctx, room.ID)
+	if err != nil {
+		slog.Error("Error getting users in room", "error", err)
+		return err
+	}
+
+	// for clearing the sidbar of other room members
+	for _, user := range useresInRoom {
+		resource.Channel = fmt.Sprintf("user:%d:rooms", user.ID)
+		err := messaging.GetCentrifugoService().Publish(
+			ctx,
+			&resource,
+		)
+		if err != nil {
+			slog.Error("Error publishing to room member", "error", err)
+			return err
+		}
+	}
+
+	return nil
 }

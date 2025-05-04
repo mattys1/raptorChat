@@ -16,6 +16,8 @@ export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
 	const chatId = key
 	console.log("ChatRoomHook key:", chatId)
+	const [room, setRoom] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`) // TODO: merge this with useFetchAndListen
+	const [sentMessageStatus, error, sendChatMessage] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
 
 	const handleNewMessage = useCallback<MessageUpdateCallback>((setState, incoming) => {
 		console.log("New message", incoming)
@@ -30,26 +32,28 @@ export const useChatRoomHook = (key: number) => {
 		["message_sent"],	
 		handleNewMessage
 	)
-	const [latest] = useEventListener<any>(
+	const [latest] = useEventListener<Room>(
 		`room:${chatId}`,
-		["room_deleted"]
+		["room_deleted", "room_updated"]
 	)
 
 	useEffect(() => {
-		if(latest.event === "room_deleted") { //FIXME: somehow this can be not a room_deleted event
-			navigate(ROUTES.MAIN)
-		}
+		switch(latest.event) {
+			case "room_deleted":
+				navigate(ROUTES.MAIN)
+				break
+			case "room_updated":
+				setRoom(latest.item)	
+		} 
 	}, [latest])
 
-	const [response, roomDelErr, deleteRoom] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
-	const [room] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`)
-	const [sentMessageStatus, error, sendChatMessage] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
+	const [response, roomDelErr, modifyRoom] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
 
 	return {
 		messageList,
 		sentMessageStatus,
 		sendChatMessage,
-		deleteRoom,
+		modifyRoom,
 		room,
 	}
 }
