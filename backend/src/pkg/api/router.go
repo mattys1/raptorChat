@@ -56,6 +56,7 @@ func Router() *chi.Mux {
 			r.Use(middleware.RequirePermission("view_admin_panel"))
 
 			r.Get("/users", admin.ListUsers)
+			r.Post("/users", admin.CreateUser)
 			r.Delete("/users/{userID}", admin.DeleteUser)
 		})
 	})
