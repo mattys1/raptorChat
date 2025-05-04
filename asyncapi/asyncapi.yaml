@@ -206,6 +206,22 @@ components:
             required:
               - event_name
               - contents
+    RoomUpdatedEvent:
+      name: RoomUpdatedEvent
+      title: Room Updated Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - room_updated
+              contents:
+                $ref: '#/components/schemas/Room'
+            required:
+              - event_name
+              - contents
     # FriendshipAcceptedEvent:
     #   name: FriendshipAcceptedEvent
     #   title: Accepted a friend request
@@ -239,6 +255,8 @@ channels:
         $ref: '#/components/messages/MessageSentEvent'
       RoomDeleted:
         $ref: '#/components/messages/RoomDeletedEvent'
+      RoomUpdated:
+        $ref:  '#/components/messages/RoomUpdatedEvent'
     description: Events happening in a chatroom
         
   user.{id}.invites:
@@ -265,6 +283,8 @@ channels:
         $ref: '#/components/messages/JoinedRoomEvent'
       RoomDeleted:
         $ref: '#/components/messages/RoomDeletedEvent'
+      RoomUpdated:
+        $ref: '#/components/messages/RoomUpdatedEvent'
     description: Events for rooms the user is part of
 
 operations:
@@ -276,6 +296,7 @@ operations:
     messages:
       - $ref: '#/channels/room.{id}/messages/MessageSent'
       - $ref: '#/channels/room.{id}/messages/RoomDeleted'
+      - $ref: '#/channels/user.{id}.rooms/messages/RoomDeleted'
   
   'user.{id}.invites.receive':
     action: receive
@@ -295,3 +316,4 @@ operations:
     messages:
       - $ref: '#/channels/user.{id}.rooms/messages/JoinedRoom'
       - $ref: '#/channels/user.{id}.rooms/messages/RoomDeleted'
+      - $ref: '#/channels/user.{id}.rooms/messages/RoomUpdated'
