@@ -1,105 +1,104 @@
+import { useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
-import "./Start.css";
+import { useRoomRoles } from "../hooks/useRoomRoles";
+import { useResourceFetcher } from "../hooks/useResourceFetcher";
 import { MessageEvents } from "../../structs/MessageNames";
-import { Message, Room, RoomsType } from "../../structs/models/Models";
+import { Message, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
+import styles from "./ChatRoomView.module.css";
 
-const ChatRoomView = () => {
-	const key = Number(useParams().chatId)
-	const navigate = useNavigate()
+const ChatRoomView: React.FC = () => {
+  const chatId   = Number(useParams().chatId);
+  const navigate = useNavigate();
 
-	const props = useChatRoomHook(key)
-	// console.log("ChatRoomView props:", props)
-	console.log("ChatRoomView message", props.messageList)
-	console.log("Rerendered")
+  /* existing room + messages logic */
+  const { room, messageList, sendChatMessage } = useChatRoomHook(chatId);
 
-	return (
-		<>
-			<button onClick={() => { console.log("navigating to call", key); navigate(`${ROUTES.CHATROOM}/${key}/call`) }}>
-				Call
-			</button>
-			{
-				props.room?.type === RoomsType.Group &&
-					<div>
-						<button onClick={() => navigate(`${ROUTES.CHATROOM}/${key}/invite`)}>
-							Invite user to chatroom...
-						</button>
+  const { isOwner, isModerator } = useRoomRoles(chatId);
 
-						<form onSubmit={(e) => {
-							e.preventDefault()
-							const formData = new FormData(e.currentTarget)
-							const newName = formData.get("roomRename")?.toString() ?? ""
+  const [users] = useResourceFetcher<User[]>([], `/api/rooms/${chatId}/user`);
+  const nameMap = useMemo(
+    () => Object.fromEntries(users.map((u) => [u.id, u.username])),
+    [users]
+  );
 
-							props.modifyRoom({
-								channel: `room:${key}`,
-								method: "PUT",
-								event_name: "room_updated",
-								contents: {
-									id: props.room?.id,
-									name: newName,
-									owner_id: props.room?.owner_id,
-									type: props.room?.type,
-								} 
-							} as EventResource<Room>)
+  const myId = Number(localStorage.getItem("uID") ?? 0);
 
-							e.currentTarget.reset();
-						}}>
-							<input name="roomRename" />
-							<button type="submit">
-								Rename room
-							</button>
-						</form> 
-					</div>
-			}
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messageList]);
 
-			<button onClick={() => props.modifyRoom({
-				channel: `room:${key}`,
-				method: "DELETE",
-				event_name: "room_deleted",
-				contents: props?.room
-			} as EventResource<Room>) /**this deletes the friendship as well (unintentional but works)**/}> 
-				{props.room?.type === RoomsType.Group ? "Delete groupchat" : "Unfriend user"}
-			</button>
-			{`${props.room?.type === RoomsType.Group ? "Group Chat" : ""} ${props.room?.name}`}
-			<p>
-				{props?.messageList?.map((message, index) => (
-					<li key={index}>
-						{message?.contents ?? "Unknown text"} { }
-						Sender: {message?.sender_id ?? "Unknown sender"}
-					</li>
-				))}
-			</p>
+  const send = (text: string) => {
+    sendChatMessage({
+      channel:   `room:${chatId}`,
+      method:    "POST",
+      event_name: MessageEvents.MESSAGE_SENT,
+      contents: {
+        id: 0,
+        room_id: chatId,
+        sender_id: 0,
+        contents: text,
+      } as Message,
+    } as EventResource<Message>);
+  };
 
-			<form onSubmit={(e) => {
-				e.preventDefault()
-				const formData = new FormData(e.currentTarget)
-				const message = formData.get("messageBox")?.toString() ?? ""
-				console.log("Message:", message)
+  return (
+    <div className={styles.wrapper}>
+      <div className={styles.topButtons}>
+        {room?.type === RoomsType.Group && (
+          <button onClick={() => navigate(`${ROUTES.CHATROOM}/${chatId}/invite`)}>
+            Invite user to chatroom
+          </button>
+        )}
+        {(isOwner || isModerator) && (
+          <button onClick={() => navigate(`${ROUTES.CHATROOM}/${chatId}/manage`)}>
+            Manage room
+          </button>
+        )}
+      </div>
 
-				props.sendChatMessage({
-					channel: `room:${key}`,
-					method: "POST",
-					event_name: MessageEvents.MESSAGE_SENT,
-					contents: {
-						id: 0,
-						room_id: key,
-						sender_id: 0,
-						contents: message,
+      <h3 style={{ textAlign: "center", margin: 0, paddingBottom: "0.5rem" }}>
+        {room?.type === RoomsType.Group ? "Group Chat" : ""} {room?.name}
+      </h3>
 
-					} 
-				} as EventResource<Message>)
+      <div className={styles.messages}>
+        {messageList.map((m) => (
+          <div
+            key={m.id}
+            className={`${styles.bubble} ${m.sender_id === myId ? styles.mine : ""}`}
+          >
+            <div className={styles.header}>
+              {nameMap[m.sender_id] ?? `user${m.sender_id}`}
+            </div>
+            {m.contents}
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
 
-				e.currentTarget.reset();
-			}}>
-				<input name="messageBox" />
-				<button type="submit">
-					Wyslij pan
-				</button>
-			</form> 
-		</>
-	)
-}
+      <form
+        className={styles.footer}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const text = (e.currentTarget.elements.namedItem("messageBox") as HTMLInputElement)
+            .value;
+          if (text.trim()) send(text.trim());
+          e.currentTarget.reset();
+        }}
+      >
+        <input
+          name="messageBox"
+          className={styles.input}
+          placeholder="Type a message..."
+          autoComplete="off"
+        />
+        <button type="submit" className={styles.sendBtn}>send</button>
+      </form>
+    </div>
+  );
+};
 
-export default ChatRoomView
+export default ChatRoomView;

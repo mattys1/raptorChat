@@ -1,0 +1,83 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+  }
+  
+  .topButtons {
+    padding: 0.5rem 1rem;
+  }
+  
+  .messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 1rem 2%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  
+.bubble {
+    max-width: 100%;
+    width: 80%;
+    border-radius: 8px;
+    padding: 0.45rem 2% 0.6rem;
+    margin-bottom: 0.75rem;
+    background: #1e293b;
+    color: #e5e9f0;
+    line-height: 1.4;
+    align-self: flex-end;
+    text-align: right;
+  }
+  
+  .mine {
+    max-width: 100%;
+    width: 80%;
+    border-radius: 8px;
+    padding: 0.45rem 2% 0.6rem;
+    margin-bottom: 0.75rem;
+    background: #0d1117;
+    color: #e5e9f0;
+    line-height: 1.4;
+    align-self: flex-start;
+    text-align: left;
+  }
+  
+  .header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #cbd5e1;
+  }
+  
+  
+  .footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    background: #374151;
+  }
+  
+  .input {
+    flex: 1 1 auto;
+    background: #1f2937;
+    color: #e5e9f0;
+    border: 1px solid #4b5563;
+    border-radius: 6px;
+    padding: 0.45rem 1.5%;
+  }
+  
+  .sendBtn {
+    background: #1f2937;
+    border: 1px solid #4b5563;
+    color: #e5e9f0;
+    border-radius: 6px;
+    padding: 0.45rem 1.8%;
+    cursor: pointer;
+  }
+  
+  .sendBtn:hover {
+    background: #334155;
+  }  

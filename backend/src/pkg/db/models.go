@@ -185,6 +185,12 @@ type Room struct {
 	Type    RoomsType `json:"type"`
 }
 
+type RoomsUsersRole struct {
+	RoomID uint64 `json:"room_id"`
+	UserID uint64 `json:"user_id"`
+	RoleID uint64 `json:"role_id"`
+}
+
 type User struct {
 	ID        uint64    `json:"id"`
 	Username  string    `json:"username"`

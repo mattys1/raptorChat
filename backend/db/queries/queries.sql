@@ -109,3 +109,20 @@ DELETE FROM friendships WHERE id = ?;
 SELECT DISTINCT u.* FROM users u 
 NATURAL JOIN friendships f
 WHERE sqlc.arg(user_id) OR f.second_id = sqlc.arg(user_id);
+
+-- name: GetRoleByName :one
+SELECT id, name FROM roles WHERE name = ? LIMIT 1;
+
+-- name: AssignRoleToUserInRoom :exec
+INSERT INTO rooms_users_roles (room_id, user_id, role_id)
+VALUES (?, ?, ?);
+
+-- name: RemoveRoleFromUserInRoom :exec
+DELETE FROM rooms_users_roles
+WHERE room_id = ? AND user_id = ? AND role_id = ?;
+
+-- name: GetRolesByUserInRoom :many
+SELECT r.id, r.name
+FROM   roles r
+JOIN   rooms_users_roles rur ON rur.role_id = r.id
+WHERE  rur.user_id = ? AND rur.room_id = ?;

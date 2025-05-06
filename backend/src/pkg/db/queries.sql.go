@@ -52,6 +52,22 @@ func (q *Queries) AssignRoleToUser(ctx context.Context, arg AssignRoleToUserPara
 	return err
 }
 
+const assignRoleToUserInRoom = `-- name: AssignRoleToUserInRoom :exec
+INSERT INTO rooms_users_roles (room_id, user_id, role_id)
+VALUES (?, ?, ?)
+`
+
+type AssignRoleToUserInRoomParams struct {
+	RoomID uint64 `json:"room_id"`
+	UserID uint64 `json:"user_id"`
+	RoleID uint64 `json:"role_id"`
+}
+
+func (q *Queries) AssignRoleToUserInRoom(ctx context.Context, arg AssignRoleToUserInRoomParams) error {
+	_, err := q.db.ExecContext(ctx, assignRoleToUserInRoom, arg.RoomID, arg.UserID, arg.RoleID)
+	return err
+}
+
 const createFriendship = `-- name: CreateFriendship :execresult
 INSERT INTO friendships (first_id, second_id, dm_id) VALUES (?, ?, ?)
 `
@@ -453,6 +469,17 @@ func (q *Queries) GetPermissionsByUser(ctx context.Context, userID uint64) ([]Pe
 	return items, nil
 }
 
+const getRoleByName = `-- name: GetRoleByName :one
+SELECT id, name FROM roles WHERE name = ? LIMIT 1
+`
+
+func (q *Queries) GetRoleByName(ctx context.Context, name string) (Role, error) {
+	row := q.db.QueryRowContext(ctx, getRoleByName, name)
+	var i Role
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
 const getRoles = `-- name: GetRoles :many
 SELECT id, name FROM roles
 `
@@ -489,6 +516,41 @@ WHERE ur.user_id = ?
 
 func (q *Queries) GetRolesByUser(ctx context.Context, userID uint64) ([]Role, error) {
 	rows, err := q.db.QueryContext(ctx, getRolesByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Role
+	for rows.Next() {
+		var i Role
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRolesByUserInRoom = `-- name: GetRolesByUserInRoom :many
+SELECT r.id, r.name
+FROM   roles r
+JOIN   rooms_users_roles rur ON rur.role_id = r.id
+WHERE  rur.user_id = ? AND rur.room_id = ?
+`
+
+type GetRolesByUserInRoomParams struct {
+	UserID uint64 `json:"user_id"`
+	RoomID uint64 `json:"room_id"`
+}
+
+func (q *Queries) GetRolesByUserInRoom(ctx context.Context, arg GetRolesByUserInRoomParams) ([]Role, error) {
+	rows, err := q.db.QueryContext(ctx, getRolesByUserInRoom, arg.UserID, arg.RoomID)
 	if err != nil {
 		return nil, err
 	}
@@ -654,6 +716,22 @@ type RemoveRoleFromUserParams struct {
 
 func (q *Queries) RemoveRoleFromUser(ctx context.Context, arg RemoveRoleFromUserParams) error {
 	_, err := q.db.ExecContext(ctx, removeRoleFromUser, arg.UserID, arg.RoleID)
+	return err
+}
+
+const removeRoleFromUserInRoom = `-- name: RemoveRoleFromUserInRoom :exec
+DELETE FROM rooms_users_roles
+WHERE room_id = ? AND user_id = ? AND role_id = ?
+`
+
+type RemoveRoleFromUserInRoomParams struct {
+	RoomID uint64 `json:"room_id"`
+	UserID uint64 `json:"user_id"`
+	RoleID uint64 `json:"role_id"`
+}
+
+func (q *Queries) RemoveRoleFromUserInRoom(ctx context.Context, arg RemoveRoleFromUserInRoomParams) error {
+	_, err := q.db.ExecContext(ctx, removeRoleFromUserInRoom, arg.RoomID, arg.UserID, arg.RoleID)
 	return err
 }
 

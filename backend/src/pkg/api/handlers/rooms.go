@@ -22,7 +22,7 @@ func GetMessagesOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dao := db.GetDao()
-	messages, err := dao.GetMessagesByRoom(r.Context(), uint64(roomid))	
+	messages, err := dao.GetMessagesByRoom(r.Context(), uint64(roomid))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Internal Server Error, couldn't retrieve messages of id: %d", roomid), http.StatusInternalServerError)
 	}
@@ -47,7 +47,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	senderID, ok := middleware.RetrieveUserIDFromContext(r.Context())	
+	senderID, ok := middleware.RetrieveUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
 		return
@@ -94,7 +94,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request, ) {
+func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "Invalid room ID", http.StatusBadRequest)
@@ -119,81 +119,96 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	eventResource, err := messaging.GetEventResourceFromRequest(r)
 	if err != nil {
-		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		http.Error(w, "Error unmarshalling EventResource", http.StatusBadRequest)
+		return
 	}
-
 
 	room, err := messaging.GetEventResourceContents[db.Room](eventResource)
 	if err != nil {
-		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		http.Error(w, "Error unmarshalling room contents", http.StatusBadRequest)
 		return
 	}
 
-	slog.Info("Creating room", "room", room)
-	roomResult, err := dao.CreateRoom(r.Context(), db.CreateRoomParams{
-		Name: room.Name,
+	res, err := dao.CreateRoom(r.Context(), db.CreateRoomParams{
+		Name:    room.Name,
 		OwnerID: room.OwnerID,
-		Type: room.Type,
+		Type:    room.Type,
 	})
 	if err != nil {
-		slog.Error("Error creating room", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+	roomID, _ := res.LastInsertId()
 
-	roomID, err := roomResult.LastInsertId()
-	assert.That(err == nil, "Error getting last insert ID from just inserted room", err)
-	newResource, err := messaging.ReassembleResource(eventResource, db.Room{
-		ID: uint64(roomID),
-		Name: room.Name,
-		OwnerID: room.OwnerID,
-		Type: room.Type,
-	})
-
-	err = dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
+	/* owner joins automatically */
+	_ = dao.AddUserToRoom(r.Context(), db.AddUserToRoomParams{
 		UserID: *room.OwnerID,
 		RoomID: uint64(roomID),
 	})
-	if err != nil {
-		slog.Error("Error adding user to room", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+	/* ★ grant OWNER role inside that room */
+	if ownerRole, err := dao.GetRoleByName(r.Context(), "owner"); err == nil {
+		_ = dao.AssignRoleToUserInRoom(r.Context(), db.AssignRoleToUserInRoomParams{
+			RoomID: uint64(roomID),
+			UserID: *room.OwnerID,
+			RoleID: ownerRole.ID,
+		})
 	}
 
-	// FIXME: hack
-	messaging.GetCentrifugoService().Publish(
-		r.Context(),
-		&messaging.EventResource{
-			Channel: newResource.Channel,
-			Method: newResource.Method,
-			EventName: "joined_room",
-			Contents: newResource.Contents,
-		},
-	)
+	newResource, _ := messaging.ReassembleResource(eventResource, db.Room{
+		ID:      uint64(roomID),
+		Name:    room.Name,
+		OwnerID: room.OwnerID,
+		Type:    room.Type,
+	})
 
-	err = messaging.GetCentrifugoService().Publish(
-		r.Context(),
-		newResource,
-	)
+	/* notify Centrifugo */
+	_ = messaging.GetCentrifugoService().Publish(r.Context(), &messaging.EventResource{
+		Channel:   newResource.Channel,
+		Method:    newResource.Method,
+		EventName: "joined_room",
+		Contents:  newResource.Contents,
+	})
+	_ = messaging.GetCentrifugoService().Publish(r.Context(), newResource)
 
 	w.WriteHeader(http.StatusCreated)
-	err = SendResource(newResource, w)
-	if err != nil {
-		slog.Error("Error sending room ID", "error", err)
-	}
+	_ = SendResource(newResource, w)
 }
 
 func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	dao := db.GetDao()
-	eventResource, err := messaging.GetEventResourceFromRequest(r)
-	if err != nil {
-		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+
+	callerID, ok := middleware.RetrieveUserIDFromContext(ctx)
+	if !ok {
+		http.Error(w, "unauthorised", http.StatusUnauthorized)
 		return
 	}
 
-	room, err := messaging.GetEventResourceContents[db.Room](eventResource)
+	roomID, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
+		http.Error(w, "invalid room id", http.StatusBadRequest)
+		return
+	}
+
+	room, err := dao.GetRoomById(ctx, roomID)
+	if err != nil {
+		http.Error(w, "room not found", http.StatusNotFound)
+		return
+	}
+	if room.OwnerID == nil || *room.OwnerID != callerID {
+		http.Error(w, "forbidden – only the owner may delete the room", http.StatusForbidden)
+		return
+	}
+
+	eventResource, err := messaging.GetEventResourceFromRequest(r)
+	if err != nil {
+		http.Error(w, "bad EventResource", http.StatusBadRequest)
+		return
+	}
+	roomPayload, err := messaging.GetEventResourceContents[db.Room](eventResource)
+	if err != nil {
+		http.Error(w, "bad contents", http.StatusBadRequest)
 		return
 	}
 
@@ -218,6 +233,7 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_ = dao.DeleteRoom(ctx, roomPayload.ID)
 	w.WriteHeader(http.StatusNoContent)
 }
 
