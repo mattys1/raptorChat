@@ -45,11 +45,9 @@ export const useEventListener = <T>(
 		}).finally(() => { console.log("sub promise finished") })
 
 		return () => {
-			sub.then(() => {
-				CentrifugoService.unsubscribe(channel)
-			})
+			CentrifugoService.unsubscribe(channel)
 		}
-	}, [])
+	}, [channel])
 
 	return [state, setState]
 }

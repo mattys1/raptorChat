@@ -17,6 +17,9 @@ const ChatRoomView = () => {
 
 	return (
 		<>
+			<button onClick={() => { console.log("navigating to call", key); navigate(`${ROUTES.CHATROOM}/${key}/call`) }}>
+				Call
+			</button>
 			{
 				props.room?.type === RoomsType.Group &&
 					<div>

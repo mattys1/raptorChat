@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { jwtDecode } from "jwt-decode";
+import { CentrifugoService } from "../../logic/CentrifugoService";
 
 interface AuthState {
   userId: number;
@@ -63,10 +64,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setToken(newToken);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-  };
+	const logout = () => {
+		localStorage.removeItem("token");
+		localStorage.removeItem("uID");
+		localStorage.removeItem("centrifugoToken");
+		CentrifugoService.disconnect();
+		setToken(null);
+	};
 
   return (
     <AuthContext.Provider value={{ ...auth, login, logout }}>

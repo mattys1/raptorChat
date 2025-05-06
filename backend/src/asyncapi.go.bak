@@ -1,0 +1,56 @@
+package main
+
+import (
+	"encoding/json"
+	"os"
+
+	"github.com/mattys1/raptorChat/src/pkg/assert"
+	"github.com/mattys1/raptorChat/src/pkg/db"
+	"github.com/mattys1/raptorChat/src/pkg/messaging"
+	"github.com/swaggest/go-asyncapi/reflector/asyncapi-2.4.0"
+	"github.com/swaggest/go-asyncapi/spec-2.4.0"
+)
+
+func passWithouError(item json.RawMessage, err error) json.RawMessage {
+	if err != nil {
+		panic(err.Error())
+	}
+	return item
+}
+
+func GenerateAsyncAPI() {
+    api := spec.AsyncAPI{}
+	api.Info.Version = "1.0.0"
+	api.Info.Title = "RaptorChat Real-Time API"
+
+	api.AddServer("dev", spec.Server{
+		URL: "localhost:8080",
+	})
+
+	reflector := asyncapi.Reflector{}
+	reflector.Schema = &api
+
+	mustNotFail := func(err error) {
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	mustNotFail(reflector.AddChannel(asyncapi.ChannelInfo{
+		Name: "user.{id}.rooms",
+		Publish: &asyncapi.MessageSample{
+			MessageEntity: spec.MessageEntity{
+				Title: "User Rooms",
+				Description: "Events related to rooms the uesr is part of",
+			},
+			MessageSample: messaging.EventResourceDocs[db.Room]{},
+			},
+		},
+	))
+
+
+	yaml, err := reflector.Schema.MarshalYAML()
+	assert.That(err == nil, "Error generating asyncapi YAML", err)
+
+	os.WriteFile("../asyncapi/asyncapi.yaml", yaml, 0644)
+}
