@@ -5,7 +5,6 @@ go 1.24.0
 require (
 	github.com/centrifugal/gocent v2.2.0+incompatible
 	github.com/coder/websocket v1.8.12
-	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/livekit/protocol v1.37.1

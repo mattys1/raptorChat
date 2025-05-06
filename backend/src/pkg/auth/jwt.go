@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 
@@ -142,8 +142,15 @@ func GenerateLivekitRoomToken(apiKey, apiSecret, room, identity string) (string,
 
 func LivekitTokenHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("uid")
-	roomId := chi.URLParam(r, "chatId")
-	slog.Info(roomId)
+
+	// normal url extract doesn't work
+	pathParts := strings.Split(r.URL.Path, "/")
+	roomId := ""
+	if len(pathParts) >= 3 {
+		roomId = pathParts[2]
+	}
+	slog.Info("Roomid", "id", roomId)
+	slog.Info("Query", "query", r.URL.Path)
 
 	token, err := GenerateLivekitRoomToken(os.Getenv("LIVEKIT_API_KEY"), os.Getenv("LIVEKIT_API_SECRET"), roomId, userID)
 	if err != nil {
