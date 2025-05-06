@@ -37,12 +37,12 @@ type Claims struct {
 func GenerateCentrifugoToken(userID uint64) (string, error) {
 	userIDStr := fmt.Sprintf("%d", userID)
 	slog.Info("Generating Centrifugo token", "userID", userIDStr)
-	
+
 	claims := jwt.MapClaims{
 		"sub": userIDStr,
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	}
-	
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(jwtKey)
@@ -143,6 +143,7 @@ func GenerateLivekitRoomToken(apiKey, apiSecret, room, identity string) (string,
 func LivekitTokenHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("uid")
 	roomId := chi.URLParam(r, "chatId")
+	slog.Info(roomId)
 
 	token, err := GenerateLivekitRoomToken(os.Getenv("LIVEKIT_API_KEY"), os.Getenv("LIVEKIT_API_SECRET"), roomId, userID)
 	if err != nil {

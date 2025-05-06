@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/livekit/protocol v1.36.2-0.20250415074849-d67a6a9f9604
+	github.com/livekit/protocol v1.37.1
 )
 
 require (

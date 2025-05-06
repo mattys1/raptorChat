@@ -58,6 +58,9 @@ const ChatRoomView: React.FC = () => {
             Manage room
           </button>
         )}
+          <button onClick={() => { console.log("navigating to call", chatId); navigate(`${ROUTES.CHATROOM}/${chatId}/call`) }}>
+                Call
+          </button>
       </div>
 
       <h3 style={{ textAlign: "center", margin: 0, paddingBottom: "0.5rem" }}>
