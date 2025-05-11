@@ -8,6 +8,7 @@ const MyVideoConference = () => {
 	const tracks = useTracks(
 		[
 			{ source: Track.Source.Microphone, withPlaceholder: true },
+			{ source: Track.Source.Camera, withPlaceholder: true },
 		],
 		{ onlySubscribed: false },
 	);
@@ -28,7 +29,7 @@ const VideoChat = () => {
 		<RoomAudioRenderer />
 		<ControlBar controls={{
 			microphone: false,
-			camera: false,
+			camera: true,
 			screenShare: false,
 			leave: true, 
 			settings: false,
