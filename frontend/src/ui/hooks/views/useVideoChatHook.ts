@@ -15,8 +15,21 @@ export const useVideoChatHook = (chatId: Number) => {
 	// const connectionState = useConnectionState();
 	const [livekitToken, setLivekitToken] = useState<string | null>(null)
 	const [room] = useState(() => new Room({
-		adaptiveStream: true,
+		// adaptiveStream: true,
 		dynacast: true,
+		videoCaptureDefaults: {
+			resolution: {
+				width: 1920,
+				height: 1080,
+				frameRate: 30
+			},
+		},
+		publishDefaults: {
+			videoEncoding: {
+				maxBitrate: 2_700_000,
+				maxFramerate: 30,
+			},
+		},
 	}));
 
 
