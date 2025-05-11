@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "npm-run-all --parallel dev:*",
 		"dev:react": "vite",
-		"dev:electron": "npm run transpile:electron && NODE_ENV=development electron .",
+		"dev:electron": "npm run transpile:electron && NODE_ENV=development ELECTRON_ENABLE_PIPEWIRE=1 electron .",
 		"build": "tsc -b && vite build",
 		"lint": "eslint .",
 		"preview": "vite preview",

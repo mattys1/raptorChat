@@ -1,6 +1,9 @@
 import {app, BrowserWindow, session} from "electron";
 import path from "path";
 import { isDev } from "./isDev.js";
+import "electron";
+
+app.commandLine.appendSwitch("enable-experimental-web-platform-features")
 
 app.on("ready", () => {
 	const mainWindow = new BrowserWindow({})

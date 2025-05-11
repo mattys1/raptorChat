@@ -1,0 +1,37 @@
+import { useRoomContext } from "@livekit/components-react"
+import { Track } from "livekit-client"
+import { useContext, useEffect, useState } from "react"
+
+const MicToggleButton = () => {
+	const room = useRoomContext()
+	const [isMuted, setIsMuted] = useState(true)
+	const localParticipant = room.localParticipant
+	
+	useEffect(() => {
+		const localParticipant = room.localParticipant
+		const micTrack = localParticipant.getTrackPublication(Track.Source.Microphone)
+		if (micTrack) {
+			setIsMuted(micTrack.isMuted)
+		}
+
+		localParticipant.on("trackMuted", () => setIsMuted(true))
+		localParticipant.on("trackUnmuted", () => setIsMuted(false))
+		
+		return () => {
+			localParticipant.off("trackMuted", () => setIsMuted(true))
+			localParticipant.off("trackUnmuted", () => setIsMuted(false))
+		}
+	}, [room])
+
+	const toggleMute = () => {
+		localParticipant.setMicrophoneEnabled(!isMuted)
+	}
+
+	return (
+		<button onClick={toggleMute} className="mic-toggle-button">
+			{isMuted ? "Unmute" : "Mute"}
+		</button>
+	)
+}
+
+export default MicToggleButton

@@ -1,11 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useVideoChatHook } from "../hooks/views/useVideoChatHook"
-import { ConnectionState, ControlBar, GridLayout, LiveKitRoom, ParticipantTile, RoomAudioRenderer, RoomContext, useTracks } from "@livekit/components-react"
+import { ConnectionState, ControlBar, GridLayout, LiveKitRoom, ParticipantTile, RoomAudioRenderer, RoomContext, TrackToggle, useTracks } from "@livekit/components-react"
 import { Track } from "livekit-client";
+import MicToggleButton from "../components/MicToggleButton";
 
 const MyVideoConference = () => {
-	// `useTracks` returns all camera and screen share tracks. If a user
-	// joins without a published camera track, a placeholder track is returned.
 	const tracks = useTracks(
 		[
 			{ source: Track.Source.Microphone, withPlaceholder: true },
@@ -13,9 +12,7 @@ const MyVideoConference = () => {
 		{ onlySubscribed: false },
 	);
 	return (
-		<GridLayout tracks={tracks} style={{ height: 'calc(100vh - var(--lk-control-bar-height))' }}>
-			{/* The GridLayout accepts zero or one child. The child is used
-	  as a template to render all passed in tracks. */}
+		<GridLayout tracks={tracks}>
 			<ParticipantTile />
 		</GridLayout>
 	);
@@ -28,15 +25,18 @@ const VideoChat = () => {
 	return <RoomContext.Provider value={props.room}>
 		<MyVideoConference />
 		<ConnectionState />
-        <RoomAudioRenderer />
-        {/* Controls for the user to start/stop audio, video, and screen share tracks */}
-		<ControlBar />
-		{/**
-			<audio ref={props.audio} autoPlay controls onPlay={props.listen}>
-			</audio>
-		**/}
+		<RoomAudioRenderer />
+		<ControlBar controls={{
+			microphone: false,
+			camera: false,
+			screenShare: false,
+			leave: true, 
+			settings: false,
+		}} 
+		/>
+		<TrackToggle source={Track.Source.Microphone}/>
 	</RoomContext.Provider>
-		{ /**
+{ /**
 			serverUrl={"ws://localhost:7880"}
 			token={props.livekitToken ?? ""}
 			audio={true}

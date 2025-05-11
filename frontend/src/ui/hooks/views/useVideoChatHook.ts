@@ -4,12 +4,14 @@ import { usePresence } from "../usePresence"
 import { useSelectedMicrophone } from "../useSelectedMicrophone"
 import { useConnectionState } from "@livekit/components-react"
 import { SERVER_URL } from "../../../api/routes"
-import { Room } from "livekit-client"
+import { LocalAudioTrack, LocalTrack, Room, Track } from "livekit-client"
 
 export const useVideoChatHook = (chatId: Number) => {
+	//IMPORTANT: mediaDeviceSelect actually has the mic selection logic
+
 	// const [presence] = usePresence(`room:${chatId}:video`)
 	const audio = useRef<HTMLAudioElement | null>(null)
-	const stream = useSelectedMicrophone(localStorage.getItem("selectedMicrophone") ?? "").stream
+	const mic = localStorage.getItem("selectedMicrophone") ?? ""
 	// const connectionState = useConnectionState();
 	const [livekitToken, setLivekitToken] = useState<string | null>(null)
 	const [room] = useState(() => new Room({
@@ -55,9 +57,8 @@ export const useVideoChatHook = (chatId: Number) => {
 
 		const connect = async () => {
 			if(mounted) {
-				await room.connect("ws://localhost:7880", livekitToken!).catch((err) => {
-					console.error("Error connecting to LiveKit room", err);
-				});
+				await room.connect("ws://localhost:7880", livekitToken!).catch((err) => { console.error("Error connecting to LiveKit room", err) })
+				console.log("Active device now:", room.getActiveDevice('audioinput'));
 			}
 		};
 		connect();
@@ -67,25 +68,16 @@ export const useVideoChatHook = (chatId: Number) => {
 			room.disconnect();
 		};
 	}, [room, livekitToken]);
-	
+
 	useEffect(() => {
-		if(!audio.current || !stream) return
-
-		audio.current.srcObject = stream
-
-		audio.current.play().catch(err => {
-			console.log("Cant autoplay", err)
-		})
-	}, [stream, audio])
-
-	const listen = useCallback(() => {
-		if(!audio.current) return
-		if(!stream) return
-
-		audio.current.srcObject = stream
-		audio.current.play()
-	}, [chatId])
-
+		if(mic) {
+			(async () => {
+				await room.switchActiveDevice('audioinput', localStorage.getItem("selectedMicrophone") ?? "")
+				console.log("Active device now:", room.getActiveDevice('audioinput'));
+			})()
+		}
+	}, [room, mic])
+	
 	useEffect(() => {
 		if(import.meta.env.DEV) {
 			console.log("Debugging enabled")
@@ -94,9 +86,7 @@ export const useVideoChatHook = (chatId: Number) => {
 	}, [])
 
 	return {
-		stream,
 		audio,
-		listen,
 		room,
 	}
 }
