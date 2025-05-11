@@ -1,8 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useVideoChatHook } from "../hooks/views/useVideoChatHook"
-import { ConnectionState, ControlBar, GridLayout, LiveKitRoom, ParticipantTile, RoomAudioRenderer, RoomContext, TrackToggle, useTracks } from "@livekit/components-react"
+import { ConnectionState, ControlBar, GridLayout, LiveKitRoom, ParticipantTile, RoomAudioRenderer, RoomContext, TrackToggle, useTracks, VideoTrack } from "@livekit/components-react"
 import { Track } from "livekit-client";
 import MicToggleButton from "../components/MicToggleButton";
+// import '@livekit/components-styles';
+import ParticipantsGrid from "../components/ParticipantsGrid";
 
 const MyVideoConference = () => {
 	const tracks = useTracks(
@@ -12,10 +14,12 @@ const MyVideoConference = () => {
 		],
 		{ onlySubscribed: false },
 	);
+
 	return (
-		<GridLayout tracks={tracks}>
-			<ParticipantTile />
-		</GridLayout>
+		<ParticipantsGrid tracks={tracks} />	
+		// <GridLayout tracks={tracks} className="">
+		// 	<ParticipantTile />
+		// </GridLayout>
 	);
 }
 
@@ -31,7 +35,7 @@ const VideoChat = () => {
 			microphone: false,
 			camera: true,
 			screenShare: false,
-			leave: true, 
+			leave: false, 
 			settings: false,
 		}} 
 		/>

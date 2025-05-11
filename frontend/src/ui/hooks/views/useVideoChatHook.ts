@@ -7,8 +7,6 @@ import { SERVER_URL } from "../../../api/routes"
 import { LocalAudioTrack, LocalTrack, Room, Track } from "livekit-client"
 
 export const useVideoChatHook = (chatId: Number) => {
-	//IMPORTANT: mediaDeviceSelect actually has the mic selection logic
-
 	// const [presence] = usePresence(`room:${chatId}:video`)
 	const audio = useRef<HTMLAudioElement | null>(null)
 	const mic = localStorage.getItem("selectedMicrophone") ?? ""
