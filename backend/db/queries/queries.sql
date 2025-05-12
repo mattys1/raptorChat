@@ -4,9 +4,6 @@ SELECT * FROM users;
 -- name: GetUserById :one
 SELECT * FROM users WHERE id = ?;
 
--- name: GetUserByEmail :one
-SELECT * FROM users WHERE email = ? LIMIT 1;
-
 -- name: GetAllRooms :many
 SELECT * FROM rooms;
 
@@ -26,10 +23,6 @@ DELETE FROM rooms WHERE id = ?;
 
 -- name: UpdateRoom :exec
 UPDATE rooms SET name = ?, type = ?, owner_id = ? WHERE id = ?;
-
--- name: CreateUser :exec
-INSERT INTO users (username, email, password, created_at)
-VALUES (?, ?, ?, NOW());
 
 -- name: GetMessagesByRoom :many
 SELECT * FROM messages WHERE room_id = ?;

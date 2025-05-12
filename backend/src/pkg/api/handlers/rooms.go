@@ -271,7 +271,7 @@ func UpdateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if room.Type != db.RoomsTypeGroup {
 		http.Error(w, "Only group rooms can be updated", http.StatusBadRequest)
-		return	
+		return
 	}
 
 	newResource, err := messaging.ReassembleResource(eventResource, room)
@@ -282,9 +282,9 @@ func UpdateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = dao.UpdateRoom(r.Context(), db.UpdateRoomParams{
-		ID: room.ID,
-		Name: room.Name,
-		Type: room.Type,
+		ID:      room.ID,
+		Name:    room.Name,
+		Type:    room.Type,
 		OwnerID: room.OwnerID,
 	})
 	if err != nil {
@@ -303,7 +303,7 @@ func UpdateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func publishToRoomMembers(resource messaging.EventResource, dao *db.Queries, ctx context.Context) (error) {
+func publishToRoomMembers(resource messaging.EventResource, dao *db.Queries, ctx context.Context) error {
 	room, err := messaging.GetEventResourceContents[db.Room](&resource)
 	useresInRoom, err := dao.GetUsersByRoom(ctx, room.ID)
 	if err != nil {
