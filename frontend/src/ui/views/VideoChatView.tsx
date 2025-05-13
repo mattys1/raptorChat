@@ -28,18 +28,23 @@ const VideoChat = () => {
 	const props = useVideoChatHook(key)
 	const navigate = useNavigate()
 	return <RoomContext.Provider value={props.room}>
-		<MyVideoConference />
-		<ConnectionState />
-		<RoomAudioRenderer />
-		<ControlBar controls={{
-			microphone: false,
-			camera: true,
-			screenShare: false,
-			leave: false, 
-			settings: false,
-		}} 
-		/>
-		<TrackToggle source={Track.Source.Microphone}/>
+		<div>
+			<MyVideoConference />
+			<ConnectionState />
+			<RoomAudioRenderer />
+
+			<div className="bottom-1/4">
+				<ControlBar controls={{
+					microphone: false,
+					camera: true,
+					screenShare: false,
+					leave: false, 
+					settings: false,
+				}} 
+				/>
+				<TrackToggle source={Track.Source.Microphone} />
+			</div>
+		</div>
 	</RoomContext.Provider>
 { /**
 			serverUrl={"ws://localhost:7880"}

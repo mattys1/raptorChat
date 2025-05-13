@@ -7,7 +7,7 @@ const ParticipantsGrid = ({ tracks }: { tracks: TrackReference[] }) => {
 
 	console.log("participants", participants)
 	return (
-		<div className={`w-full grid gap-2 ${
+		<div className={`w-full h-full grid gap-x-8 ${
       participants.length === 1 ? 'place-items-center' : 
       participants.length === 2 ? 'grid-cols-2' : 
       participants.length === 3 ? 'grid-cols-3' : 

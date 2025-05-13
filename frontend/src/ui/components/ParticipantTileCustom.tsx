@@ -12,12 +12,12 @@ const ParticipantTileCustom = ({id, tracks}: ParticipantTileCustomProps) => {
 
 	console.log("track is muted", tracks.video.publication?.isMuted)
 	return (
-		<div>
+		<div className="w-full">
 			{
 				tracks.video.publication?.isMuted || !tracks.video.publication ? (
-					<ParticipantAudioTile trackRef={tracks.audio}/>
+					<ParticipantAudioTile className="w-full" trackRef={tracks.audio}/>
 				) : (
-					<VideoTrack className="max-w-full max-h-full" trackRef={tracks.video} />
+					<VideoTrack className="w-full" trackRef={tracks.video} />
 				)
 			}
 			{user.username}
