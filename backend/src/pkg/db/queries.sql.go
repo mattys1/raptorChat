@@ -132,22 +132,6 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (sql.Res
 	return q.db.ExecContext(ctx, createRoom, arg.Name, arg.OwnerID, arg.Type)
 }
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (username, email, password, created_at)
-VALUES (?, ?, ?, NOW())
-`
-
-type CreateUserParams struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser, arg.Username, arg.Email, arg.Password)
-	return err
-}
-
 const deleteFriendship = `-- name: DeleteFriendship :exec
 DELETE FROM friendships WHERE id = ?
 `
@@ -620,23 +604,6 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 		return nil, err
 	}
 	return items, nil
-}
-
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, created_at, password FROM users WHERE email = ? LIMIT 1
-`
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.Password,
-	)
-	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one

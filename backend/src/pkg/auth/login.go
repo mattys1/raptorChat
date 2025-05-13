@@ -1,41 +1,34 @@
+// backend/src/pkg/auth/login.go
 package auth
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
-	"github.com/mattys1/raptorChat/src/pkg/db"
+	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
 
+// This is json content for login
 type LoginCredentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// LoginHandler godoc
-// @Summary Log in a user
-// @Description Authenticates a user and sets a JWT token cookie upon success.
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param credentials body LoginCredentials true "User credentials"
-// @Success 200 {object} map[string]string "Login successful"
-// @Failure 400 {string} string "Bad request"
-// @Failure 401 {string} string "Unauthorized"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /login [post]
+// LoginHandler verifies credentials via GORM and then issues a JWT cookie after success
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("LoginHandler called")
 
+	// CORS preflight
 	if r.Method == http.MethodOptions {
 		return
 	}
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -50,11 +43,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	dao := db.GetDao()
-	user, err := dao.GetUserByEmail(ctx, creds.Email)
+	user, err := orm.GetUserByEmail(ctx, creds.Email)
 	if err != nil {
-		log.Println("Error fetching user:", err)
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		} else {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -64,14 +59,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// This does JWT
 	tokenString, err := GenerateToken(user.ID)
 	if err != nil {
 		http.Error(w, "Could not generate token", http.StatusInternalServerError)
 		return
 	}
 
+	// here is token as cookie
 	expirationTime := time.Now().Add(24 * time.Hour)
-	cookie := &http.Cookie{
+	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    tokenString,
 		Expires:  expirationTime,
@@ -79,13 +76,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
-	}
-	http.SetCookie(w, cookie)
+	})
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"status": "login successful",
-		"token": tokenString,
+		"token":  tokenString,
 	})
 }
