@@ -8,13 +8,13 @@ interface ParticipantTileCustomProps {
 }
 
 const ParticipantTileCustom = ({id, tracks}: ParticipantTileCustomProps) => {
-	const [user, setUserInfo] = useUserInfo(id)
+	const [user] = useUserInfo(id)
 
 	console.log("track is muted", tracks.video.publication?.isMuted)
 	return (
 		<div>
 			{
-				tracks.video.publication?.isMuted ? (
+				tracks.video.publication?.isMuted || !tracks.video.publication ? (
 					<ParticipantAudioTile trackRef={tracks.audio}/>
 				) : (
 					<VideoTrack className="max-w-full max-h-full" trackRef={tracks.video} />
