@@ -7,16 +7,27 @@ import { SERVER_URL } from "../../../api/routes"
 import { LocalAudioTrack, LocalTrack, Room, Track } from "livekit-client"
 
 export const useVideoChatHook = (chatId: Number) => {
-	//IMPORTANT: mediaDeviceSelect actually has the mic selection logic
-
 	// const [presence] = usePresence(`room:${chatId}:video`)
 	const audio = useRef<HTMLAudioElement | null>(null)
 	const mic = localStorage.getItem("selectedMicrophone") ?? ""
 	// const connectionState = useConnectionState();
 	const [livekitToken, setLivekitToken] = useState<string | null>(null)
 	const [room] = useState(() => new Room({
-		adaptiveStream: true,
+		// adaptiveStream: true,
 		dynacast: true,
+		videoCaptureDefaults: {
+			resolution: {
+				width: 1920,
+				height: 1080,
+				frameRate: 30
+			},
+		},
+		publishDefaults: {
+			videoEncoding: {
+				maxBitrate: 2_700_000,
+				maxFramerate: 30,
+			},
+		},
 	}));
 
 

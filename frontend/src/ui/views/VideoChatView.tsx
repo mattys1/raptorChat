@@ -1,20 +1,25 @@
 import { useNavigate, useParams } from "react-router-dom"
 import { useVideoChatHook } from "../hooks/views/useVideoChatHook"
-import { ConnectionState, ControlBar, GridLayout, LiveKitRoom, ParticipantTile, RoomAudioRenderer, RoomContext, TrackToggle, useTracks } from "@livekit/components-react"
+import { ConnectionState, ControlBar, GridLayout, LiveKitRoom, ParticipantTile, RoomAudioRenderer, RoomContext, TrackToggle, useTracks, VideoTrack } from "@livekit/components-react"
 import { Track } from "livekit-client";
 import MicToggleButton from "../components/MicToggleButton";
+// import '@livekit/components-styles';
+import ParticipantsGrid from "../components/ParticipantsGrid";
 
 const MyVideoConference = () => {
 	const tracks = useTracks(
 		[
 			{ source: Track.Source.Microphone, withPlaceholder: true },
+			{ source: Track.Source.Camera, withPlaceholder: true },
 		],
 		{ onlySubscribed: false },
 	);
+
 	return (
-		<GridLayout tracks={tracks}>
-			<ParticipantTile />
-		</GridLayout>
+		<ParticipantsGrid tracks={tracks} />	
+		// <GridLayout tracks={tracks} className="">
+		// 	<ParticipantTile />
+		// </GridLayout>
 	);
 }
 
@@ -23,18 +28,23 @@ const VideoChat = () => {
 	const props = useVideoChatHook(key)
 	const navigate = useNavigate()
 	return <RoomContext.Provider value={props.room}>
-		<MyVideoConference />
-		<ConnectionState />
-		<RoomAudioRenderer />
-		<ControlBar controls={{
-			microphone: false,
-			camera: false,
-			screenShare: false,
-			leave: true, 
-			settings: false,
-		}} 
-		/>
-		<TrackToggle source={Track.Source.Microphone}/>
+		<div>
+			<MyVideoConference />
+			<ConnectionState />
+			<RoomAudioRenderer />
+
+			<div className="bottom-1/4">
+				<ControlBar controls={{
+					microphone: false,
+					camera: true,
+					screenShare: false,
+					leave: false, 
+					settings: false,
+				}} 
+				/>
+				<TrackToggle source={Track.Source.Microphone} />
+			</div>
+		</div>
 	</RoomContext.Provider>
 { /**
 			serverUrl={"ws://localhost:7880"}
