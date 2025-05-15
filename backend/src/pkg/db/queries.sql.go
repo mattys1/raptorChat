@@ -160,7 +160,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uint64) error {
 }
 
 const getAllRooms = `-- name: GetAllRooms :many
-SELECT id, name, owner_id, type FROM rooms
+SELECT id, name, owner_id, type, member_count FROM rooms
 `
 
 func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
@@ -177,6 +177,7 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 			&i.Name,
 			&i.OwnerID,
 			&i.Type,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}
@@ -557,7 +558,7 @@ func (q *Queries) GetRolesByUserInRoom(ctx context.Context, arg GetRolesByUserIn
 }
 
 const getRoomById = `-- name: GetRoomById :one
-SELECT id, name, owner_id, type FROM rooms WHERE id = ?
+SELECT id, name, owner_id, type, member_count FROM rooms WHERE id = ?
 `
 
 func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
@@ -568,12 +569,13 @@ func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
 		&i.Name,
 		&i.OwnerID,
 		&i.Type,
+		&i.MemberCount,
 	)
 	return i, err
 }
 
 const getRoomsByUser = `-- name: GetRoomsByUser :many
-SELECT r.id, r.name, r.owner_id, r.type FROM rooms r
+SELECT r.id, r.name, r.owner_id, r.type, r.member_count FROM rooms r
 JOIN users_rooms ur ON ur.room_id = r.id
 WHERE ur.user_id = ?
 `
@@ -592,6 +594,7 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 			&i.Name,
 			&i.OwnerID,
 			&i.Type,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}

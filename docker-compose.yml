@@ -58,18 +58,23 @@ services:
     command: ["generate"]
 
   db-migrate:
-    image: gomicro/goose
-    networks:
-      - app-network
-    depends_on: 
-      mysql:
-        condition: service_healthy
-    environment:
-      GOOSE_DRIVER: mysql
-      GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3306)/${DB_NAME}
-    volumes:
-      - ./backend/db/migrations:/migrations
-    command: ["sh", "-c", "goose ${MIGRATION_DIRECTION:-up} --dir /migrations ${MIGRATION_VERSION:-}"]
+      image: gomicro/goose
+      networks:
+        - app-network
+      depends_on: 
+        mysql:
+          condition: service_healthy
+      environment:
+        GOOSE_DRIVER: mysql
+        GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3306)/${DB_NAME}
+      volumes:
+        - ./backend/db/migrations/schema:/migrations/schema
+        - ./backend/db/migrations/behaviour:/migrations/behaviour
+      command: >
+        sh -c "
+          goose --dir /migrations/schema ${MIGRATION_DIRECTION:-up} ${MIGRATION_VERSION} &&
+          goose --dir /migrations/behaviour ${MIGRATION_DIRECTION:-up} || echo 'No matching behaviour migration, continuing'
+        "
 
   centrifugo:
     container_name: centrifugo
