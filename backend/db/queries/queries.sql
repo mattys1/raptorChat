@@ -32,6 +32,9 @@ SELECT u.* FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?;
 
+-- name: GetCountOfRoom :one
+SELECT member_count FROM rooms WHERE id = ?;
+
 -- name: AddUserToRoom :exec
 INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?);
 

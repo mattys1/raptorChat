@@ -213,6 +213,16 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
 					Contents: roomData,
 				},
 				)
+
+			err = messaging.GetCentrifugoService().Publish(
+				r.Context(),
+				&messaging.EventResource{
+					Channel: fmt.Sprintf("room:%d", *invite.RoomID),
+					Method: "POST",
+					EventName: "user_joined",
+					Contents: roomData, // maybe hacky, doesn't really matter what we send
+				},
+			)
 		}
 	}
 

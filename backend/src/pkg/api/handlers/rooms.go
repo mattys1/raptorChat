@@ -326,3 +326,22 @@ func publishToRoomMembers(resource messaging.EventResource, dao *db.Queries, ctx
 
 	return nil
 }
+
+func GetCountOfRoomHandler(w http.ResponseWriter, r *http.Request) {
+	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
+		return
+	}
+
+	dao := db.GetDao()
+	count, err := dao.GetCountOfRoom(r.Context(), uint64(roomid))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Internal Server Error, couldn't retrieve count of id: %d", roomid), http.StatusInternalServerError)
+	}
+
+	err = SendResource(count, w)
+	if err != nil {
+		slog.Error("Error sending count of room", "roomid", roomid, "error", err)
+	}
+}

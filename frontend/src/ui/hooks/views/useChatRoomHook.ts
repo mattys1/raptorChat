@@ -1,5 +1,5 @@
 import { useResourceFetcher } from "../useResourceFetcher"
-import { Message, Room } from "../../../structs/models/Models"
+import { Message, Room, User } from "../../../structs/models/Models"
 import { useSendEventMessage } from "../useSendEventMessage"
 import { useFetchAndListen } from "../useFetchAndListen"
 import { useCallback, useEffect } from "react"
@@ -9,9 +9,16 @@ import { ROUTES } from "../../routes"
 import { usePresence } from "../usePresence"
 
 type MessageUpdateCallback = (
-  setState: React.Dispatch<React.SetStateAction<Message[]>>, 
-  incoming: Message
+	setState: React.Dispatch<React.SetStateAction<Message[]>>, 
+	incoming: Message
 ) => void;
+
+type UserUpdateCallback = (
+	setState: React.Dispatch<React.SetStateAction<number>>, 
+	incoming: Room,
+	event: string
+) => void;
+
 
 export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
@@ -26,7 +33,28 @@ export const useChatRoomHook = (key: number) => {
 		setState((prev) => [...prev, incoming]);
 	}, []);
 
+	const handleUserCount = useCallback<UserUpdateCallback>((setState, incoming, event) => {
+		console.log("handle user count", incoming, event)
+		switch(event) {
+			case "user_joined":
+				setState((prev) => prev + 1);
+				break;
+			case "user_left":
+				setState((prev) => prev - 1);
+				break;
+			default:
+				break;
+		}	
+	}, [])
+
 	// const [messageList] = useResourceFetcher<Message[]>([], `/api/rooms/${chatId}/messages`)
+	const [memberCount] = useFetchAndListen<number, Room>(
+		0,
+		`/api/rooms/${chatId}/user/count`,
+		`room:${chatId}`,
+		["user_joined", "user_left"],
+		handleUserCount,
+	)
 	const [messageList] = useFetchAndListen<Message[], Message>(
 		[],
 		`/api/rooms/${chatId}/messages`,
@@ -57,6 +85,7 @@ export const useChatRoomHook = (key: number) => {
 		sendChatMessage,
 		modifyRoom,
 		room,
+		memberCount,
 	}
 }
 

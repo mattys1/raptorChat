@@ -225,6 +225,17 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getCountOfRoom = `-- name: GetCountOfRoom :one
+SELECT member_count FROM rooms WHERE id = ?
+`
+
+func (q *Queries) GetCountOfRoom(ctx context.Context, id uint64) (*int32, error) {
+	row := q.db.QueryRowContext(ctx, getCountOfRoom, id)
+	var member_count *int32
+	err := row.Scan(&member_count)
+	return member_count, err
+}
+
 const getFriendsOfUser = `-- name: GetFriendsOfUser :many
 SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password FROM users u 
 NATURAL JOIN friendships f

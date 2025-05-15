@@ -49,6 +49,7 @@ func Router() *chi.Mux {
 				r.Post("/messages", handlers.SendMessageHandler)
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
+				r.Get("/user/count", handlers.GetCountOfRoomHandler)
 
 				r.Get("/myroles", handlers.GetMyRolesHandler)
 				r.Post("/moderators/{userID}", handlers.DesignateModeratorHandler)

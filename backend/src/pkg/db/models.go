@@ -179,11 +179,11 @@ type RolesPermission struct {
 }
 
 type Room struct {
-	ID          uint64        `json:"id"`
-	Name        *string       `json:"name"`
-	OwnerID     *uint64       `json:"owner_id"`
-	Type        RoomsType     `json:"type"`
-	MemberCount sql.NullInt32 `json:"member_count"`
+	ID          uint64    `json:"id"`
+	Name        *string   `json:"name"`
+	OwnerID     *uint64   `json:"owner_id"`
+	Type        RoomsType `json:"type"`
+	MemberCount *int32    `json:"member_count"`
 }
 
 type RoomsUsersRole struct {

@@ -25,4 +25,9 @@ sql:
             go_type:
               type: "uint64"
               pointer: true
+          - db_type: "int"
+            nullable: true
+            go_type:
+              type: "int32"
+              pointer: true
 
