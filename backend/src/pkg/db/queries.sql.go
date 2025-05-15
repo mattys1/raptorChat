@@ -141,6 +141,15 @@ func (q *Queries) DeleteFriendship(ctx context.Context, id uint64) error {
 	return err
 }
 
+const deleteMessage = `-- name: DeleteMessage :exec
+UPDATE messages SET is_deleted = TRUE WHERE id = ?
+`
+
+func (q *Queries) DeleteMessage(ctx context.Context, id uint64) error {
+	_, err := q.db.ExecContext(ctx, deleteMessage, id)
+	return err
+}
+
 const deleteRoom = `-- name: DeleteRoom :exec
 DELETE FROM rooms WHERE id = ?
 `
@@ -328,7 +337,7 @@ func (q *Queries) GetInvitesToUser(ctx context.Context, receiverID uint64) ([]In
 }
 
 const getMessageById = `-- name: GetMessageById :one
-SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE id = ?
+SELECT id, sender_id, room_id, contents, created_at, is_deleted, deleted_at FROM messages WHERE id = ?
 `
 
 func (q *Queries) GetMessageById(ctx context.Context, id uint64) (Message, error) {
@@ -340,12 +349,14 @@ func (q *Queries) GetMessageById(ctx context.Context, id uint64) (Message, error
 		&i.RoomID,
 		&i.Contents,
 		&i.CreatedAt,
+		&i.IsDeleted,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getMessagesByRoom = `-- name: GetMessagesByRoom :many
-SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE room_id = ?
+SELECT id, sender_id, room_id, contents, created_at, is_deleted, deleted_at FROM messages WHERE room_id = ?
 `
 
 func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Message, error) {
@@ -363,6 +374,8 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 			&i.RoomID,
 			&i.Contents,
 			&i.CreatedAt,
+			&i.IsDeleted,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}

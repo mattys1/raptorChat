@@ -45,8 +45,12 @@ func Router() *chi.Mux {
 			r.Post("/", handlers.CreateRoomHandler)
 
 			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/messages", handlers.GetMessagesOfRoomHandler)
-				r.Post("/messages", handlers.SendMessageHandler)
+				r.Route("/messages", func(r chi.Router) {
+					r.Get("/", handlers.GetMessagesOfRoomHandler)
+					r.Post("/", handlers.SendMessageHandler)
+					r.Delete("/", handlers.DeleteMessageHandler)
+				})
+
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
 				r.Get("/user/count", handlers.GetCountOfRoomHandler)

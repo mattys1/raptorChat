@@ -44,6 +44,9 @@ SELECT * FROM messages WHERE id = ?;
 -- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?);
 
+-- name: DeleteMessage :exec
+UPDATE messages SET is_deleted = TRUE WHERE id = ?;
+
 -- name: GetInviteById :one
 SELECT * FROM invites WHERE id = ?;
 

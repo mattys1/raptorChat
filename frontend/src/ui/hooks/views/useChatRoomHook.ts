@@ -10,7 +10,8 @@ import { usePresence } from "../usePresence"
 
 type MessageUpdateCallback = (
 	setState: React.Dispatch<React.SetStateAction<Message[]>>, 
-	incoming: Message
+	incoming: Message,
+	event: string
 ) => void;
 
 type UserUpdateCallback = (
@@ -25,12 +26,21 @@ export const useChatRoomHook = (key: number) => {
 	const chatId = key
 	console.log("ChatRoomHook key:", chatId)
 	const [room, setRoom] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`) // TODO: merge this with useFetchAndListen
-	const [sentMessageStatus, error, sendChatMessage] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
+
+	const [sentMessageStatus, error, sendChatMessageAction] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
 
 	// usePresence(`room:${chatId}`)
-	const handleNewMessage = useCallback<MessageUpdateCallback>((setState, incoming) => {
-		console.log("New message", incoming)
-		setState((prev) => [...prev, incoming]);
+	const handleMessageAction = useCallback<MessageUpdateCallback>((setState, incoming, event) => {
+		switch (event) {
+			case "message_sent":
+				setState((prev) => [...prev, incoming]);
+				break
+			case "message_deleted":
+				setState((prev) => prev.filter((msg) => msg.id !== incoming.id));
+				break
+			
+
+		}
 	}, []);
 
 	const handleUserCount = useCallback<UserUpdateCallback>((setState, incoming, event) => {
@@ -59,8 +69,8 @@ export const useChatRoomHook = (key: number) => {
 		[],
 		`/api/rooms/${chatId}/messages`,
 		`room:${chatId}`,
-		["message_sent"],	
-		handleNewMessage
+		["message_sent", "message_deleted"],	
+		handleMessageAction
 	)
 	const [latest] = useEventListener<Room>(
 		`room:${chatId}`,
@@ -82,7 +92,7 @@ export const useChatRoomHook = (key: number) => {
 	return {
 		messageList,
 		sentMessageStatus,
-		sendChatMessage,
+		sendChatMessageAction,
 		modifyRoom,
 		room,
 		memberCount,

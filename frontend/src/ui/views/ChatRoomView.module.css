@@ -5,7 +5,25 @@
     width: 100%;
     min-width: 0;
   }
-  
+
+.messageDeleteButton {
+	position: absolute;
+	right: 8px;
+	bottom: 8px;
+	font-size: 0.75rem;
+	color: red;
+	background-color: darkgray;
+	padding: 4px 8px;
+	border-radius: 4px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.bubble:hover .messageDeleteButton {
+	opacity: 1;
+}
+
   .topButtons {
     padding: 0.5rem 1rem;
   }

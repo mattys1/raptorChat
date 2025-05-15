@@ -156,11 +156,13 @@ type Invite struct {
 }
 
 type Message struct {
-	ID        uint64    `json:"id"`
-	SenderID  uint64    `json:"sender_id"`
-	RoomID    uint64    `json:"room_id"`
-	Contents  string    `json:"contents"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uint64       `json:"id"`
+	SenderID  uint64       `json:"sender_id"`
+	RoomID    uint64       `json:"room_id"`
+	Contents  string       `json:"contents"`
+	CreatedAt time.Time    `json:"created_at"`
+	IsDeleted sql.NullBool `json:"is_deleted"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
 }
 
 type Permission struct {

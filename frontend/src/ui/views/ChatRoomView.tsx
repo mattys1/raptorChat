@@ -14,7 +14,7 @@ const ChatRoomView: React.FC = () => {
 	const navigate = useNavigate();
 
 	/* existing room + messages logic */
-	const { room, messageList, sendChatMessage, memberCount } = useChatRoomHook(chatId);
+	const props = useChatRoomHook(chatId);
 
 	const { isOwner, isModerator } = useRoomRoles(chatId);
 
@@ -29,10 +29,10 @@ const ChatRoomView: React.FC = () => {
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messageList]);
+	}, [props.messageList]);
 
 	const send = (text: string) => {
-		sendChatMessage({
+		props.sendChatMessageAction({
 			channel:   `room:${chatId}`,
 			method:    "POST",
 			event_name: MessageEvents.MESSAGE_SENT,
@@ -44,11 +44,19 @@ const ChatRoomView: React.FC = () => {
 			} as Message,
 		} as EventResource<Message>);
 	};
+	const deleteMessage = (message: Message) => {
+		props.sendChatMessageAction({
+			channel:   `room:${chatId}`,
+			method:    "DELETE",
+			event_name: MessageEvents.MESSAGE_DELETED,
+			contents: message
+		} as EventResource<Message>);
+	}
 
 	return (
 		<div className={styles.wrapper}>
 			<div className={styles.topButtons}>
-				{room?.type === RoomsType.Group && (
+				{props.room?.type === RoomsType.Group && (
 					<button onClick={() => navigate(`${ROUTES.CHATROOM}/${chatId}/invite`)}>
 						Invite user to chatroom
 					</button>
@@ -68,23 +76,31 @@ const ChatRoomView: React.FC = () => {
 					{/* Left section - empty for balance */}
 				</div>
 				<div className="text-center flex-1">
-					{room?.type === RoomsType.Group ? <strong className="font-bold">Group Chat:</strong> : ""} {room?.name}
+					{props.room?.type === RoomsType.Group ? <strong className="font-bold">Group Chat:</strong> : ""} {props.room?.name}
 				</div>
 				<div className="w-24 text-right">
-					{room?.type === RoomsType.Group ? `${memberCount} members` : ""}
+					{props.room?.type === RoomsType.Group ? `${props.memberCount} members` : ""}
 				</div>
 			</div>
 
 			<div className={styles.messages}>
-				{messageList.map((m) => (
+				{props.messageList.map((m) => (
 					<div
 						key={m.id}
-						className={`${styles.bubble} ${m.sender_id === myId ? styles.mine : ""}`}
+						className={`${styles.bubble} ${m.sender_id === myId ? styles.mine : ""} group relative`}
 					>
 						<div className={styles.header}>
 							{nameMap[m.sender_id] ?? `user${m.sender_id}`}
 						</div>
 						{m.contents}
+
+						{(m.sender_id === myId || isOwner || isModerator) && (
+							<button className={styles.messageDeleteButton}
+								onClick={() => deleteMessage(m)}
+							>
+								Delete message
+							</button>
+						)}
 					</div>
 				))}
 				<div ref={bottomRef} />
