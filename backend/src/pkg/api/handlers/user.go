@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
+	"github.com/mattys1/raptorChat/src/pkg/messaging"
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -214,4 +215,42 @@ func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
+
+func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	ctx := r.Context()
+	resource, err := messaging.GetEventResourceFromRequest(r)
+	newUsername, err := messaging.GetEventResourceContents[string](resource)
+	if err != nil {
+		http.Error(w, "Error getting resource", http.StatusBadRequest)
+		return
+	}
+
+	uid, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+		return
+	}
+
+	user, err := dao.GetUserById(ctx, uint64(uid))
+	if err != nil {
+		slog.Error("Error fetching user", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = dao.UpdateUser(ctx, db.UpdateUserParams{
+		ID: user.ID,
+		Username: *newUsername,
+		Email: user.Email,
+		Password: user.Password,
+	})
+	if err != nil {
+		slog.Error("Error updating user", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	messaging.GetCentrifugoService().Publish(ctx, resource)
 }

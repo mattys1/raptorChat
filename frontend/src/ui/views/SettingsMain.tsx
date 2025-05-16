@@ -1,14 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useSettingsHook } from "../hooks/views/useSettingsHook";
 import { useAuth } from "../contexts/AuthContext";
 import { ROUTES } from "../routes";
 import { DeviceSelector } from "../components/MicrophoneSelector";
 
 const SettingsMain: React.FC = () => {
 	const navigate = useNavigate();
-	const { handleChangeUsername, changePassword } = useSettingsHook(navigate);
 	const { permissions, logout } = useAuth();
 
 
@@ -24,7 +22,7 @@ const SettingsMain: React.FC = () => {
 					</li>
 				)}
 				<li>
-					<button onClick={handleChangeUsername}>Change Username</button>
+					<button onClick={() => navigate(`${ROUTES.SETTINGS}/change-username`)}>Change Username</button>
 				</li>
 				<li>
 					<button onClick={() => navigate(`${ROUTES.SETTINGS}/change-password`)}>Change Password</button>

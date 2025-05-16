@@ -35,6 +35,8 @@ func Router() *chi.Mux {
 				r.Get("/", handlers.GetOwnIDHandler)
 
 				r.Patch("/password", handlers.UpdatePasswordHandler)
+
+				r.Patch("/username", handlers.UpdateUsernameHandler)
 			})
 			r.Get("/", handlers.GetAllUsersHandler)
 

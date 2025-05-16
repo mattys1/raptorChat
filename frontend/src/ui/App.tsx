@@ -20,6 +20,7 @@ import InviteFriendsView from "./views/InviteFriendsView";
 import VideoChat from "./views/VideoChatView";
 import ManageRoomView     from "./views/ManageRoomView";
 import ChangePasswordView from "./views/ChangePasswordView";
+import ChangeUsernameView from "./views/ChangeUsernameView";
 
 const App: React.FC = () => {
 	// const navigate = useNavigate()
@@ -35,6 +36,7 @@ const App: React.FC = () => {
 				<Route path={ROUTES.MAIN} element={<MainView />} />
 				<Route path={ROUTES.SETTINGS} element={<SettingsMain />} />
 				<Route path={`${ROUTES.SETTINGS}/change-password`} element={<ChangePasswordView />} />
+				<Route path={`${ROUTES.SETTINGS}/change-username`} element={<ChangeUsernameView />} />
 				<Route path={`${ROUTES.CHATROOM}/:chatId`} element={<ChatRoomView />} />
 				<Route path={`${ROUTES.CHATROOM}/create`} element={<CreateRoomView />} />
 				<Route path={`${ROUTES.CHATROOM}/:chatId/manage`} element={<ManageRoomView />} />
