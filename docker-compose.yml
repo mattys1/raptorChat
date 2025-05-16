@@ -72,8 +72,18 @@ services:
         - ./backend/db/migrations/behaviour:/migrations/behaviour
       command: >
         sh -c "
-          goose --dir /migrations/schema ${MIGRATION_DIRECTION:-up} ${MIGRATION_VERSION} &&
-          goose --dir /migrations/behaviour ${MIGRATION_DIRECTION:-up} || echo 'No matching behaviour migration, continuing'
+          if [ -d /migrations/schema ] && [ \"$(ls -A /migrations/schema 2>/dev/null)\" ]; then
+            echo 'Running schema migrations...'
+            goose --dir /migrations/schema ${MIGRATION_DIRECTION:-up} ${MIGRATION_VERSION}
+          else
+            echo 'No schema migrations found, skipping'
+          fi &&
+          if [ -d /migrations/behaviour ] && [ \"$(ls -A /migrations/behaviour 2>/dev/null)\" ]; then
+            echo 'Running behaviour migrations...'
+            goose --dir /migrations/behaviour ${MIGRATION_DIRECTION:-up}
+          else
+            echo 'No behaviour migrations found, skipping'
+          fi
         "
 
   centrifugo:
