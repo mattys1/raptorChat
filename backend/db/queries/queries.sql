@@ -4,6 +4,9 @@ SELECT * FROM users;
 -- name: GetUserById :one
 SELECT * FROM users WHERE id = ?;
 
+-- name: UpdateUser :exec
+UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?;
+
 -- name: GetAllRooms :many
 SELECT * FROM rooms;
 

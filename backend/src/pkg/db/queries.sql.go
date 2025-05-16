@@ -763,3 +763,24 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
 	)
 	return err
 }
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?
+`
+
+type UpdateUserParams struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	ID       uint64 `json:"id"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.Username,
+		arg.Email,
+		arg.Password,
+		arg.ID,
+	)
+	return err
+}

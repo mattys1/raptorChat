@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -9,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -148,5 +152,66 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	err = SendResource(user, w)
 	if err != nil {
 		slog.Error("Error sending user", "err", err.Error())
+	}
+}
+
+type UpdatePasswordRequest struct {
+	NewPassword string `json:"new_password"`
+	OldPassword string `json:"old_password"`
+}
+
+func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	ctx := r.Context()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+
+	uid, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+		return
+	}
+
+	user, err := dao.GetUserById(ctx, uint64(uid))
+	if err != nil {
+		slog.Error("Error fetching user", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var update UpdatePasswordRequest
+	err = json.Unmarshal(body, &update)
+	if err != nil {
+		http.Error(w, "Error unmarshalling request body", http.StatusBadRequest)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(update.OldPassword))
+	if err != nil {
+		http.Error(w, "Old password doesn't match the user password", http.StatusBadRequest)
+		return
+	}
+
+	hashedNew, err := bcrypt.GenerateFromPassword([]byte(update.NewPassword), bcrypt.DefaultCost)
+
+	if bytes.Equal(hashedNew, []byte(user.Password)) {
+		http.Error(w, "New password cannot be the same as the old one", http.StatusBadRequest)
+		return
+	}
+
+	err = dao.UpdateUser(ctx, db.UpdateUserParams{
+		ID: user.ID,
+		Username: user.Username,
+		Email: user.Email,
+		Password: string(hashedNew),
+	})
+
+	if err != nil {
+		slog.Error("Error updating user", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 }

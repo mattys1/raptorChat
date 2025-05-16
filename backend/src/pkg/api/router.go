@@ -30,8 +30,12 @@ func Router() *chi.Mux {
 		r.Put("/invites/{id}", handlers.UpdateInviteHandler)
 
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/me/rooms", handlers.GetRoomsOfUserHandler)
-			r.Get("/me", handlers.GetOwnIDHandler)
+			r.Route("/me", func(r chi.Router) {
+				r.Get("/rooms", handlers.GetRoomsOfUserHandler)
+				r.Get("/", handlers.GetOwnIDHandler)
+
+				r.Patch("/password", handlers.UpdatePasswordHandler)
+			})
 			r.Get("/", handlers.GetAllUsersHandler)
 
 			r.Route("/{id}", func(r chi.Router) {

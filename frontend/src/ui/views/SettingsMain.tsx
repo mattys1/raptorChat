@@ -8,7 +8,7 @@ import { DeviceSelector } from "../components/MicrophoneSelector";
 
 const SettingsMain: React.FC = () => {
 	const navigate = useNavigate();
-	const { handleChangeUsername, handleChangePassword } = useSettingsHook(navigate);
+	const { handleChangeUsername, changePassword } = useSettingsHook(navigate);
 	const { permissions, logout } = useAuth();
 
 
@@ -27,7 +27,7 @@ const SettingsMain: React.FC = () => {
 					<button onClick={handleChangeUsername}>Change Username</button>
 				</li>
 				<li>
-					<button onClick={handleChangePassword}>Change Password</button>
+					<button onClick={() => navigate(`${ROUTES.SETTINGS}/change-password`)}>Change Password</button>
 				</li>
 				<li>
 					<DeviceSelector storageName="selectedMicrophone" displayName="Microphone "/>
