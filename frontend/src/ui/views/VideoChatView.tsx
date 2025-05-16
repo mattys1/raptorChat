@@ -37,13 +37,14 @@ const VideoChat = () => {
 			<div className="bottom-1/4">
 				<ControlBar controls={{
 					microphone: false,
-					camera: true,
+					camera: false,
 					screenShare: true,
 					leave: false, 
 					settings: false,
 				}} 
 				/>
 				<TrackToggle source={Track.Source.Microphone} />
+				<TrackToggle source={Track.Source.Camera} />
 			</div>
 		</div>
 	</RoomContext.Provider>

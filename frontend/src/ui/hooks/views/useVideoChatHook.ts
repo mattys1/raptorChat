@@ -10,6 +10,7 @@ export const useVideoChatHook = (chatId: Number) => {
 	// const [presence] = usePresence(`room:${chatId}:video`)
 	const audio = useRef<HTMLAudioElement | null>(null)
 	const mic = localStorage.getItem("selectedMicrophone") ?? ""
+	const cam = localStorage.getItem("selectedCamera") ?? ""
 	// const connectionState = useConnectionState();
 	const [livekitToken, setLivekitToken] = useState<string | null>(null)
 	const [room] = useState(() => new Room({
@@ -83,7 +84,14 @@ export const useVideoChatHook = (chatId: Number) => {
 	useEffect(() => {
 		if(mic) {
 			(async () => {
-				await room.switchActiveDevice('audioinput', localStorage.getItem("selectedMicrophone") ?? "")
+				await room.switchActiveDevice('audioinput', mic)
+				console.log("Active device now:", room.getActiveDevice('audioinput'));
+			})()
+		}
+
+		if(cam) {
+			(async () => {
+				await room.switchActiveDevice('audioinput', cam)
 				console.log("Active device now:", room.getActiveDevice('audioinput'));
 			})()
 		}
