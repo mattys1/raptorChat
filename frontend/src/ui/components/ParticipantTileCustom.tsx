@@ -14,18 +14,17 @@ const ParticipantTileCustom = ({id, tracks}: ParticipantTileCustomProps) => {
 		<div className="w-full">
 			{
 				tracks.camera.publication?.isMuted || !tracks.camera.publication ? (
-					<ParticipantAudioTile className="w-full" trackRef={tracks.audio}/>
+					tracks.screenShare.publication?.isMuted || !tracks.screenShare.publication ? (
+						<ParticipantAudioTile className="w-full" trackRef={tracks.audio}/>
+					) : (
+							<VideoTrack className="w-full" trackRef={tracks.screenShare} />
+						)
 				) : (
-					<VideoTrack className="w-full" trackRef={tracks.camera} />
-				)
+						<VideoTrack className="w-full" trackRef={tracks.camera} />
+					)
 			}
 
 			{
-				tracks.screenShare.publication?.isMuted || !tracks.screenShare.publication ? (
-					<ParticipantAudioTile className="w-full" trackRef={tracks.audio}/>
-				) : (
-						<VideoTrack className="w-full" trackRef={tracks.screenShare} />
-					)
 			}
 			{user.username}
 		</div>
