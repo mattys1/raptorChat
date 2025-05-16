@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { useAudioInputs } from "../hooks/useAudioInputs";
+import { useMediaInputs } from "../hooks/useAudioInputs";
 
-interface MicrophoneSelectorProps {
+interface DeviceSelectorProps {
 	onDeviceSelect?: (deviceId: string) => void;
 	className?: string;
+	storageName: string
+	displayName: string
 }
 
-export const MicrophoneSelector: React.FC<MicrophoneSelectorProps> = ({ 
+export const DeviceSelector: React.FC<DeviceSelectorProps> = ({ 
 	onDeviceSelect,
-	className = ""
+	className = "",
+	storageName,
+	displayName,
 }) => {
-	const [microphones, setMicrophones] = useAudioInputs();
+	const [microphones, setMicrophones] = useMediaInputs({
+		constraints: storageName == "selectedMicrophone" ? {audio: true} : {video: true},
+		deviceKind: storageName == "selectedMicrophone" ? "audioinput" : "videoinput",
+	});
 	const [selectedDevice, setSelectedDevice] = useState<string>(() => {
-		return localStorage.getItem("selectedMicrophone") || "";
+		return localStorage.getItem(storageName) || "";
 	});
 
 	useEffect(() => {
@@ -25,7 +32,7 @@ export const MicrophoneSelector: React.FC<MicrophoneSelectorProps> = ({
 
 	const handleDeviceChange = (deviceId: string) => {
 		setSelectedDevice(deviceId);
-		localStorage.setItem("selectedMicrophone", deviceId);
+		localStorage.setItem(storageName, deviceId);
 		if (onDeviceSelect) onDeviceSelect(deviceId);
 	};
 
@@ -37,7 +44,7 @@ export const MicrophoneSelector: React.FC<MicrophoneSelectorProps> = ({
 		>
 			{microphones.map((device) => (
 				<option key={device.deviceId} value={device.deviceId}>
-					{device.label || `Microphone (${device.deviceId.substring(0, 8)}...)`}
+					{device.label || `${displayName} (${device.deviceId.substring(0, 8)}...)`}
 				</option>
 			))}
 		</select>

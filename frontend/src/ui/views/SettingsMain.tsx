@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSettingsHook } from "../hooks/views/useSettingsHook";
 import { useAuth } from "../contexts/AuthContext";
 import { ROUTES } from "../routes";
-import { MicrophoneSelector } from "../components/MicrophoneSelector";
+import { DeviceSelector } from "../components/MicrophoneSelector";
 
 const SettingsMain: React.FC = () => {
 	const navigate = useNavigate();
@@ -30,8 +30,13 @@ const SettingsMain: React.FC = () => {
 					<button onClick={handleChangePassword}>Change Password</button>
 				</li>
 				<li>
-					<MicrophoneSelector />
+					<DeviceSelector storageName="selectedMicrophone" displayName="Microphone "/>
 				</li>	
+
+				<li>
+					<DeviceSelector storageName="selectedCamera" displayName="Camera "/>
+				</li>	
+
 				<li>
 					<button onClick={() => navigate(ROUTES.LOGIN)}>Log Out</button>
 				</li>

@@ -1,19 +1,27 @@
 import { useEffect, useState } from "react"
 
-export const useAudioInputs = (): [ 
+interface useAudioInputProps {
+	constraints: MediaStreamConstraints
+	deviceKind: string
+}
+
+export const useMediaInputs = ({
+	constraints,
+	deviceKind
+}: useAudioInputProps): [ 
 	microphones: MediaDeviceInfo[],
 	setMicrophones: React.Dispatch<React.SetStateAction<MediaDeviceInfo[]>> 
 ] => {
-	const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([])
+	const [mediaInputs, setMediaInputs] = useState<MediaDeviceInfo[]>([])
 
 	useEffect(() => {
 		let mounted = true
 		async function fetchInputs() {
 			try {
-				await navigator.mediaDevices.getUserMedia({ audio: true })
+				await navigator.mediaDevices.getUserMedia(constraints)
 				const devices = await navigator.mediaDevices.enumerateDevices()
 				if (!mounted) return
-				setMicrophones(devices.filter(d => d.kind === 'audioinput'))
+				setMediaInputs(devices.filter(d => d.kind === deviceKind))
 			} catch (err) {
 				console.error('Failed to list audio inputs:', err)
 			}
@@ -22,5 +30,5 @@ export const useAudioInputs = (): [
 		return () => { mounted = false }
 	}, [])
 
-	return [microphones, setMicrophones]
+	return [mediaInputs, setMediaInputs]
 }
