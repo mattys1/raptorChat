@@ -11,6 +11,7 @@ const MyVideoConference = () => {
 		[
 			{ source: Track.Source.Microphone, withPlaceholder: true },
 			{ source: Track.Source.Camera, withPlaceholder: true },
+			{ source: Track.Source.ScreenShare, withPlaceholder: true },
 		],
 		{ onlySubscribed: false },
 	);
@@ -37,7 +38,7 @@ const VideoChat = () => {
 				<ControlBar controls={{
 					microphone: false,
 					camera: true,
-					screenShare: false,
+					screenShare: true,
 					leave: false, 
 					settings: false,
 				}} 

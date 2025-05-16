@@ -1,6 +1,7 @@
 import { TrackReference, TrackReferenceOrPlaceholder } from "@livekit/components-react";
 import { useState } from "react";
 import ParticipantTileCustom from "./ParticipantTileCustom";
+import { Track } from "livekit-client";
 
 const ParticipantsGrid = ({ tracks }: { tracks: TrackReference[] }) => {
 	const participants = [...new Set (tracks.map(track => track.participant.identity) as number[])]
@@ -18,8 +19,9 @@ const ParticipantsGrid = ({ tracks }: { tracks: TrackReference[] }) => {
 				return (
 					<div key={participant}>
 						<ParticipantTileCustom id={participant} tracks={{
-							audio: tracks.find(track => track.participant.identity === participant && track.source === "microphone") as TrackReference,
-							video: tracks.find(track => track.participant.identity === participant && track.source === "camera") as TrackReference,
+							audio: tracks.find(track => track.participant.identity === participant && track.source === Track.Source.Microphone) as TrackReference,
+							camera: tracks.find(track => track.participant.identity === participant && track.source === Track.Source.Camera) as TrackReference,
+							screenShare: tracks.find(track => track.participant.identity === participant && track.source === Track.Source.ScreenShare) as TrackReference,
 						}} />
 					</div>
 				)

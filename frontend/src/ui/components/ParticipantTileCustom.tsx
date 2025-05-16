@@ -1,24 +1,31 @@
-import { ParticipantAudioTile, ParticipantTile, TrackReference, VideoTrack } from "@livekit/components-react"
+import { ParticipantAudioTile, TrackReference, VideoTrack } from "@livekit/components-react"
 import { useUserInfo } from "../hooks/useUserInfo"
-import { Participant, Track, TrackPublication } from "livekit-client"
 
 interface ParticipantTileCustomProps {
 	id: number,
-	tracks: {audio: TrackReference, video: TrackReference},
+	tracks: {audio: TrackReference, camera: TrackReference, screenShare: TrackReference},
 }
 
 const ParticipantTileCustom = ({id, tracks}: ParticipantTileCustomProps) => {
 	const [user] = useUserInfo(id)
 
-	console.log("track is muted", tracks.video.publication?.isMuted)
+	console.log("track is muted", tracks.camera.publication?.isMuted)
 	return (
 		<div className="w-full">
 			{
-				tracks.video.publication?.isMuted || !tracks.video.publication ? (
+				tracks.camera.publication?.isMuted || !tracks.camera.publication ? (
 					<ParticipantAudioTile className="w-full" trackRef={tracks.audio}/>
 				) : (
-					<VideoTrack className="w-full" trackRef={tracks.video} />
+					<VideoTrack className="w-full" trackRef={tracks.camera} />
 				)
+			}
+
+			{
+				tracks.screenShare.publication?.isMuted || !tracks.screenShare.publication ? (
+					<ParticipantAudioTile className="w-full" trackRef={tracks.audio}/>
+				) : (
+						<VideoTrack className="w-full" trackRef={tracks.screenShare} />
+					)
 			}
 			{user.username}
 		</div>
