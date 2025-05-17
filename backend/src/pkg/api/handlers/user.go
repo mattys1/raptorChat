@@ -175,24 +175,25 @@ func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	if err := os.MkdirAll("avatars", 0o755); err != nil {
-		slog.Error("mkdir failed", "err", err)
+	const avatarsDir = "avatars"
+	if err := os.MkdirAll(avatarsDir, 0o755); err != nil {
+		slog.Error("failed to create avatars dir", "err", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
 
-	fname := fmt.Sprintf("%d_%d_%s", uid, time.Now().Unix(), hdr.Filename)
-	dstPath := filepath.Join("avatars", fname)
+	fname := fmt.Sprintf("%d_%d_%s", uid, time.Now().Unix(), filepath.Base(hdr.Filename))
+	dstPath := filepath.Join(avatarsDir, fname)
 	dst, err := os.Create(dstPath)
 	if err != nil {
-		slog.Error("create file failed", "err", err)
+		slog.Error("failed to create file", "err", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
 	defer dst.Close()
 
 	if _, err := io.Copy(dst, file); err != nil {
-		slog.Error("save file failed", "err", err)
+		slog.Error("failed to save file", "err", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
@@ -207,5 +208,6 @@ func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// return the new URL
 	SendResource(map[string]string{"avatar_url": avatarURL}, w)
 }
