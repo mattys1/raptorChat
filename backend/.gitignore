@@ -2,4 +2,5 @@ out/
 db/mysql-data/
 ./backend
 
-./avatars/*
+avatars/*
+!avatars/.gitkeep
