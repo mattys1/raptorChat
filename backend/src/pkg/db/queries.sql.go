@@ -202,7 +202,7 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, created_at, password FROM users
+SELECT id, username, email, created_at, password, avatar_url FROM users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -220,6 +220,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -246,7 +247,7 @@ func (q *Queries) GetCountOfRoom(ctx context.Context, id uint64) (*int32, error)
 }
 
 const getFriendsOfUser = `-- name: GetFriendsOfUser :many
-SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password FROM users u 
+SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u 
 NATURAL JOIN friendships f
 WHERE ? OR f.second_id = ?
 `
@@ -270,6 +271,7 @@ func (q *Queries) GetFriendsOfUser(ctx context.Context, arg GetFriendsOfUserPara
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -634,7 +636,7 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, username, email, created_at, password FROM users WHERE id = ?
+SELECT id, username, email, created_at, password, avatar_url FROM users WHERE id = ?
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
@@ -646,12 +648,13 @@ func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
 		&i.Email,
 		&i.CreatedAt,
 		&i.Password,
+		&i.AvatarUrl,
 	)
 	return i, err
 }
 
 const getUsersByRoom = `-- name: GetUsersByRoom :many
-SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
+SELECT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?
 `
@@ -671,6 +674,7 @@ func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, er
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -761,5 +765,21 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
 		arg.OwnerID,
 		arg.ID,
 	)
+	return err
+}
+
+const updateUserAvatar = `-- name: UpdateUserAvatar :exec
+UPDATE users
+SET avatar_url = ?
+WHERE id = ?
+`
+
+type UpdateUserAvatarParams struct {
+	AvatarUrl string `json:"avatar_url"`
+	ID        uint64 `json:"id"`
+}
+
+func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserAvatar, arg.AvatarUrl, arg.ID)
 	return err
 }

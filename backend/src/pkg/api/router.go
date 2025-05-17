@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/mattys1/raptorChat/src/pkg/admin"
@@ -14,6 +16,8 @@ func Router() *chi.Mux {
 
 	r.Use(middleware.EnableCors)
 	r.Use(middleware.LogRequest)
+
+	r.Handle("/avatars/*", http.StripPrefix("/avatars/", http.FileServer(http.Dir("avatars"))))
 
 	r.Post("/login", auth.LoginHandler)
 	r.Post("/register", auth.RegisterHandler)
@@ -32,6 +36,9 @@ func Router() *chi.Mux {
 		r.Route("/user", func(r chi.Router) {
 			r.Get("/me/rooms", handlers.GetRoomsOfUserHandler)
 			r.Get("/me", handlers.GetOwnIDHandler)
+
+			r.Post("/me/avatar", handlers.UploadAvatarHandler)
+
 			r.Get("/", handlers.GetAllUsersHandler)
 
 			r.Route("/{id}", func(r chi.Router) {
@@ -51,22 +58,19 @@ func Router() *chi.Mux {
 					r.Delete("/", handlers.DeleteMessageHandler)
 				})
 
-
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
 				r.Get("/user/count", handlers.GetCountOfRoomHandler)
-
 				r.Get("/myroles", handlers.GetMyRolesHandler)
 				r.Post("/moderators/{userID}", handlers.DesignateModeratorHandler)
 
 				r.Get("/", handlers.GetRoomHandler)
-				r.Delete("/", handlers.DeleteRoomHandler)
 				r.Put("/", handlers.UpdateRoomHandler)
+				r.Delete("/", handlers.DeleteRoomHandler)
 			})
 		})
 
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(middleware.RequirePermission("view_admin_panel"))
-
 			r.Get("/users", admin.ListUsersHandler)
 			r.Post("/users", admin.CreateUserHandler)
 			r.Delete("/users/{userID}", admin.DeleteUserHandler)

@@ -25,6 +25,7 @@ export interface User {
 	username: string;
 	email: string;
 	created_at: Date;
+	avatar_url?: string;
 }
 
 export interface UsersRoom {

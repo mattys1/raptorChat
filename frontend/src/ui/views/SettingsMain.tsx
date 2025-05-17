@@ -5,6 +5,7 @@ import { useSettingsHook } from "../hooks/views/useSettingsHook";
 import { useAuth } from "../contexts/AuthContext";
 import { ROUTES } from "../routes";
 import { DeviceSelector } from "../components/MicrophoneSelector";
+import { AvatarUploader } from "../components/AvatarUploader";
 
 const SettingsMain: React.FC = () => {
 	const navigate = useNavigate();
@@ -23,6 +24,10 @@ const SettingsMain: React.FC = () => {
 						</button>
 					</li>
 				)}
+				<li>
+    				<strong>Avatar:</strong>
+    				<AvatarUploader />
+				</li>
 				<li>
 					<button onClick={handleChangeUsername}>Change Username</button>
 				</li>

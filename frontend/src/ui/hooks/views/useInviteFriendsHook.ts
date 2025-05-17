@@ -14,7 +14,7 @@ export const useInviteFriendsHook = (uID: number) => {
 		[],
 		`/api/user/${uID}/friends`,
 		`user:${uID}:friends`,
-		"friend_added",
+		["friend_added"],
 		onNewFriend
 	)
 

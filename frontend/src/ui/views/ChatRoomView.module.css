@@ -69,6 +69,14 @@
     margin-bottom: 0.25rem;
     color: #cbd5e1;
   }
+
+  .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
+  }
   
   
   .footer {

@@ -1,10 +1,15 @@
 package handlers
 
 import (
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
@@ -18,7 +23,7 @@ func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
 		return
-	}	
+	}
 
 	slog.Info("User ID from context", "uid", uid)
 
@@ -51,7 +56,7 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usersWithoutSender := slices.DeleteFunc(users, func (u db.User) bool {
+	usersWithoutSender := slices.DeleteFunc(users, func(u db.User) bool {
 		return u.ID == uid
 	})
 
@@ -149,4 +154,58 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("Error sending user", "err", err.Error())
 	}
+}
+
+func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid, ok := middleware.RetrieveUserIDFromContext(ctx)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Bad form data", http.StatusBadRequest)
+		return
+	}
+	file, hdr, err := r.FormFile("avatar")
+	if err != nil {
+		http.Error(w, "Missing avatar file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	if err := os.MkdirAll("avatars", 0o755); err != nil {
+		slog.Error("mkdir failed", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	fname := fmt.Sprintf("%d_%d_%s", uid, time.Now().Unix(), hdr.Filename)
+	dstPath := filepath.Join("avatars", fname)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		slog.Error("create file failed", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		slog.Error("save file failed", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	avatarURL := "/avatars/" + fname
+	if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
+		AvatarUrl: avatarURL,
+		ID:        uint64(uid),
+	}); err != nil {
+		slog.Error("db update failed", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	SendResource(map[string]string{"avatar_url": avatarURL}, w)
 }
