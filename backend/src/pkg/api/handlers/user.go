@@ -208,6 +208,43 @@ func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// return the new URL
 	SendResource(map[string]string{"avatar_url": avatarURL}, w)
+}
+
+func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid, ok := middleware.RetrieveUserIDFromContext(ctx)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := db.GetDao().GetUserById(ctx, uint64(uid))
+	if err != nil {
+		slog.Error("Error fetching user", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	avatarURL := user.AvatarUrl
+	if avatarURL != "" {
+		filename := filepath.Base(avatarURL)
+		filePath := filepath.Join("avatars", filename)
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			slog.Error("Error deleting avatar file", "path", filePath, "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
+		AvatarUrl: "",
+		ID:        uint64(uid),
+	}); err != nil {
+		slog.Error("Error clearing avatar URL", "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendResource(map[string]string{"avatar_url": ""}, w)
 }

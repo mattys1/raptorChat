@@ -38,6 +38,7 @@ func Router() *chi.Mux {
 			r.Get("/me", handlers.GetOwnIDHandler)
 
 			r.Post("/me/avatar", handlers.UploadAvatarHandler)
+			r.Delete("/me/avatar", handlers.DeleteAvatarHandler)
 
 			r.Get("/", handlers.GetAllUsersHandler)
 

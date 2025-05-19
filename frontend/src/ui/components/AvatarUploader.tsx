@@ -38,6 +38,22 @@ export const AvatarUploader: React.FC = () => {
     window.location.reload();
   };
 
+  const handleDelete = async () => {
+    const res = await fetch("http://localhost:8080/api/user/me/avatar", {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Avatar delete failed:", res.status, text);
+      alert(`Delete failed (${res.status}): ${text}`);
+      return;
+    }
+    setPreview("");
+    setFile(null);
+    alert("Avatar deleted!");
+  };
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
       {preview && (
@@ -50,6 +66,9 @@ export const AvatarUploader: React.FC = () => {
       <input type="file" accept="image/*" onChange={handleFileChange} />
       <button disabled={!file} onClick={handleUpload}>
         Upload Avatar
+      </button>
+      <button disabled={!preview} onClick={handleDelete}>
+        Delete Avatar
       </button>
     </div>
   );
