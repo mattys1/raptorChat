@@ -221,30 +221,32 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := db.GetDao().GetUserById(ctx, uint64(uid))
 	if err != nil {
-		slog.Error("Error fetching user", "error", err)
+		slog.Error("fetch user failed", "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	avatarURL := user.AvatarUrl
-	if avatarURL != "" {
-		filename := filepath.Base(avatarURL)
-		filePath := filepath.Join("avatars", filename)
-		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
-			slog.Error("Error deleting avatar file", "path", filePath, "err", err)
+	// Delete file on disk if exists
+	if user.AvatarUrl != "" {
+		fname := filepath.Base(user.AvatarUrl)
+		fullpath := filepath.Join("avatars", fname)
+		if rmErr := os.Remove(fullpath); rmErr != nil && !os.IsNotExist(rmErr) {
+			slog.Error("remove avatar file failed", "path", fullpath, "err", rmErr)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 	}
 
+	// Clear DB record
 	if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
 		AvatarUrl: "",
 		ID:        uint64(uid),
 	}); err != nil {
-		slog.Error("Error clearing avatar URL", "err", err)
+		slog.Error("clear avatar url failed", "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	SendResource(map[string]string{"avatar_url": ""}, w)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"avatar_url":""}`))
 }
