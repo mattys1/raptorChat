@@ -3,11 +3,15 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mattys1/raptorChat/src/pkg/db"
@@ -23,7 +27,7 @@ func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
 		return
-	}	
+	}
 
 	slog.Info("User ID from context", "uid", uid)
 
@@ -56,7 +60,7 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usersWithoutSender := slices.DeleteFunc(users, func (u db.User) bool {
+	usersWithoutSender := slices.DeleteFunc(users, func(u db.User) bool {
 		return u.ID == uid
 	})
 
@@ -236,8 +240,6 @@ func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := dao.GetUserById(ctx, uint64(uid))
 	if err != nil {
 		slog.Error("Error fetching user", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
 	}
 
 	err = dao.UpdateUser(ctx, db.UpdateUserParams{
@@ -248,9 +250,98 @@ func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		slog.Error("Error updating user", "error", err)
+	}
+	messaging.GetCentrifugoService().Publish(ctx, resource)
+}
+func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid, ok := middleware.RetrieveUserIDFromContext(ctx)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Bad form data", http.StatusBadRequest)
+		return
+	}
+	file, hdr, err := r.FormFile("avatar")
+	if err != nil {
+		http.Error(w, "Missing avatar file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	const avatarsDir = "avatars"
+	if err := os.MkdirAll(avatarsDir, 0o755); err != nil {
+		slog.Error("failed to create avatars dir", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	fname := fmt.Sprintf("%d_%d_%s", uid, time.Now().Unix(), filepath.Base(hdr.Filename))
+	dstPath := filepath.Join(avatarsDir, fname)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		slog.Error("failed to create file", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		slog.Error("failed to save file", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	avatarURL := "/avatars/" + fname
+	if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
+		AvatarUrl: avatarURL,
+		ID:        uint64(uid),
+	}); err != nil {
+		slog.Error("db update failed", "err", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	SendResource(map[string]string{"avatar_url": avatarURL}, w)
+}
+
+func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid, ok := middleware.RetrieveUserIDFromContext(ctx)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := db.GetDao().GetUserById(ctx, uint64(uid))
+	if err != nil {
+		slog.Error("fetch user failed", "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	messaging.GetCentrifugoService().Publish(ctx, resource)
+	if user.AvatarUrl != "" {
+		fname := filepath.Base(user.AvatarUrl)
+		fullpath := filepath.Join("avatars", fname)
+		if rmErr := os.Remove(fullpath); rmErr != nil && !os.IsNotExist(rmErr) {
+			slog.Error("remove avatar file failed", "path", fullpath, "err", rmErr)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
+		AvatarUrl: "",
+		ID:        uint64(uid),
+	}); err != nil {
+		slog.Error("clear avatar url failed", "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"avatar_url":""}`))
 }

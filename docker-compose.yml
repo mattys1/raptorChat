@@ -30,6 +30,8 @@ services:
         condition: service_started
       # asyncapi-ui:
       #   condition: service_started
+    volumes:
+      - ./backend/avatars:/app/avatars
 
   mysql:
     image: mariadb:lts

@@ -128,3 +128,8 @@ SELECT r.id, r.name
 FROM   roles r
 JOIN   rooms_users_roles rur ON rur.role_id = r.id
 WHERE  rur.user_id = ? AND rur.room_id = ?;
+
+-- name: UpdateUserAvatar :exec
+UPDATE users
+SET avatar_url = ?
+WHERE id = ?;

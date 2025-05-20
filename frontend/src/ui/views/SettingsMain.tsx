@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { ROUTES } from "../routes";
 import { DeviceSelector } from "../components/MicrophoneSelector";
+import { AvatarUploader } from "../components/AvatarUploader";
 
 const SettingsMain: React.FC = () => {
 	const navigate = useNavigate();
@@ -23,6 +24,8 @@ const SettingsMain: React.FC = () => {
 				)}
 				<li>
 					<button onClick={() => navigate(`${ROUTES.SETTINGS}/change-username`)}>Change Username</button>
+    				<strong>Avatar:</strong>
+    				<AvatarUploader />
 				</li>
 				<li>
 					<button onClick={() => navigate(`${ROUTES.SETTINGS}/change-password`)}>Change Password</button>

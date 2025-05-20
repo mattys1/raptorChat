@@ -200,6 +200,7 @@ type User struct {
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 	Password  string    `json:"password"`
+	AvatarUrl string    `json:"avatar_url"`
 }
 
 type UsersRole struct {
