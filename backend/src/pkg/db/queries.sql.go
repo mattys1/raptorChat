@@ -786,6 +786,9 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.Password,
 		arg.ID,
 	)
+	return err
+}
+
 const updateUserAvatar = `-- name: UpdateUserAvatar :exec
 UPDATE users
 SET avatar_url = ?
