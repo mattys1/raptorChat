@@ -1,80 +1,119 @@
-import styles from "./Login.module.css";
-
+// frontend/src/ui/views/RegistrationView.tsx
+import React from "react";
 import { useRegistrationHook } from "../hooks/views/useRegistrationHook";
-import { Form } from "../components/Form"
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
 
-const RegistrationView = () => {
-	const navigate = useNavigate()
+const RegistrationView: React.FC = () => {
+  const navigate = useNavigate();
+  const {
+    email,
+    username,
+    password,
+    repeatPassword,
+    loading,
+    setEmail,
+    setUsername,
+    setPassword,
+    setRepeatPassword,
+    handleSubmit,
+  } = useRegistrationHook(navigate);
 
-	const {
-		email,
-		username,
-		password,
-		repeatPassword,
-		loading,
-		setEmail,
-		setUsername,
-		setPassword,
-		setRepeatPassword,
-		handleSubmit
-	} = useRegistrationHook(navigate)
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-[#394A59] p-4">
+      <div className="bg-[#1E2B3A] w-full max-w-md rounded-lg p-8 space-y-6">
+        <div className="flex justify-center">
+          <img src="avatar.png" alt="Avatar" className="h-16 w-16" />
+        </div>
 
-	return (
-		<div className={styles.loginContainer}>
-			<div className={styles.loginCard}>
-				<div className={styles.avatarContainer}>
-					<img src="avatar.png" alt="Avatar" className={styles.avatar} />
-				</div>
-				<form className={styles.loginForm} onSubmit={handleSubmit}>
-					<Form 
-						readValue={email}
-						setValue={setEmail}
-						label="E-mail"
-						placeholder="Enter your email"
-						id="userEmail"
-					/>
+        <h1 className="text-2xl text-white font-semibold text-center">
+          Create Account
+        </h1>
 
-					<Form 
-						readValue={username}
-						setValue={setUsername}
-						label="Username"
-						placeholder="Enter your username"
-						id="username"
-					/>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="flex flex-col">
+            <label htmlFor="email" className="text-sm text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring"
+            />
+          </div>
 
-					<Form 
-						readValue={password}
-						setValue={setPassword}
-						label="Password"
-						placeholder="Enter your password"
-						id="userPassword"
-						hidden={true}
-					/>
+          <div className="flex flex-col">
+            <label htmlFor="username" className="text-sm text-gray-300 mb-2">
+              Username
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              required
+              className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring"
+            />
+          </div>
 
-					<Form 
-						readValue={repeatPassword}
-						setValue={setRepeatPassword}
-						label="Repeat Password"
-						placeholder="Repeat your password"
-						id="repeatPassword"
-						hidden={true}
-					/>
+          <div className="flex flex-col">
+            <label htmlFor="password" className="text-sm text-gray-300 mb-2">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring"
+            />
+          </div>
 
-					<div className={styles.buttonGroup}>
-						<button type="submit" className={styles.primaryBtn} disabled={loading}>
-							{loading ? "Creating account..." : "Create account"}
-						</button>
+          <div className="flex flex-col">
+            <label
+              htmlFor="repeatPassword"
+              className="text-sm text-gray-300 mb-2"
+            >
+              Repeat Password
+            </label>
+            <input
+              id="repeatPassword"
+              type="password"
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              placeholder="Repeat your password"
+              required
+              className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring"
+            />
+          </div>
 
-						<button type="button" className={styles.secondaryBtn} onClick={() => navigate(ROUTES.ROOT)}>
-							Already have an account? Log in
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	);
+          <div className="flex space-x-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-2 bg-[#5C4CE7] text-white rounded hover:bg-[#473ac0] transition-colors"
+            >
+              {loading ? "Creating account..." : "Create account"}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.ROOT)}
+              className="flex-1 py-2 bg-[#7E57C2] text-white rounded hover:bg-[#6b49a7] transition-colors"
+            >
+              Already have an account? Log in
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default RegistrationView;

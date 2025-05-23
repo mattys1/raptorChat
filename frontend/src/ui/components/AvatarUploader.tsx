@@ -1,3 +1,4 @@
+// frontend/src/ui/components/AvatarUploader.tsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -19,7 +20,7 @@ export const AvatarUploader: React.FC = () => {
           signal: abort.signal,
         });
         if (res.ok) {
-          const user = await res.json() as { avatar_url?: string };
+          const user = (await res.json()) as { avatar_url?: string };
           if (user.avatar_url) setPreview(user.avatar_url);
         } else {
           console.error("Couldn’t fetch current user:", res.status);
@@ -81,24 +82,55 @@ export const AvatarUploader: React.FC = () => {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+    <div className="flex items-center space-x-4">
       {preview && (
         <img
           src={preview}
           alt="Avatar preview"
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
+          className="h-12 w-12 rounded-full object-cover"
         />
       )}
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      <button disabled={!file} onClick={handleUpload}>
+
+      <label className="cursor-pointer inline-block">
+        <span className="
+          inline-flex items-center
+          bg-gray-200 hover:bg-gray-300
+          text-gray-800
+          px-3 py-2
+          rounded
+          transition
+        ">
+          Choose File
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </label>
+
+      <button
+        disabled={!file}
+        onClick={handleUpload}
+        className="
+          px-4 py-2 bg-blue-600 text-white rounded
+          hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
+          transition
+        "
+      >
         Upload Avatar
       </button>
-      <button disabled={!preview} onClick={handleDelete}>
+
+      <button
+        disabled={!preview}
+        onClick={handleDelete}
+        className="
+          px-4 py-2 bg-red-600 text-white rounded
+          hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
+          transition
+        "
+      >
         Delete Avatar
       </button>
     </div>
