@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -35,7 +34,7 @@ type Claims struct {
 }
 
 func GenerateCentrifugoToken(userID uint64) (string, error) {
-	userIDStr := fmt.Sprintf("%d", userID)
+	userIDStr := strconv.FormatUint(userID, 10)
 	slog.Info("Generating Centrifugo token", "userID", userIDStr)
 
 	claims := jwt.MapClaims{
@@ -49,7 +48,6 @@ func GenerateCentrifugoToken(userID uint64) (string, error) {
 }
 
 func GenerateToken(userID uint64) (string, error) {
-	// Fetch permissions from DB
 	dao := db.GetDao()
 	perms, err := dao.GetPermissionsByUser(context.Background(), userID)
 	if err != nil {
