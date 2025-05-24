@@ -59,6 +59,32 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 
       <div className="mt-auto space-y-2">
         <button
+          className="w-full text-left px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition flex items-center"
+          onClick={() => navigate(ROUTES.MAIN)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 9.75L12 3l9 6.75V20a.75.75 0 01-.75.75H3.75A.75.75 0 013 20V9.75z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 22V12h6v10"
+          />
+          </svg>
+          Return to Start Screen
+        </button>
+        <button
           className="w-full text-left px-2 py-1 bg-gray-700 rounded hover:bg-gray-600"
           onClick={onSettingsClick}
         >
