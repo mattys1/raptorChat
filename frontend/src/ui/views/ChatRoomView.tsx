@@ -1,4 +1,3 @@
-// frontend/src/ui/views/ChatRoomView.tsx
 import { useRef, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
@@ -32,7 +31,7 @@ const ChatRoomView: React.FC = () => {
   const avatarMap = useMemo(
     () =>
       Object.fromEntries(
-        users.map((u) => [u.id, u.avatar_url || ""])
+        users.map((u) => [u.id, u.avatar_url || ""])  
       ),
     [users]
   );
@@ -88,10 +87,10 @@ const ChatRoomView: React.FC = () => {
         )}
         <button
           className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
-            onClick={() => {
-              console.log("navigating to call", chatId);
-              navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
-            }}
+          onClick={() => {
+            console.log("navigating to call", chatId);
+            navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
+          }}
         >
           Call
         </button>
@@ -115,7 +114,9 @@ const ChatRoomView: React.FC = () => {
       <div className="flex-1 overflow-y-auto space-y-3 px-[2%] py-4">
         {props.messageList.map((m) => {
           const isMine = m.sender_id === myId;
-          const bubbleBg = isMine ? "bg-[#0d1117] text-[#e5e9f0] self-end" : "bg-[#1e293b] text-[#e5e9f0] self-start";
+          const bubbleBg = isMine
+            ? "bg-[#0d1117] text-[#e5e9f0] self-end"
+            : "bg-[#1e293b] text-[#e5e9f0] self-start";
           return (
             <div
               key={m.id}
@@ -136,7 +137,10 @@ const ChatRoomView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="leading-relaxed">{m.contents}</div>
+              {/* Add wrapping so text never overflows */}
+              <div className="leading-relaxed whitespace-pre-wrap break-words">
+                {m.contents}
+              </div>
 
               {(isMine || isOwner || isModerator) && (
                 <button
