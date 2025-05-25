@@ -21,22 +21,6 @@ const MainView: React.FC = () => {
 
       <button
         className="
-          mb-4
-          inline-flex items-center
-          bg-[#2F3C4C] hover:bg-[#3f4e5c]
-          text-white
-          px-4 py-2
-          rounded-md
-          transition-colors duration-200
-        "
-        onClick={() => {
-        }}
-      >
-        <span className="mr-2 text-xl font-bold">+</span> Add Friend
-      </button>
-
-      <button
-        className="
           px-4 py-2
           bg-blue-600 hover:bg-blue-700
           text-white rounded
