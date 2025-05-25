@@ -23,15 +23,13 @@ const ChatRoomView: React.FC = () => {
   );
   const nameMap = useMemo(
     () =>
-      Object.fromEntries(
-        users.map((u) => [u.id, u.username])
-      ),
+      Object.fromEntries(users.map((u) => [u.id, u.username])),
     [users]
   );
   const avatarMap = useMemo(
     () =>
       Object.fromEntries(
-        users.map((u) => [u.id, u.avatar_url || ""])  
+        users.map((u) => [u.id, u.avatar_url || ""])
       ),
     [users]
   );
@@ -87,10 +85,7 @@ const ChatRoomView: React.FC = () => {
         )}
         <button
           className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
-          onClick={() => {
-            console.log("navigating to call", chatId);
-            navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
-          }}
+          onClick={() => navigate(`${ROUTES.CHATROOM}/${chatId}/call`)}
         >
           Call
         </button>
@@ -111,16 +106,23 @@ const ChatRoomView: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 px-[2%] py-4">
+      <div className="flex-1 flex flex-col overflow-y-auto space-y-3 px-[2%] py-4">
         {props.messageList.map((m) => {
           const isMine = m.sender_id === myId;
+
           const bubbleBg = isMine
-            ? "bg-[#0d1117] text-[#e5e9f0] self-end"
-            : "bg-[#1e293b] text-[#e5e9f0] self-start";
+            ? "bg-[#0d1117] text-[#e5e9f0] self-start"
+            : "bg-[#1e293b] text-[#e5e9f0] self-end";
+
           return (
             <div
               key={m.id}
-              className={`group relative w-4/5 rounded-lg ${bubbleBg} py-[0.45rem] pb-[0.6rem] px-[2%]`}
+              className={`
+                group relative
+                w-4/5 rounded-lg
+                ${bubbleBg}
+                py-[0.45rem] pb-[0.6rem] px-[2%]
+              `}
             >
               <div className="flex items-center mb-1">
                 <img
@@ -137,7 +139,6 @@ const ChatRoomView: React.FC = () => {
                 </span>
               </div>
 
-              {/* Add wrapping so text never overflows */}
               <div className="leading-relaxed whitespace-pre-wrap break-words">
                 {m.contents}
               </div>
