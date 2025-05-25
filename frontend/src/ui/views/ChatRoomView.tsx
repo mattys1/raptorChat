@@ -145,7 +145,7 @@ const ChatRoomView: React.FC = () => {
 
               {(isMine || isOwner || isModerator) && (
                 <button
-                  className="absolute right-2 bottom-2 text-xs text-red-500 bg-gray-400 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute right-2 bottom-2 text-xs text-red-500 bg-gray-400 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   onClick={() => deleteMessage(m)}
                 >
                   Delete message
