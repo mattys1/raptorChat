@@ -3,6 +3,7 @@ import React from "react";
 import { useLoginHook } from "../hooks/views/useLoginHook";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
+import logo from "../logo/logo.png";
 
 const LoginView: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +14,11 @@ const LoginView: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-[#394A59] p-4">
       <div className="bg-[#1E2B3A] w-full max-w-md rounded-lg p-8 space-y-6">
         <div className="flex justify-center">
-          <img src="avatar.png" alt="Avatar" className="h-16 w-16" />
+          <img
+            src={logo}
+            alt="raptorChat logo"
+            className="h-40 w-40"
+          />
         </div>
 
         <h1 className="text-2xl text-white font-semibold text-center">
@@ -24,9 +29,9 @@ const LoginView: React.FC = () => {
           <div className="flex flex-col">
             <label
               htmlFor="userEmail"
-              className="text-sm text-gray-300 mb-2"
+              className="text-md text-gray-300 mb-2"
             >
-              Email or Nickname
+              Email
             </label>
             <input
               id="userEmail"
@@ -42,7 +47,7 @@ const LoginView: React.FC = () => {
           <div className="flex flex-col">
             <label
               htmlFor="userPassword"
-              className="text-sm text-gray-300 mb-2"
+              className="text-md text-gray-300 mb-2"
             >
               Password
             </label>

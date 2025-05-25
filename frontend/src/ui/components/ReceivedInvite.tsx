@@ -1,4 +1,3 @@
-// frontend/src/ui/components/ReceivedInvite.tsx
 import React, { useCallback } from "react";
 import { Invite, InvitesState } from "../../structs/models/Models";
 import { useSendEventMessage } from "../hooks/useSendEventMessage";
@@ -43,7 +42,6 @@ export const InviteReceived: React.FC<Invite> = (invite) => {
     });
   }, [invite, rejectInvite]);
 
-  // Hide once handled
   if (acceptState === "SUCCESS" || rejectState === "SUCCESS") {
     return null;
   }
