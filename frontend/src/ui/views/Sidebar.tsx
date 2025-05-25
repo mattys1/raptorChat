@@ -59,6 +59,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 
       <div className="mt-auto space-y-2">
         <button
+          className="w-full text-left px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center"
+          onClick={() => navigate(`${ROUTES.MAIN}/invites`)}
+        >
+          <span className="mr-2 text-xl font-bold"></span>
+          See Invites
+        </button>
+        <button
           className="w-full text-left px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition flex items-center"
           onClick={() => navigate(ROUTES.MAIN)}
         >

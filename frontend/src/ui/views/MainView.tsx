@@ -18,18 +18,6 @@ const MainView: React.FC = () => {
       "
     >
       <h1 className="text-3xl font-semibold mb-6">Welcome to raptorChat!</h1>
-
-      <button
-        className="
-          px-4 py-2
-          bg-blue-600 hover:bg-blue-700
-          text-white rounded
-          transition-colors duration-200
-        "
-        onClick={() => navigate(`${ROUTES.MAIN}/invites`)}
-      >
-        See invites
-      </button>
     </div>
   );
 };
