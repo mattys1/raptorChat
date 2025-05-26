@@ -1,8 +1,6 @@
 import { Room } from "../../../structs/models/Models"
-import { SERVER_URL } from "../../../api/routes"
-import { useResourceFetcher } from "../useResourceFetcher"
 import { useFetchAndListen } from "../useFetchAndListen"
-import { useCallback, useMemo } from "react"
+import { useCallback } from "react"
 //
 export const useSidebarHook = () => {
 	const onRoomEvent = useCallback((setRooms: React.Dispatch<React.SetStateAction<Room[]>>, incoming: Room, event: String) => {

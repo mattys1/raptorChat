@@ -1,7 +1,7 @@
 import React from "react";
 // import Layout from "./Layout";
 // import SettingsMain from "./views/SettingsMain";
-import { Routes, Route, useParams, } from "react-router-dom";
+import { Routes, Route, } from "react-router-dom";
 import Layout from "./Layout";
 
 import LoginView from "./views/LoginView";

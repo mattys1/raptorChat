@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavigateFunction, useNavigate } from "react-router-dom";
+import { NavigateFunction } from "react-router-dom";
 import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
 import { useAuth } from "../../contexts/AuthContext";

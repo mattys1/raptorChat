@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { EventResource } from "../../structs/Message";
+import { useState, useCallback } from "react";
 import { SERVER_URL } from "../../api/routes";
 
 const HttpMethod = {

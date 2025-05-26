@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Subscription } from "centrifuge";
-import { useEventListener } from "../../hooks/useEventListener";
 
 export const useMainHook = () => {
 	// const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -38,8 +37,8 @@ export const useMainHook = () => {
 	// 	users,//: users.flatMap(usersActualArray => usersActualArray),
 	// 	setUsers,
 	// }
-	const [isConnected, setIsConnected] = useState(false);
-	const [sub, setSub] = useState<Subscription | null>(null);
+	const [isConnected] = useState(false);
+	const [] = useState<Subscription | null>(null);
 
 	return { isConnected };
 };

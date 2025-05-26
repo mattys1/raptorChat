@@ -1,12 +1,11 @@
 import { useResourceFetcher } from "../useResourceFetcher"
-import { Message, Room, User } from "../../../structs/models/Models"
+import { Message, Room } from "../../../structs/models/Models"
 import { useSendEventMessage } from "../useSendEventMessage"
 import { useFetchAndListen } from "../useFetchAndListen"
 import { useCallback, useEffect } from "react"
 import { useEventListener } from "../useEventListener"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "../../routes"
-import { usePresence } from "../usePresence"
 
 type MessageUpdateCallback = (
 	setState: React.Dispatch<React.SetStateAction<Message[]>>, 
@@ -27,7 +26,7 @@ export const useChatRoomHook = (key: number) => {
 	console.log("ChatRoomHook key:", chatId)
 	const [room, setRoom] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`) // TODO: merge this with useFetchAndListen
 
-	const [sentMessageStatus, error, sendChatMessageAction] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
+	const [sentMessageStatus,, sendChatMessageAction] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
 
 	// usePresence(`room:${chatId}`)
 	const handleMessageAction = useCallback<MessageUpdateCallback>((setState, incoming, event) => {
@@ -87,7 +86,7 @@ export const useChatRoomHook = (key: number) => {
 		} 
 	}, [latest])
 
-	const [response, roomDelErr, modifyRoom] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
+	const [,, modifyRoom] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
 
 	return {
 		messageList,

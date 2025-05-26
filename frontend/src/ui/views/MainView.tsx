@@ -1,12 +1,7 @@
 // frontend/src/ui/views/MainView.tsx
 import React from "react";
-import { useMainHook } from "../hooks/views/useStartHook";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "../routes";
 
 const MainView: React.FC = () => {
-  const props = useMainHook();
-  const navigate = useNavigate();
 
   return (
     <div

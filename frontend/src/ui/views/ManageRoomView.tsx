@@ -3,7 +3,6 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useManageRoomHook } from "../hooks/views/useManageRoomHook";
 import { useRoomRoles } from "../hooks/useRoomRoles";
-import { ROUTES } from "../routes";
 
 const ManageRoomView: React.FC = () => {
   const roomId = Number(useParams().chatId);

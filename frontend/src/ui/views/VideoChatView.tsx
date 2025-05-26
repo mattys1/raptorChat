@@ -1,9 +1,8 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useVideoChatHook } from "../hooks/views/useVideoChatHook";
-import { RoomContext, ConnectionState, RoomAudioRenderer, ControlBar, TrackToggle, useTracks, ParticipantTile, LiveKitRoom, } from "@livekit/components-react";
+import { RoomContext, ConnectionState, RoomAudioRenderer, ControlBar, TrackToggle, useTracks, } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import MicToggleButton from "../components/MicToggleButton";
 import ParticipantsGrid from "../components/ParticipantsGrid";
 
 const MyVideoConference: React.FC = () => {
@@ -26,7 +25,7 @@ const MyVideoConference: React.FC = () => {
 const VideoChat: React.FC = () => {
   const { chatId } = useParams<{ chatId: string }>();
   const key = Number(chatId);
-  const { room, audio } = useVideoChatHook(key);
+  const { room } = useVideoChatHook(key);
   const navigate = useNavigate();
 
   return (

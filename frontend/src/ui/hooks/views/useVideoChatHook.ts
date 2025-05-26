@@ -1,10 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react"
-import { useFetchAndListen } from "../useFetchAndListen"
-import { usePresence } from "../usePresence"
-import { useSelectedMicrophone } from "../useSelectedMicrophone"
-import { useConnectionState } from "@livekit/components-react"
+import { useEffect, useRef, useState } from "react"
 import { SERVER_URL } from "../../../api/routes"
-import { LocalAudioTrack, LocalTrack, Room, Track } from "livekit-client"
+import { Room } from "livekit-client"
 
 export const useVideoChatHook = (chatId: Number) => {
 	// const [presence] = usePresence(`room:${chatId}:video`)

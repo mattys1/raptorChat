@@ -1,5 +1,4 @@
-import { TrackReference, TrackReferenceOrPlaceholder } from "@livekit/components-react";
-import { useState } from "react";
+import { TrackReference } from "@livekit/components-react";
 import ParticipantTileCustom from "./ParticipantTileCustom";
 import { Track } from "livekit-client";
 

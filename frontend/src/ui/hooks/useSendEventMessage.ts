@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { EventResource } from "../../structs/Message";
 import { SERVER_URL } from "../../api/routes";
 

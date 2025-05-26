@@ -14,7 +14,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 	storageName,
 	displayName,
 }) => {
-	const [microphones, setMicrophones] = useMediaInputs({
+	const [microphones] = useMediaInputs({
 		constraints: storageName == "selectedMicrophone" ? {audio: true} : {video: true},
 		deviceKind: storageName == "selectedMicrophone" ? "audioinput" : "videoinput",
 	});

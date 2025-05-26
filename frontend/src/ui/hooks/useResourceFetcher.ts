@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react"
-import { err, ok, Result, ResultAsync } from "neverthrow"
+import { err, ok } from "neverthrow"
 import { SERVER_URL } from "../../api/routes"
 
 export const useResourceFetcher = <T>(
