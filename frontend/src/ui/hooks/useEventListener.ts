@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { CentrifugoService } from "../../logic/CentrifugoService"
+import { EventResource } from "../../structs/Message"
 
 interface EventAndItem<T> {
 	event: string
@@ -20,6 +21,28 @@ export const useEventListener = <T>(
 
 	useEffect(() => {
 		console.log("Attempting to hook into event", events)
+		CentrifugoService.subscribe(channel).then((sub) => {
+			sub.on("publication", (ctx) => {
+				const incoming = ctx.data as EventResource<T>
+				console.log("Received publication", ctx)
+				if(events.includes(incoming.event_name)) {
+					console.log("Published", ctx)
+					// callback(setState, ctx.data.data)
+					setState({
+						event: incoming.event_name,
+						item: incoming.contents as T
+					}) // TODO: assuming contents is T for now
+				}
+			})
+			.on("subscribed", () => {
+				console.log(`Subscribed to ${channel}`)
+			})
+			.on("error", (ctx) => {
+				console.error("Error subscribing", ctx.error)
+			})
+		}).catch(err => {
+			console.error(err)
+		}).finally(() => { console.log("sub promise finished") })
 
 		return () => {
 			CentrifugoService.unsubscribe(channel)

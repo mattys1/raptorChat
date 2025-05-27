@@ -39,7 +39,8 @@ app.on("ready", () => {
 	if(isDev()) {
 		mainWindow.loadURL("http://localhost:3000")
 	} else {
-		mainWindow.loadFile(path.join(app.getAppPath(),  "/dist-react/index.html"))
+        const fileUrl = `file://${path.join(app.getAppPath(), "/dist-react/index.html")}`;
+        mainWindow.loadURL(fileUrl);
 	}
 
 })

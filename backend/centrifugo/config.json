@@ -9,7 +9,9 @@
 			"hmac_secret_key": "secret_key"
 		},
 		"allowed_origins": [
-			"http://localhost:3000"
+			"http://localhost:3000",
+			"0.0.0.0",
+			"file://"
 		]
 	},
 	"channel": {

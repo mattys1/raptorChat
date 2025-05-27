@@ -110,9 +110,12 @@ services:
       - app-network
 
   frontend-build:
-    build: 
+    build:
       context: ./frontend
-      target: export
+      dockerfile: dockerfile
+    volumes:
+      - ./dist:/dist
+    command: ls && cp -r /app/dist/* /dist/
 
   swagger:
     image: swaggerapi/swagger-ui

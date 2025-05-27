@@ -24,8 +24,6 @@ const ParticipantTileCustom = ({id, tracks}: ParticipantTileCustomProps) => {
 					)
 			}
 
-			{
-			}
 			{user.username}
 		</div>
 	)

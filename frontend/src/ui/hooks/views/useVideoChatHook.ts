@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { SERVER_URL } from "../../../api/routes"
 import { Room } from "livekit-client"
 
 export const useVideoChatHook = (chatId: Number) => {
-	// const [presence] = usePresence(`room:${chatId}:video`)
-	const audio = useRef<HTMLAudioElement | null>(null)
 	const mic = localStorage.getItem("selectedMicrophone") ?? ""
 	const cam = localStorage.getItem("selectedCamera") ?? ""
-	// const connectionState = useConnectionState();
 	const [livekitToken, setLivekitToken] = useState<string | null>(null)
 	const [room] = useState(() => new Room({
-		// adaptiveStream: true,
 		dynacast: true,
 		videoCaptureDefaults: {
 			resolution: {
@@ -54,7 +50,7 @@ export const useVideoChatHook = (chatId: Number) => {
 
 		return () => {
 			isValid = false;
-			setLivekitToken(null); // Reset on unmount
+			setLivekitToken(null);
 		};
 	}, [chatId]);
 
@@ -101,7 +97,6 @@ export const useVideoChatHook = (chatId: Number) => {
 	}, [])
 
 	return {
-		audio,
 		room,
 	}
 }

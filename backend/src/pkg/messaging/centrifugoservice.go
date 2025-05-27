@@ -37,7 +37,6 @@ func GetCentrifugoService() *CentrifugoService {
 	return instance
 }
 
-//TODO: there should probably be a way to send an event not tied to a resource
 func (cs *CentrifugoService) Publish(
 	ctx context.Context, resource *EventResource,
 ) error {
