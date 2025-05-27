@@ -15,4 +15,6 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache npm run dist:linux
 
 FROM alpine:latest AS export
-# COPY --from=build /app/dist/frontend-*.AppImage /dist/
+
+RUN mkdir -p /temp_dist
+COPY --from=build /app/dist/frontend-*.AppImage /temp_dist
