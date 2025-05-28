@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
@@ -11,12 +11,16 @@ export function useLoginHook(navigate: NavigateFunction) {
 	const [loading, setLoading] = useState(false);
 	const { login } = useAuth();
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = async (email: string, password: string, e: React.FormEvent<HTMLFormElement>) => {
 		try {
 			e.preventDefault();
 			setLoading(true);
 
 			console.log("Submitting login form, email: ", email, "password:", password);
+
+			if (email === "" || password === "") {
+				throw("Email or password is empty. Login aborted.");
+			}
 
 			const response = await fetch(SERVER_URL + "/login", {
 				method: "POST",

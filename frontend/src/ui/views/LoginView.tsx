@@ -25,7 +25,7 @@ const LoginView: React.FC = () => {
           Log In
         </h1>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={(e) => handleSubmit(email, password, e)}>
           <div className="flex flex-col">
             <label
               htmlFor="userEmail"

@@ -11,7 +11,7 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 	const [loading, setLoading] = useState(false);
 	const loginData = useLoginHook(navigate)
 
-	const handleRegister = async (e: React.FormEvent) => {
+	const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
 		if (password !== repeatPassword) {
@@ -30,10 +30,14 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 
 			if (response.ok) {
 				// navigate(ROUTES.MAIN);
+				if(email === "" || username === "" || password === "") {
+					console.log("Email, username or password is empty. Registration aborted.");
+					return
+				}
 				loginData.setEmail(email)
 				loginData.setPassword(password)
 
-				await loginData.handleSubmit(e)
+				await loginData.handleSubmit(email, password, e)
 				alert("Registration successful!");
 			} else {
 				setLoading(false);
