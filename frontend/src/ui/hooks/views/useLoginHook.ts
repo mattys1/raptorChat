@@ -16,7 +16,7 @@ export function useLoginHook(navigate: NavigateFunction) {
 			e.preventDefault();
 			setLoading(true);
 
-			console.log("Submitting login form...");
+			console.log("Submitting login form, email: ", email, "password:", password);
 
 			const response = await fetch(SERVER_URL + "/login", {
 				method: "POST",

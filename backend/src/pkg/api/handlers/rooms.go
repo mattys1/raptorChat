@@ -136,7 +136,7 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 		Type:    room.Type,
 	})
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error:" + err.Error(), http.StatusInternalServerError)
 		return
 	}
 	roomID, _ := res.LastInsertId()
