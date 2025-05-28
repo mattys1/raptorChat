@@ -32,7 +32,7 @@ func GetORM() *gorm.DB {
 		if err != nil {
 			log.Fatalf("ORM failed to connect: %v", err)
 		}
-		if err := db.AutoMigrate(&User{}); err != nil {
+		if err := db.AutoMigrate(&User{}, &Invite{}); err != nil {
 			log.Fatalf("ORM failed auto-migrate: %v", err)
 		}
 		instance = db

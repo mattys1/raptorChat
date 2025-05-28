@@ -50,20 +50,6 @@ INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?);
 -- name: DeleteMessage :exec
 UPDATE messages SET is_deleted = TRUE WHERE id = ?;
 
--- name: GetInviteById :one
-SELECT * FROM invites WHERE id = ?;
-
--- name: CreateInvite :execresult
-INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?);
-
--- name: UpdateInvite :exec
-UPDATE invites SET state = ? WHERE id = ?;
-
--- name: GetInvitesToUser :many
-SELECT * FROM invites i WHERE i.receiver_id = ?;
--- name: GetRoles :many
-SELECT id, name FROM roles;
-
 -- name: GetPermissions :many
 SELECT id, name FROM permissions;
 
