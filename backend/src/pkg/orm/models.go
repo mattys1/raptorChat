@@ -4,10 +4,11 @@ import "time"
 
 type User struct {
 	ID        uint64    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Username  string    `gorm:"size:255;not null;unique" json:"username"`
-	Email     string    `gorm:"size:255;not null;unique" json:"email"`
-	Password  string    `gorm:"size:255;not null" json:"password"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	Username  string    `gorm:"size:255;not null;unique"      json:"username"`
+	Email     string    `gorm:"size:255;not null;unique"      json:"email"`
+	Password  string    `gorm:"size:255;not null"              json:"-"`
+	AvatarURL string    `gorm:"size:255"                       json:"avatar_url"`
+	CreatedAt time.Time `gorm:"autoCreateTime"                json:"created_at"`
 }
 
 type Invite struct {

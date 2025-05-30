@@ -46,7 +46,6 @@ func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
-    dao := db.GetDao()
     ctx := r.Context()
     uid, ok := middleware.RetrieveUserIDFromContext(ctx)
     if !ok {
@@ -54,18 +53,18 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    users, err := dao.GetAllUsers(ctx)
+    users, err := orm.GetAllUsers(ctx)
     if err != nil {
         slog.Error("Error fetching users", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
 
-    usersWithoutSender := slices.DeleteFunc(users, func(u db.User) bool {
+    filtered := slices.DeleteFunc(users, func(u orm.User) bool {
         return u.ID == uid
     })
 
-    if err := SendResource(usersWithoutSender, w); err != nil {
+    if err := SendResource(filtered, w); err != nil {
         slog.Error("Error sending users", "error", err)
     }
 }
@@ -86,21 +85,19 @@ func GetOwnIDHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetInvitesOfUserHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
-    targetId, err := strconv.Atoi(chi.URLParam(r, "id"))
+    targetID, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
     if err != nil {
         http.Error(w, "Invalid user ID", http.StatusBadRequest)
         return
     }
 
-    // Fetch via GORM
-    ormInvs, err := orm.GetInvitesToUser(ctx, uint64(targetId))
+    ormInvs, err := orm.GetInvitesToUser(ctx, targetID)
     if err != nil {
         slog.Error("Error fetching invites", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
 
-    // Map back into db.Invite (convert string to alias types)
     var invites []db.Invite
     for _, oi := range ormInvs {
         invites = append(invites, db.Invite{
@@ -113,7 +110,6 @@ func GetInvitesOfUserHandler(w http.ResponseWriter, r *http.Request) {
         })
     }
 
-    // Keep only pending invites
     invites = slices.DeleteFunc(invites, func(i db.Invite) bool {
         return i.State != db.InvitesStatePending
     })
@@ -148,15 +144,14 @@ func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
-    dao := db.GetDao()
     ctx := r.Context()
-    targetId, err := strconv.Atoi(chi.URLParam(r, "id"))
+    targetID, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
     if err != nil {
         http.Error(w, "Invalid user ID", http.StatusBadRequest)
         return
     }
 
-    user, err := dao.GetUserById(ctx, uint64(targetId))
+    user, err := orm.GetUserByID(ctx, targetID)
     if err != nil {
         slog.Error("Error fetching user", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -174,7 +169,6 @@ type UpdatePasswordRequest struct {
 }
 
 func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
-    dao := db.GetDao()
     ctx := r.Context()
     body, err := io.ReadAll(r.Body)
     if err != nil {
@@ -188,25 +182,25 @@ func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, err := dao.GetUserById(ctx, uint64(uid))
+    user, err := orm.GetUserByID(ctx, uid)
     if err != nil {
         slog.Error("Error fetching user", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
 
-    var update UpdatePasswordRequest
-    if err := json.Unmarshal(body, &update); err != nil {
+    var req UpdatePasswordRequest
+    if err := json.Unmarshal(body, &req); err != nil {
         http.Error(w, "Error unmarshalling request body", http.StatusBadRequest)
         return
     }
 
-    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(update.OldPassword)); err != nil {
-        http.Error(w, "Old password doesn't match the user password", http.StatusBadRequest)
+    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+        http.Error(w, "Old password doesn't match", http.StatusBadRequest)
         return
     }
 
-    hashedNew, err := bcrypt.GenerateFromPassword([]byte(update.NewPassword), bcrypt.DefaultCost)
+    hashedNew, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
     if err != nil {
         http.Error(w, "Error hashing new password", http.StatusInternalServerError)
         return
@@ -217,20 +211,21 @@ func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if err := dao.UpdateUser(ctx, db.UpdateUserParams{
-        ID:       user.ID,
+    update := &orm.User{
         Username: user.Username,
         Email:    user.Email,
         Password: string(hashedNew),
-    }); err != nil {
-        slog.Error("Error updating user", "error", err)
+    }
+    if err := orm.UpdateUser(ctx, uid, update); err != nil {
+        slog.Error("Error updating password", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
+
+    w.WriteHeader(http.StatusNoContent)
 }
 
 func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
-    dao := db.GetDao()
     ctx := r.Context()
     resource, err := messaging.GetEventResourceFromRequest(r)
     if err != nil {
@@ -249,20 +244,26 @@ func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, err := dao.GetUserById(ctx, uint64(uid))
+    user, err := orm.GetUserByID(ctx, uid)
     if err != nil {
         slog.Error("Error fetching user", "error", err)
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
     }
 
-    if err := dao.UpdateUser(ctx, db.UpdateUserParams{
-        ID:       user.ID,
+    update := &orm.User{
         Username: *newUsername,
         Email:    user.Email,
         Password: user.Password,
-    }); err != nil {
-        slog.Error("Error updating user", "error", err)
     }
+    if err := orm.UpdateUser(ctx, uid, update); err != nil {
+        slog.Error("Error updating username", "error", err)
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
     messaging.GetCentrifugoService().Publish(ctx, resource)
+    w.WriteHeader(http.StatusNoContent)
 }
 
 func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
@@ -308,11 +309,8 @@ func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     avatarURL := "/avatars/" + fname
-    if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
-        AvatarUrl: avatarURL,
-        ID:        uint64(uid),
-    }); err != nil {
-        slog.Error("db update failed", "error", err)
+    if err := orm.UpdateUserAvatar(ctx, uid, avatarURL); err != nil {
+        slog.Error("ORM update failed", "error", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
@@ -328,15 +326,15 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, err := db.GetDao().GetUserById(ctx, uint64(uid))
+    user, err := orm.GetUserByID(ctx, uid)
     if err != nil {
-        slog.Error("fetch user failed", "error", err)
+        slog.Error("Error fetching user", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
 
-    if user.AvatarUrl != "" {
-        fname := filepath.Base(user.AvatarUrl)
+    if user.AvatarURL != "" {
+        fname := filepath.Base(user.AvatarURL)
         fullpath := filepath.Join("avatars", fname)
         if rmErr := os.Remove(fullpath); rmErr != nil && !os.IsNotExist(rmErr) {
             slog.Error("remove avatar file failed", "path", fullpath, "error", rmErr)
@@ -345,11 +343,8 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
         }
     }
 
-    if err := db.GetDao().UpdateUserAvatar(ctx, db.UpdateUserAvatarParams{
-        AvatarUrl: "",
-        ID:        uint64(uid),
-    }); err != nil {
-        slog.Error("clear avatar url failed", "error", err)
+    if err := orm.UpdateUserAvatar(ctx, uid, ""); err != nil {
+        slog.Error("Error clearing avatar URL", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }

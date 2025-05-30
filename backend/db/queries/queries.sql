@@ -1,12 +1,3 @@
--- name: GetAllUsers :many
-SELECT * FROM users;
-
--- name: GetUserById :one
-SELECT * FROM users WHERE id = ?;
-
--- name: UpdateUser :exec
-UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?;
-
 -- name: GetAllRooms :many
 SELECT * FROM rooms;
 
@@ -114,8 +105,3 @@ SELECT r.id, r.name
 FROM   roles r
 JOIN   rooms_users_roles rur ON rur.role_id = r.id
 WHERE  rur.user_id = ? AND rur.room_id = ?;
-
--- name: UpdateUserAvatar :exec
-UPDATE users
-SET avatar_url = ?
-WHERE id = ?;

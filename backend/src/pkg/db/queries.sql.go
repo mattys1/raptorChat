@@ -179,40 +179,6 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 	return items, nil
 }
 
-const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, created_at, password, avatar_url FROM users
-`
-
-func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getAllUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Username,
-			&i.Email,
-			&i.CreatedAt,
-			&i.Password,
-			&i.AvatarUrl,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getCountOfRoom = `-- name: GetCountOfRoom :one
 SELECT member_count FROM rooms WHERE id = ?
 `
@@ -534,24 +500,6 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 	return items, nil
 }
 
-const getUserById = `-- name: GetUserById :one
-SELECT id, username, email, created_at, password, avatar_url FROM users WHERE id = ?
-`
-
-func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserById, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.Password,
-		&i.AvatarUrl,
-	)
-	return i, err
-}
-
 const getUsersByRoom = `-- name: GetUsersByRoom :many
 SELECT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
@@ -650,42 +598,5 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
 		arg.OwnerID,
 		arg.ID,
 	)
-	return err
-}
-
-const updateUser = `-- name: UpdateUser :exec
-UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?
-`
-
-type UpdateUserParams struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	ID       uint64 `json:"id"`
-}
-
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser,
-		arg.Username,
-		arg.Email,
-		arg.Password,
-		arg.ID,
-	)
-	return err
-}
-
-const updateUserAvatar = `-- name: UpdateUserAvatar :exec
-UPDATE users
-SET avatar_url = ?
-WHERE id = ?
-`
-
-type UpdateUserAvatarParams struct {
-	AvatarUrl string `json:"avatar_url"`
-	ID        uint64 `json:"id"`
-}
-
-func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserAvatar, arg.AvatarUrl, arg.ID)
 	return err
 }
