@@ -22,6 +22,15 @@ import (
     "golang.org/x/crypto/bcrypt"
 )
 
+// GetRoomsOfUserHandler godoc
+// @Summary     List rooms of the current user
+// @Description Returns all chat rooms belonging to the authenticated user
+// @Tags        users,rooms
+// @Produce     json
+// @Success     200  {array}   db.Room
+// @Failure     500  {object}  ErrorResponse
+// @Security    ApiKeyAuth
+// @Router      /users/me/rooms [get]
 func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
     dao := db.GetDao()
     ctx := r.Context()
@@ -351,4 +360,8 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Content-Type", "application/json")
     w.Write([]byte(`{"avatar_url":""}`))
+}
+
+type ErrorResponse struct {
+    Message string `json:"message"`
 }

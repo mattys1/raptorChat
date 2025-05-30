@@ -115,7 +115,7 @@ services:
       dockerfile: dockerfile
     volumes:
       - ./frontend/dist:/dist
-    command: ["sh", "-c", "cp /temp_dist/* /dist"] 
+    command: ["sh", "-c", "cp /temp_dist/* /dist"]
 
   swagger:
     image: swaggerapi/swagger-ui:latest
@@ -123,7 +123,7 @@ services:
     environment:
       SWAGGER_JSON: /swagger/swagger.yaml
     volumes:
-      - ./backend/swagger:/swagger:ro
+      - ./swagger:/swagger:ro
     ports:
       - "8001:8080"
     networks:
