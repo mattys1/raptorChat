@@ -2,6 +2,7 @@ services:
   backend:
     build:
       context: ./backend
+    working_dir: /app
     command: ./backend
     ports:
       - "8080:8080"

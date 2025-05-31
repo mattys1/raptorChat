@@ -22,13 +22,15 @@ import (
     "golang.org/x/crypto/bcrypt"
 )
 
+//
 // GetRoomsOfUserHandler godoc
 // @Summary     List rooms of the current user
 // @Description Returns all chat rooms belonging to the authenticated user
-// @Tags        users,rooms
+// @Tags        users, rooms
 // @Produce     json
 // @Success     200  {array}   db.Room
-// @Failure     500  {object}  ErrorResponse
+// @Failure     401  {object}  ErrorResponse  "Unauthorized or missing token"
+// @Failure     500  {object}  ErrorResponse  "Internal Server Error"
 // @Security    ApiKeyAuth
 // @Router      /users/me/rooms [get]
 func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +56,17 @@ func GetRoomsOfUserHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+//
+// GetAllUsersHandler godoc
+// @Summary     List all users (excluding current user)
+// @Description Returns a list of all users in the system except the authenticated user
+// @Tags        users
+// @Produce     json
+// @Success     200  {array}   orm.User
+// @Failure     401  {object}  ErrorResponse  "Unauthorized or missing token"
+// @Failure     500  {object}  ErrorResponse  "Internal Server Error"
+// @Security    ApiKeyAuth
+// @Router      /users [get]
 func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     uid, ok := middleware.RetrieveUserIDFromContext(ctx)
@@ -78,6 +91,16 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+//
+// GetOwnIDHandler godoc
+// @Summary     Get authenticated user's ID
+// @Description Returns the ID of the currently authenticated user
+// @Tags        users
+// @Produce     json
+// @Success     200  {integer}  int  "User ID"
+// @Failure     401  {object}   ErrorResponse  "Unauthorized or missing token"
+// @Security    ApiKeyAuth
+// @Router      /users/me [get]
 func GetOwnIDHandler(w http.ResponseWriter, r *http.Request) {
     uid, ok := middleware.RetrieveUserIDFromContext(r.Context())
     if !ok {
@@ -92,6 +115,19 @@ func GetOwnIDHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+//
+// GetInvitesOfUserHandler godoc
+// @Summary     Get pending invites for a user
+// @Description Returns all pending invites sent to the specified user
+// @Tags        users, invites
+// @Produce     json
+// @Param       id   path      int  true  "Target User ID"
+// @Success     200  {array}   db.Invite
+// @Failure     400  {object}  ErrorResponse  "Invalid user ID"
+// @Failure     401  {object}  ErrorResponse  "Unauthorized or missing token"
+// @Failure     500  {object}  ErrorResponse  "Internal Server Error"
+// @Security    ApiKeyAuth
+// @Router      /users/{id}/invites [get]
 func GetInvitesOfUserHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     targetID, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
@@ -129,6 +165,17 @@ func GetInvitesOfUserHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+//
+// GetFriendsOfUserHandler godoc
+// @Summary     Get friends of the authenticated user
+// @Description Returns a list of friends (other users) for the currently authenticated user
+// @Tags        users, friends
+// @Produce     json
+// @Success     200  {array}   orm.User
+// @Failure     401  {object}  ErrorResponse  "Unauthorized or missing token"
+// @Failure     500  {object}  ErrorResponse  "Internal Server Error"
+// @Security    ApiKeyAuth
+// @Router      /users/me/friends [get]
 func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
     dao := db.GetDao()
     ctx := r.Context()
@@ -152,6 +199,19 @@ func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+//
+// GetUserHandler godoc
+// @Summary     Get user by ID
+// @Description Returns the user object for the specified user ID
+// @Tags        users
+// @Produce     json
+// @Param       id   path      int  true  "User ID"
+// @Success     200  {object}  orm.User
+// @Failure     400  {object}  ErrorResponse  "Invalid user ID"
+// @Failure     401  {object}  ErrorResponse  "Unauthorized or missing token"
+// @Failure     500  {object}  ErrorResponse  "Internal Server Error"
+// @Security    ApiKeyAuth
+// @Router      /users/{id} [get]
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     targetID, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
@@ -177,6 +237,20 @@ type UpdatePasswordRequest struct {
     OldPassword string `json:"old_password"`
 }
 
+//
+// UpdatePasswordHandler godoc
+// @Summary     Update current user's password
+// @Description Updates the authenticated user's password, verifying the old password first
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       payload  body      UpdatePasswordRequest  true  "Old and new password payload"
+// @Success     204      {string}  string                 "No Content"
+// @Failure     400      {object}  ErrorResponse          "Bad request or validation failure"
+// @Failure     401      {object}  ErrorResponse          "Unauthorized or missing token"
+// @Failure     500      {object}  ErrorResponse          "Internal Server Error"
+// @Security    ApiKeyAuth
+// @Router      /users/me/password [put]
 func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     body, err := io.ReadAll(r.Body)
@@ -234,6 +308,20 @@ func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusNoContent)
 }
 
+//
+// UpdateUsernameHandler godoc
+// @Summary     Update current user's username
+// @Description Updates the authenticated user's username and publishes an event via Centrifugo
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       new_username  body      object  true  "JSON payload: {\"new_username\": \"newName\"}"
+// @Success     204           {string}  string  "No Content"
+// @Failure     400           {object}  ErrorResponse  "Bad request or validation failure"
+// @Failure     401           {object}  ErrorResponse  "Unauthorized or missing token"
+// @Failure     500           {object}  ErrorResponse  "Internal Server Error"
+// @Security    ApiKeyAuth
+// @Router      /users/me/username [put]
 func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     resource, err := messaging.GetEventResourceFromRequest(r)
@@ -275,6 +363,21 @@ func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusNoContent)
 }
 
+
+//
+// UploadAvatarHandler godoc
+// @Summary     Upload or update user's avatar
+// @Description Accepts a multipart/form-data file upload for the authenticated user's avatar, stores it, and updates the user's record
+// @Tags        users, avatars
+// @Accept      multipart/form-data
+// @Produce     json
+// @Param       avatar  formData  file  true  "Avatar image file (JPEG/PNG/etc.)"
+// @Success     200     {object}  map[string]string  "Returns {\"avatar_url\": \"<url>\"}"
+// @Failure     400     {object}  ErrorResponse       "Bad form data or missing file"
+// @Failure     401     {object}  ErrorResponse       "Unauthorized or missing token"
+// @Failure     500     {object}  ErrorResponse       "Server error while saving avatar"
+// @Security    ApiKeyAuth
+// @Router      /users/me/avatar [post]
 func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     uid, ok := middleware.RetrieveUserIDFromContext(ctx)
@@ -327,6 +430,17 @@ func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
     SendResource(map[string]string{"avatar_url": avatarURL}, w)
 }
 
+//
+// DeleteAvatarHandler godoc
+// @Summary     Delete user's avatar
+// @Description Deletes the authenticated user's avatar file and clears the URL in the database
+// @Tags        users, avatars
+// @Produce     json
+// @Success     200  {object}  map[string]string  "Returns {\"avatar_url\": \"\"}"
+// @Failure     401  {object}  ErrorResponse       "Unauthorized or missing token"
+// @Failure     500  {object}  ErrorResponse       "Server error while deleting avatar"
+// @Security    ApiKeyAuth
+// @Router      /users/me/avatar [delete]
 func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     uid, ok := middleware.RetrieveUserIDFromContext(ctx)
