@@ -15,7 +15,7 @@ COPY . .
 
 # Install swag and generate the swagger spec.
 RUN go install github.com/swaggo/swag/cmd/swag@latest
-RUN swag init -g src/main.go -o ../swagger
+RUN swag init -g src/main.go -o ./swagger
 
 RUN CGO_ENABLED=0 GOOS=linux go build -tags debug -o backend ./src 
 # RUN CGO_ENABLED=0 GOOS=linux go build -o backend ./src
