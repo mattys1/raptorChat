@@ -13,13 +13,21 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 
 	// lksdk "github.com/livekit/server-sdk-go/v2"
 	lkauth "github.com/livekit/protocol/auth"
 )
 
-var jwtKey = []byte("secret_key")
+func getJwt() []byte {
+	_jwtKey := os.Getenv("JWT_SIGNING_KEY") 
+	assert.That(_jwtKey != "", "jwt key var empty", nil)
+
+	return []byte(_jwtKey)
+}
+
+var jwtKey = getJwt()
 
 type CentrifugoTokenClaims struct {
 	Sub      string         `json:"sub"`

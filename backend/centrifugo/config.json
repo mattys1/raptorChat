@@ -1,13 +1,8 @@
 {
 	"admin": {
-		"enabled": true,
-		"password": "admin123",
-		"secret": "admin_secret"
+		"enabled": true
 	},
 	"client": {
-		"token": {
-			"hmac_secret_key": "secret_key"
-		},
 		"allowed_origins": [
 			"http://localhost:3000",
 			"0.0.0.0",
@@ -32,8 +27,5 @@
 				"allow_subscribe_for_client": true
 			}
 		]
-	},
-	"http_api": {
-		"key": "http_secret"
 	}
 }

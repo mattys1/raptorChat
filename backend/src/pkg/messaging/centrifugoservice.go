@@ -27,7 +27,7 @@ func GetCentrifugoService() *CentrifugoService {
 		}
 		cfg := gocent.Config{
 			Addr: addr,  
-			Key:  "http_secret",                 
+			Key:  os.Getenv("CENTRIFUGO_HTTP_API_KEY"),                 
 		}
 		instance = &CentrifugoService{
 			client: gocent.New(cfg),
