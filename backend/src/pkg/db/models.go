@@ -11,6 +11,49 @@ import (
 	"time"
 )
 
+type CallsStatus string
+
+const (
+	CallsStatusActive    CallsStatus = "active"
+	CallsStatusCompleted CallsStatus = "completed"
+	CallsStatusRejected  CallsStatus = "rejected"
+)
+
+func (e *CallsStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CallsStatus(s)
+	case string:
+		*e = CallsStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CallsStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCallsStatus struct {
+	CallsStatus CallsStatus `json:"calls_status"`
+	Valid       bool        `json:"valid"` // Valid is true if CallsStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCallsStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CallsStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CallsStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCallsStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CallsStatus), nil
+}
+
 type InvitesState string
 
 const (
@@ -136,6 +179,20 @@ func (ns NullRoomsType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.RoomsType), nil
+}
+
+type Call struct {
+	ID               uint64      `json:"id"`
+	RoomID           uint64      `json:"room_id"`
+	Status           CallsStatus `json:"status"`
+	CreatedAt        time.Time   `json:"created_at"`
+	ParticipantCount uint32      `json:"participant_count"`
+}
+
+type CallParticipant struct {
+	CallID   uint64    `json:"call_id"`
+	UserID   uint64    `json:"user_id"`
+	JoinedAt time.Time `json:"joined_at"`
 }
 
 type Friendship struct {
