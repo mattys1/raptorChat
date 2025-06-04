@@ -68,6 +68,7 @@ func Router() *chi.Mux {
 					r.Get("/", handlers.GetCallsOfRoomHandler)
 
 					r.Post("/joined", handlers.JoinOrCreateCallHandler)
+					r.Post("/leave", handlers.LeaveOrEndCallHandler)
 				})
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)

@@ -79,3 +79,22 @@ func AddUserToCall(ctx context.Context, callID, userID uint64) error {
 
 	return err 
 }
+
+func RemoveUserFromCall(ctx context.Context, callID, userID uint64) error {
+	db := GetORM().WithContext(ctx)
+
+	err := db.Where("call_id = ? AND user_id = ?", callID, userID).Delete(&CallParticipant{}).Error
+	if err != nil {
+		return err
+	}
+
+	return db.Model(&Call{}).Where("id = ?", callID).
+		UpdateColumn("participant_count", gorm.Expr("participant_count - 1")).Error
+}
+
+func CompleteCall(ctx context.Context, callID uint64) error {
+	db := GetORM().WithContext(ctx)
+
+	return db.Model(&Call{}).Where("id = ?", callID).
+		Update("status", CallsStatusCompleted).Error
+}

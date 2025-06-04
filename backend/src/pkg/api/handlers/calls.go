@@ -78,35 +78,29 @@ func LeaveOrEndCallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calls, err := orm.GetCallsByUserID(r.Context(), uint64(userID))
+	calls, err := orm.GetCallsByRoomID(r.Context(), uint64(roomID))
 	if err != nil {
-		slog.Error("Error fetching calls for user", "error", err)
+		slog.Error("Error fetching calls for room", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
+	slog.Info("Calls for room", "roomID", roomID, "calls", calls, "callsCount", len(calls))
+
 	activeCalls := slices.DeleteFunc(calls, func(call orm.Call) bool {
-		return call.Status == orm.CallsStatusActive && call.RoomID == uint64(roomID)
+		return call.Status != orm.CallsStatusActive
 	})
 
 	if len(activeCalls) == 0 {
-		http.Error(w, "No active call found for the user in this room", http.StatusNotFound)
+		http.Error(w, "No active call found for this room", http.StatusInternalServerError)
 		return
 	}
 
+	assert.That(len(activeCalls) == 1, "There should be exactly one active call for the user in this room", nil)
 	call := activeCalls[0]
-	if len(call.Participants) == 1 {
-		call.Status = orm.CallsStatusCompleted
-	} else {
-		call.ParticipantCount--
-	}
 
-	err = orm.GetORM().WithContext(r.Context()).Save(&call).Error
-	if err != nil {
-		slog.Error("Error updating call status", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+	orm.RemoveUserFromCall(r.Context(), call.ID, uint64(userID))
+	if call.ParticipantCount == 1 {
+		orm.CompleteCall(r.Context(), call.ID)
 	}
-
-	SendResource(call, w)
 }

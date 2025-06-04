@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { SERVER_URL } from "../../../api/routes"
 import { Room } from "livekit-client"
+import { useSendResource } from "../useSendResource"
 
 export const useVideoChatHook = (chatId: Number) => {
 	const mic = localStorage.getItem("selectedMicrophone") ?? ""
@@ -23,6 +24,7 @@ export const useVideoChatHook = (chatId: Number) => {
 		},
 	}));
 
+	const [, , leaveRoom] = useSendResource<null>(`/api/rooms/${chatId}/calls/leave`, "POST");
 
 	useEffect(() => {
 		let isValid = true;
@@ -70,6 +72,8 @@ export const useVideoChatHook = (chatId: Number) => {
 		return () => {
 			mounted = false;
 			room.disconnect();
+
+			leaveRoom(null)
 		};
 	}, [room, livekitToken]);
 
