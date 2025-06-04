@@ -30,4 +30,6 @@ sql:
             go_type:
               type: "int32"
               pointer: true
+          - column: users.password # prevent exporting the struct tag
+            go_struct_tag: json:"-" 
 

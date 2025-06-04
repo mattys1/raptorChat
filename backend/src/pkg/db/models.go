@@ -256,7 +256,7 @@ type User struct {
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
-	Password  string    `json:"password"`
+	Password  string    `json:"-"`
 	AvatarUrl string    `json:"avatar_url"`
 }
 

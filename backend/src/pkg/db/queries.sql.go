@@ -775,7 +775,7 @@ UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?
 type UpdateUserParams struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
-	Password string `json:"password"`
+	Password string `json:"-"`
 	ID       uint64 `json:"id"`
 }
 
