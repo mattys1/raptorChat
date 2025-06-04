@@ -25,6 +25,10 @@ CREATE TABLE call_participants (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE calls;
 DROP TABLE call_participants;
 -- +goose StatementEnd
+
+-- +goose StatementBegin
+DROP TABLE calls;
+-- +goose StatementEnd
+
