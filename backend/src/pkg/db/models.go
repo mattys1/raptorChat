@@ -182,11 +182,13 @@ func (ns NullRoomsType) Value() (driver.Value, error) {
 }
 
 type Call struct {
-	ID               uint64      `json:"id"`
-	RoomID           uint64      `json:"room_id"`
-	Status           CallsStatus `json:"status"`
-	CreatedAt        time.Time   `json:"created_at"`
-	ParticipantCount uint32      `json:"participant_count"`
+	ID                   uint64       `json:"id"`
+	RoomID               uint64       `json:"room_id"`
+	Status               CallsStatus  `json:"status"`
+	CreatedAt            time.Time    `json:"created_at"`
+	ParticipantCount     uint32       `json:"participant_count"`
+	EndedAt              sql.NullTime `json:"ended_at"`
+	PeakParticipantCount uint32       `json:"peak_participant_count"`
 }
 
 type CallParticipant struct {

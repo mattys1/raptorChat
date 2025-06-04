@@ -44,3 +44,38 @@ func ListUsers(ctx context.Context) ([]User, error) {
 func DeleteUser(ctx context.Context, id uint64) error {
 	return GetORM().WithContext(ctx).Delete(&User{}, id).Error
 }
+
+func CreateCall(ctx context.Context, c *Call) error {
+	db := GetORM().WithContext(ctx)
+	return db.Create(c).Error
+}
+
+func GetCallsByRoomID(ctx context.Context, roomID uint64) ([]Call, error) {
+	var calls []Call
+	err := GetORM().WithContext(ctx).Where("room_id = ?", roomID).Find(&calls).Error
+	if err != nil {
+		return nil, err
+	}
+	return calls, nil
+}
+
+func GetCallsByUserID(ctx context.Context, userID uint64) ([]Call, error) {
+	var calls []Call
+	err := GetORM().WithContext(ctx).Where("id = ?", userID).Find(&calls).Error
+	if err != nil {
+		return nil, err
+	}
+	return calls, nil
+}
+
+func AddUserToCall(ctx context.Context, callID, userID uint64) error {
+	db := GetORM().WithContext(ctx)
+
+	newParticipant := CallParticipant{UserID: userID, CallID: callID}
+	err := db.Create(&newParticipant).Error
+
+	err = db.WithContext(ctx).Model(&Call{}).Where("id = ?", callID).
+		UpdateColumn("participant_count", gorm.Expr("participant_count + 1")).Error
+
+	return err 
+}
