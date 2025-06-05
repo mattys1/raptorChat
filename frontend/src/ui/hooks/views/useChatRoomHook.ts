@@ -38,13 +38,13 @@ export const useChatRoomHook = (key: number) => {
 		[],
 		`/api/rooms/${chatId}/calls`,
 		`room:${chatId}`,
-		["call_created", "call_ended", "call_updated"],
+		["call_created", "call_completed", "call_updated"],
 		(setState, incoming, event) => {
 			switch(event) {
 				case "call_created":
 					setState((prev) => [...prev, incoming]);
 					break;
-				case "call_ended":
+				case "call_completed":
 				case "call_udpated":
 					setState((prev) => prev.map(call => { return call.id === incoming.id ? incoming : call }));
 					break;

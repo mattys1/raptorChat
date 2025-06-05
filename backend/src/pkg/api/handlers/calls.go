@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mattys1/raptorChat/src/pkg/assert"
+	"github.com/mattys1/raptorChat/src/pkg/messaging"
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
 	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
@@ -53,13 +55,35 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Active calls for room", "roomID", roomID, "calls", activeCalls, "activeCallsCount", len(activeCalls))
 
 	if(len(activeCalls) == 0) {
-		orm.CreateCall(r.Context(), &orm.Call{
+		call, err := orm.CreateCall(r.Context(), &orm.Call{
 			RoomID: uint64(roomID),
 			Status: orm.CallsStatusActive,
 			Participants: []orm.CallParticipant{
 				{ UserID: userID },
 			},
 		})
+		if err != nil {
+			slog.Error("Error creating call", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		callJson, err := json.Marshal(call)
+		if err != nil {
+			slog.Error("Error marshalling call", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		messaging.GetCentrifugoService().Publish(
+			r.Context(),
+			&messaging.EventResource{
+				Channel: "room:" + strconv.Itoa(roomID),
+				Method: "POST",
+				EventName: "call_created",
+				Contents: callJson,
+			},
+		)
 	} else {
 		orm.AddUserToCall(r.Context(), activeCalls[0].ID, uint64(userID))
 	}
@@ -101,6 +125,28 @@ func LeaveOrEndCallHandler(w http.ResponseWriter, r *http.Request) {
 
 	orm.RemoveUserFromCall(r.Context(), call.ID, uint64(userID))
 	if call.ParticipantCount == 1 {
-		orm.CompleteCall(r.Context(), call.ID)
+		updatedCall, err := orm.CompleteCall(r.Context(), call.ID)
+		if err != nil {
+			slog.Error("Error completing call", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		updateCallJson, err := json.Marshal(updatedCall)
+		if err != nil {
+			slog.Error("Error marshalling call", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		messaging.GetCentrifugoService().Publish(
+			r.Context(),
+			&messaging.EventResource{
+				Channel: "room:" + strconv.Itoa(roomID),
+				Method: "POST",
+				EventName: "call_completed",
+				Contents: updateCallJson,
+			},
+		)
 	}
 }
