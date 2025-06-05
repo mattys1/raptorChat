@@ -7,6 +7,8 @@ import { MessageEvents } from "../../structs/MessageNames";
 import { Message, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
+import CallMessage from "../components/CallMessage";
+import ChatMessage from "../components/ChatMessage";
 
 const API_URL = "http://localhost:8080";
 
@@ -111,54 +113,20 @@ const ChatRoomView: React.FC = () => {
 
 			<div className="flex-1 flex flex-col overflow-y-auto space-y-3 px-[2%] py-4">
 				{props.messageList.map((m) => {
-					const isMine = m.sender_id === myId;
-
-					const bubbleBg = isMine
-						? "bg-[#0d1117] text-[#e5e9f0] self-start"
-						: "bg-[#1e293b] text-[#e5e9f0] self-end";
-
 					return (
-						<div
-							key={m.id}
-							className={`
-								group relative
-								w-4/5 rounded-lg
-								${bubbleBg}
-								py-[0.45rem] pb-[0.6rem] px-[2%]
-								`}
-						>
-							<div className="flex items-center mb-1">
-								<img
-									src={
-										avatarMap[m.sender_id]
-											? `${API_URL}${avatarMap[m.sender_id]}`
-											: "/default-avatar.png"
-									}
-									alt="avatar"
-									className="h-8 w-8 rounded-full object-cover mr-2"
-								/>
-								<span className="text-xs font-semibold text-[#cbd5e1]">
-									{nameMap[m.sender_id] ?? `user${m.sender_id}`}
-								</span>
-							</div>
-
-							<div className="leading-relaxed whitespace-pre-wrap break-words">
-								{m.contents}
-							</div>
-
-							{(isMine || isOwner || isModerator) && (
-								<button
-									className="absolute right-2 bottom-2 text-xs text-red-500 bg-gray-400 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-									onClick={() => deleteMessage(m)}
-								>
-									Delete message
-								</button>
-							)}
-						</div>
-					);
+						<ChatMessage message={m} myId={myId} nameMap={nameMap} avatarMap={avatarMap} isOwner={isOwner} isModerator={isModerator} deleteMessage={deleteMessage}/>
+										
+					)
 				})}
 				<div ref={bottomRef} />
+
+				{
+					props.calls.map((call) => {
+						return CallMessage(call)
+					})
+				}
 			</div>
+
 
 			<form
 				className="flex items-center space-x-2 bg-[#374151] py-[0.65rem] px-4"
