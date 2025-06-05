@@ -1,140 +1,399 @@
-basePath: /
+basePath: /api/v1
 definitions:
-  auth.LoginCredentials:
+  db.Invite:
     properties:
-      email:
+      id:
+        type: integer
+      issuer_id:
+        type: integer
+      receiver_id:
+        type: integer
+      room_id:
+        type: integer
+      state:
+        $ref: '#/definitions/db.InvitesState'
+      type:
+        $ref: '#/definitions/db.InvitesType'
+    type: object
+  db.InvitesState:
+    enum:
+    - pending
+    - accepted
+    - declined
+    type: string
+    x-enum-varnames:
+    - InvitesStatePending
+    - InvitesStateAccepted
+    - InvitesStateDeclined
+  db.InvitesType:
+    enum:
+    - direct
+    - group
+    type: string
+    x-enum-varnames:
+    - InvitesTypeDirect
+    - InvitesTypeGroup
+  db.Room:
+    properties:
+      id:
+        type: integer
+      member_count:
+        type: integer
+      name:
         type: string
-      password:
+      owner_id:
+        type: integer
+      type:
+        $ref: '#/definitions/db.RoomsType'
+    type: object
+  db.RoomsType:
+    enum:
+    - direct
+    - group
+    type: string
+    x-enum-varnames:
+    - RoomsTypeDirect
+    - RoomsTypeGroup
+  handlers.ErrorResponse:
+    properties:
+      message:
         type: string
     type: object
-  auth.RegistrationCredentials:
+  handlers.UpdatePasswordRequest:
     properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  orm.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
       email:
         type: string
-      password:
-        type: string
+      id:
+        type: integer
       username:
         type: string
     type: object
 host: localhost:8080
 info:
   contact:
-    email: support@raptorchat.io
+    email: support@raptorchat.example.com
     name: API Support
-  description: This is a sample server for raptorChat.
-  title: raptorChat API
+    url: http://www.swagger.io/support
+  description: This is the API server for RaptorChat.
+  termsOfService: http://swagger.io/terms/
+  title: RaptorChat API
   version: "1.0"
 paths:
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticates a user and sets a JWT token cookie upon success.
-      parameters:
-      - description: User credentials
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/auth.LoginCredentials'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Login successful
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            type: string
-        "401":
-          description: Unauthorized
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Log in a user
-      tags:
-      - auth
-  /protected:
+  /users:
     get:
-      description: Returns protected data for authenticated users.
+      description: Returns a list of all users in the system except the authenticated
+        user
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            items:
+              $ref: '#/definitions/orm.User'
+            type: array
         "401":
-          description: Unauthorized
+          description: Unauthorized or missing token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Access protected resource
+      summary: List all users (excluding current user)
       tags:
-      - protected
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Registers a new user with an email, username, and password.
+      - users
+  /users/{id}:
+    get:
+      description: Returns the user object for the specified user ID
       parameters:
-      - description: User registration details
-        in: body
-        name: credentials
+      - description: User ID
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/auth.RegistrationCredentials'
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Registration successful
+          description: OK
+          schema:
+            $ref: '#/definitions/orm.User'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+  /users/{id}/invites:
+    get:
+      description: Returns all pending invites sent to the specified user
+      parameters:
+      - description: Target User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Invite'
+            type: array
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get pending invites for a user
+      tags:
+      - users
+      - invites
+  /users/me:
+    get:
+      description: Returns the ID of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User ID
+          schema:
+            type: integer
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get authenticated user's ID
+      tags:
+      - users
+  /users/me/avatar:
+    delete:
+      description: Deletes the authenticated user's avatar file and clears the URL
+        in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Returns {\"avatar_url\": \"\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Server error while deleting avatar
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete user's avatar
+      tags:
+      - users
+      - avatars
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts a multipart/form-data file upload for the authenticated
+        user's avatar, stores it, and updates the user's record
+      parameters:
+      - description: Avatar image file (JPEG/PNG/etc.)
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Returns {\"avatar_url\": \"<url>\"}'
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Bad request
+          description: Bad form data or missing file
           schema:
-            type: string
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Server error while saving avatar
           schema:
-            type: string
-      summary: Register a new user
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Upload or update user's avatar
       tags:
-      - auth
-  /ws:
+      - users
+      - avatars
+  /users/me/friends:
     get:
-      consumes:
-      - application/json
-      description: Upgrades an HTTP connection to a WebSocket connection for real-time
-        communication.
+      description: Returns a list of friends (other users) for the currently authenticated
+        user
       produces:
       - application/json
       responses:
-        "101":
-          description: Switching Protocols
+        "200":
+          description: OK
           schema:
-            type: string
+            items:
+              $ref: '#/definitions/orm.User'
+            type: array
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Upgrade HTTP connection to WebSocket
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get friends of the authenticated user
       tags:
-      - websocket
+      - users
+      - friends
+  /users/me/password:
+    put:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's password, verifying the old password
+        first
+      parameters:
+      - description: Old and new password payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad request or validation failure
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update current user's password
+      tags:
+      - users
+  /users/me/rooms:
+    get:
+      description: Returns all chat rooms belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Room'
+            type: array
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List rooms of the current user
+      tags:
+      - users
+      - rooms
+  /users/me/username:
+    put:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's username and publishes an event
+        via Centrifugo
+      parameters:
+      - description: 'JSON payload: {\'
+        in: body
+        name: new_username
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad request or validation failure
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update current user's username
+      tags:
+      - users
 swagger: "2.0"

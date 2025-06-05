@@ -1,7 +1,21 @@
 services:
+  swagger-gen:
+    image: golang:1.24-alpine
+    working_dir: /backend
+    volumes:
+      - ./backend:/backend
+      - ./swagger:/swagger
+    entrypoint: 
+      sh -c "
+      apk add --no-cache git &&
+      go install github.com/swaggo/swag/cmd/swag@latest &&
+      swag init -g src/main.go -o /swagger
+      "
+    restart: "no"
   backend:
     build:
       context: ./backend
+    working_dir: /app
     command: ./backend
     ports:
       - "8080:8080"
@@ -22,6 +36,8 @@ services:
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY}
       CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_HTTP_API_KEY}
     depends_on:
+      swagger-gen:
+        condition: service_completed_successfully
       mysql: 
         condition: service_started
       db-migrate:
@@ -125,16 +141,20 @@ services:
       dockerfile: dockerfile
     volumes:
       - ./frontend/dist:/dist
-    command: ["sh", "-c", "cp /temp_dist/* /dist"] 
+    command: ["sh", "-c", "cp /temp_dist/* /dist"]
 
   swagger:
-    image: swaggerapi/swagger-ui
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    depends_on:
+      swagger-gen:
+        condition: service_completed_successfully
     environment:
-      - SWAGGER_JSON=/swagger/swagger.yaml
-    ports:
-      - "8081:8080"
+      SWAGGER_JSON: /swagger/swagger.yaml
     volumes:
-      - ./swagger:/swagger
+      - ./swagger:/swagger:ro
+    ports:
+      - "8001:8080"
     networks:
       - app-network
 
