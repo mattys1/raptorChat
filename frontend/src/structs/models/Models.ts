@@ -56,3 +56,19 @@ export interface Invite {
 	issuer_id: number;
 	receiver_id: number;
 }
+
+const CallStatus = {
+	Active: "active",
+	Completed: "completed",
+	Rejected: "rejected",
+}
+
+export type CallStatus = typeof CallStatus[keyof typeof CallStatus];
+
+export interface Call {
+	id: number;
+	room_id: number;
+	status: CallStatus;
+	created_at: Date;
+	participant_count: number;
+}

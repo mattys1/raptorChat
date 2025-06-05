@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { SERVER_URL } from "../../api/routes";
 
-const HttpMethod = {
+export const HttpMethods = {
 	GET: "GET",
 	POST: "POST",
 	PUT: "PUT",
@@ -9,7 +9,7 @@ const HttpMethod = {
 	DELETE: "DELETE",
 }
 
-export type HttpMethods = typeof HttpMethod[keyof typeof HttpMethod];
+export type HttpMethods = typeof HttpMethods[keyof typeof HttpMethods];
 
 const ResponseStates = {
 	SUCCESS: "SUCCESS",

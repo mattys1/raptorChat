@@ -1,11 +1,12 @@
 import { useResourceFetcher } from "../useResourceFetcher"
-import { Message, Room } from "../../../structs/models/Models"
+import { Call, Message, Room } from "../../../structs/models/Models"
 import { useSendEventMessage } from "../useSendEventMessage"
 import { useFetchAndListen } from "../useFetchAndListen"
 import { useCallback, useEffect } from "react"
 import { useEventListener } from "../useEventListener"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "../../routes"
+import { HttpMethods, useSendResource } from "../useSendResource"
 
 type MessageUpdateCallback = (
 	setState: React.Dispatch<React.SetStateAction<Message[]>>, 
@@ -19,12 +20,40 @@ type UserUpdateCallback = (
 	event: string
 ) => void;
 
+type CallUpdateCallback = (
+	setState: React.Dispatch<React.SetStateAction<Call[]>>, 
+	incoming: Call,
+	event: string
+) => void;
+
 
 export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
 	const chatId = key
 	console.log("ChatRoomHook key:", chatId)
 	const [room, setRoom] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`) // TODO: merge this with useFetchAndListen
+	const [, , notifyOnCallJoin] = useSendResource<null>(`/api/rooms/${chatId}/calls/joined`, HttpMethods.POST)
+
+	const [calls] = useFetchAndListen<Call[], Call>(
+		[],
+		`/api/rooms/${chatId}/calls`,
+		`room:${chatId}`,
+		["call_created", "call_completed", "call_updated"],
+		(setState, incoming, event) => {
+			switch(event) {
+				case "call_created":
+					setState((prev) => [...prev, incoming]);
+					break;
+				case "call_completed":
+				case "call_udpated":
+					setState((prev) => prev.map(call => { return call.id === incoming.id ? incoming : call }));
+					break;
+				default:
+					console.warn(`Unhandled call event: ${event}`);
+					break;
+			}
+		}
+	)
 
 	const [sentMessageStatus,, sendChatMessageAction] = useSendEventMessage<Message>(`/api/rooms/${chatId}/messages`) 
 
@@ -95,6 +124,8 @@ export const useChatRoomHook = (key: number) => {
 		modifyRoom,
 		room,
 		memberCount,
+		calls,
+		notifyOnCallJoin,
 	}
 }
 

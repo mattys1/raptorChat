@@ -109,6 +109,25 @@ components:
           type: string
           format: date-time
           nullable: true
+
+    Call:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+        room_id:
+          type: integer
+          format: uint64
+        status:
+          type: string
+          enum: ["active", "completed", "rejected"]
+        created_at:
+          type: string
+          format: date-time
+        participant_count:
+          type: integer
+          format: uint32
   messages:
     MessageSentEvent:
       name: MessageSentEvent
@@ -242,6 +261,40 @@ components:
     #                     type: string
     #                     enum:
     #                       - direct 
+     
+    CallCreatedEvent:
+      name: CallCreatedEvent
+      title: Call Created Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - call_created
+              contents:
+                $ref: '#/components/schemas/Call'
+            required:
+              - event_name
+              - contents
+              
+    CallDeletedEvent:
+      name: CallDeletedEvent
+      title: Call Deleted Event
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventResourceBase'
+          - type: object
+            properties:
+              event_name:
+                enum:
+                  - call_deleted
+              contents:
+                $ref: '#/components/schemas/Call'
+            required:
+              - event_name
+              - contents
 
 
 channels:
@@ -257,6 +310,10 @@ channels:
         $ref: '#/components/messages/RoomDeletedEvent'
       RoomUpdated:
         $ref:  '#/components/messages/RoomUpdatedEvent'
+      CallCreated:
+        $ref: '#/components/messages/CallCreatedEvent'
+      CallDeleted:
+        $ref: '#/components/messages/CallDeletedEvent'
     description: Events happening in a chatroom
         
   user.{id}.invites:
@@ -297,6 +354,8 @@ operations:
       - $ref: '#/channels/room.{id}/messages/MessageSent'
       - $ref: '#/channels/room.{id}/messages/RoomDeleted'
       - $ref: '#/channels/user.{id}.rooms/messages/RoomDeleted'
+      - $ref: '#/channels/room.{id}/messages/CallCreated'
+      - $ref: '#/channels/room.{id}/messages/CallDeleted'
   
   'user.{id}.invites.receive':
     action: receive
@@ -317,3 +376,4 @@ operations:
       - $ref: '#/channels/user.{id}.rooms/messages/JoinedRoom'
       - $ref: '#/channels/user.{id}.rooms/messages/RoomDeleted'
       - $ref: '#/channels/user.{id}.rooms/messages/RoomUpdated'
+

@@ -93,7 +93,6 @@ services:
       command: >
         sh -c "
           mkdir -p /migrations/merged_migrations &&
-          ls -la /migrations/merged_migrations &&
           cp -r /migrations/schema/* /migrations/merged_migrations/ &&
           cp -r /migrations/behaviour/* /migrations/merged_migrations/ &&          
           goose --dir /migrations/merged_migrations ${MIGRATION_DIRECTION:-up} ${MIGRATION_VERSION}
