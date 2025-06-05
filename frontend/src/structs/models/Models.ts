@@ -57,7 +57,7 @@ export interface Invite {
 	receiver_id: number;
 }
 
-const CallStatus = {
+export const CallStatus = {
 	Active: "active",
 	Completed: "completed",
 	Rejected: "rejected",
@@ -69,6 +69,7 @@ export interface Call {
 	id: number;
 	room_id: number;
 	status: CallStatus;
-	created_at: Date;
+	created_at: string;
 	participant_count: number;
+	ended_at: string | null;
 }

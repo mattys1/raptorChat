@@ -20,13 +20,6 @@ type UserUpdateCallback = (
 	event: string
 ) => void;
 
-type CallUpdateCallback = (
-	setState: React.Dispatch<React.SetStateAction<Call[]>>, 
-	incoming: Call,
-	event: string
-) => void;
-
-
 export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
 	const chatId = key

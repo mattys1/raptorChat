@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -156,7 +157,10 @@ func CompleteCall(ctx context.Context, callID uint64) (*Call, error) {
 	db := GetORM().WithContext(ctx)
 
 	if err := db.Model(&Call{}).Where("id = ?", callID).
-		Update("status", CallsStatusCompleted).Error; err != nil {
+		Updates(map[string]any{
+			"status":    CallsStatusCompleted,
+			"ended_at":  time.Now().UTC(),
+		}).Error; err != nil {
 		return nil, err
 	}
 	
