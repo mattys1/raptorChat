@@ -35,8 +35,8 @@ func CreateInviteHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     ormInv := &orm.Invite{
-        Type:       string(invite.Type),
-        State:      string(invite.State),
+        Type:       orm.InvitesType(invite.Type),
+        State:      orm.InvitesState(invite.State),
         RoomID:     invite.RoomID,
         IssuerID:   senderID,
         ReceiverID: invite.ReceiverID,

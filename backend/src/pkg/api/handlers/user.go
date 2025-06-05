@@ -456,8 +456,8 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if user.AvatarURL != "" {
-        fname := filepath.Base(user.AvatarURL)
+    if *user.AvatarUrl != "" {
+        fname := filepath.Base(*user.AvatarUrl)
         fullpath := filepath.Join("avatars", fname)
         if rmErr := os.Remove(fullpath); rmErr != nil && !os.IsNotExist(rmErr) {
             slog.Error("remove avatar file failed", "path", fullpath, "error", rmErr)
