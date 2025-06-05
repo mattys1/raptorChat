@@ -2,24 +2,25 @@
 package handlers
 
 import (
-    "bytes"
-    "encoding/json"
-    "fmt"
-    "io"
-    "log/slog"
-    "net/http"
-    "os"
-    "path/filepath"
-    "slices"
-    "strconv"
-    "time"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
+	"slices"
+	"sort"
+	"strconv"
+	"time"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/mattys1/raptorChat/src/pkg/db"
-    "github.com/mattys1/raptorChat/src/pkg/messaging"
-    "github.com/mattys1/raptorChat/src/pkg/middleware"
-    "github.com/mattys1/raptorChat/src/pkg/orm"
-    "golang.org/x/crypto/bcrypt"
+	"github.com/go-chi/chi/v5"
+	"github.com/mattys1/raptorChat/src/pkg/db"
+	"github.com/mattys1/raptorChat/src/pkg/messaging"
+	"github.com/mattys1/raptorChat/src/pkg/middleware"
+	"github.com/mattys1/raptorChat/src/pkg/orm"
+	"golang.org/x/crypto/bcrypt"
 )
 
 //
@@ -478,4 +479,56 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
 type ErrorResponse struct {
     Message string `json:"message"`
+}
+
+func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+
+	ownId, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := dao.GetRecentMessagesByUserLimited(r.Context(), db.GetRecentMessagesByUserLimitedParams{
+		SenderID: ownId,
+		Limit: 5,
+	})
+	if err != nil {
+		slog.Error("Error fetching messages", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	
+	calls, err := orm.GetCallsByUserID(r.Context(), ownId)
+	if err != nil {
+		slog.Error("Error fetching calls", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	sort.Slice(calls, func(i, j int) bool {
+		return calls[i].CreatedAt.After(calls[j].CreatedAt)
+	})
+	slog.Info("calls", "calls", calls)
+
+	if len(calls) > 5 {
+		calls = calls[:5]
+	}
+
+
+	activity, err := json.Marshal(struct {
+		Messages []db.Message `json:"messages"`
+		Calls    []orm.Call   `json:"calls"`
+	} {
+		Messages: messages,
+		Calls:    calls,
+	})
+	if err != nil {
+		slog.Error("Error marshalling activity data", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(activity)
 }

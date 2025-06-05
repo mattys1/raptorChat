@@ -14,6 +14,15 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
 
+// @Summary Get calls for a specific room
+// @Description Returns all calls associated with the specified room
+// @Tags calls
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Success 200 {array} orm.Call "List of calls for the room"
+// @Failure 400 {object} string "Bad request - invalid room ID"
+// @Router /rooms/{id}/calls [get]
 func GetCallsOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -25,6 +34,17 @@ func GetCallsOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	SendResource(calls, w)
 }
 
+// @Summary Join or create a call in a room
+// @Description Joins an existing active call in the room or creates a new one if none exists
+// @Tags calls
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Success 200 {object} orm.Call "Successfully joined or created call"
+// @Failure 400 {object} string "Bad request - invalid room ID"
+// @Failure 500 {object} string "Internal server error"
+// @Security ApiKeyAuth
+// @Router /rooms/{id}/calls/join [post]
 func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -89,6 +109,17 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Leave or end a call in a room
+// @Description User leaves the active call in the room; call is ended if this is the last participant
+// @Tags calls
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Success 200 {object} string "Successfully left the call"
+// @Failure 400 {object} string "Bad request - invalid room ID"
+// @Failure 500 {object} string "Internal server error"
+// @Security ApiKeyAuth
+// @Router /rooms/{id}/calls/leave [post]
 func LeaveOrEndCallHandler(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {

@@ -372,6 +372,47 @@ func (q *Queries) GetPermissionsByUser(ctx context.Context, userID uint64) ([]Pe
 	return items, nil
 }
 
+const getRecentMessagesByUserLimited = `-- name: GetRecentMessagesByUserLimited :many
+SELECT id, sender_id, room_id, contents, created_at, is_deleted, deleted_at FROM messages
+WHERE sender_id = ? AND is_deleted = FALSE ORDER BY created_at DESC LIMIT ?
+`
+
+type GetRecentMessagesByUserLimitedParams struct {
+	SenderID uint64 `json:"sender_id"`
+	Limit    int32  `json:"limit"`
+}
+
+func (q *Queries) GetRecentMessagesByUserLimited(ctx context.Context, arg GetRecentMessagesByUserLimitedParams) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getRecentMessagesByUserLimited, arg.SenderID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.SenderID,
+			&i.RoomID,
+			&i.Contents,
+			&i.CreatedAt,
+			&i.IsDeleted,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRoleByName = `-- name: GetRoleByName :one
 SELECT id, name FROM roles WHERE name = ? LIMIT 1
 `

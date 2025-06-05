@@ -14,6 +14,145 @@
     "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
+        "/rooms/{id}/calls": {
+            "get": {
+                "description": "Returns all calls associated with the specified room",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "calls"
+                ],
+                "summary": "Get calls for a specific room",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Room ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of calls for the room",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/orm.Call"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid room ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/rooms/{id}/calls/join": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Joins an existing active call in the room or creates a new one if none exists",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "calls"
+                ],
+                "summary": "Join or create a call in a room",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Room ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully joined or created call",
+                        "schema": {
+                            "$ref": "#/definitions/orm.Call"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid room ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/rooms/{id}/calls/leave": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "User leaves the active call in the room; call is ended if this is the last participant",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "calls"
+                ],
+                "summary": "Leave or end a call in a room",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Room ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully left the call",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid room ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -585,6 +724,45 @@
                     "type": "string"
                 }
             }
+        },
+        "orm.Call": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "ended_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "participant_count": {
+                    "type": "integer"
+                },
+                "peak_participant_count": {
+                    "type": "integer"
+                },
+                "room_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/orm.CallsStatus"
+                }
+            }
+        },
+        "orm.CallsStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "completed",
+                "rejected"
+            ],
+            "x-enum-varnames": [
+                "CallsStatusActive",
+                "CallsStatusCompleted",
+                "CallsStatusRejected"
+            ]
         },
         "orm.User": {
             "type": "object",

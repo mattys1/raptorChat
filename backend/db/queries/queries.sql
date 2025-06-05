@@ -21,6 +21,10 @@ UPDATE rooms SET name = ?, type = ?, owner_id = ? WHERE id = ?;
 -- name: GetMessagesByRoom :many
 SELECT * FROM messages WHERE room_id = ?;
 
+-- name: GetRecentMessagesByUserLimited :many
+SELECT * FROM messages
+WHERE sender_id = ? AND is_deleted = FALSE ORDER BY created_at DESC LIMIT ?;
+
 -- name: GetUsersByRoom :many
 SELECT u.* FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id

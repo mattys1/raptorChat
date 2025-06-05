@@ -122,7 +122,10 @@ func GetCallsByRoomID(ctx context.Context, roomID uint64) ([]Call, error) {
 
 func GetCallsByUserID(ctx context.Context, userID uint64) ([]Call, error) {
 	var calls []Call
-	err := GetORM().WithContext(ctx).Where("id = ?", userID).Find(&calls).Error
+	err := GetORM().WithContext(ctx).
+		Joins("JOIN call_participants ON calls.id = call_participants.call_id").
+		Where("call_participants.user_id = ?", userID).
+		Find(&calls).Error
 	if err != nil {
 		return nil, err
 	}
@@ -143,11 +146,6 @@ func AddUserToCall(ctx context.Context, callID, userID uint64) error {
 
 func RemoveUserFromCall(ctx context.Context, callID, userID uint64) error {
 	db := GetORM().WithContext(ctx)
-
-	err := db.Where("call_id = ? AND user_id = ?", callID, userID).Delete(&CallParticipant{}).Error
-	if err != nil {
-		return err
-	}
 
 	return db.Model(&Call{}).Where("id = ?", callID).
 		UpdateColumn("participant_count", gorm.Expr("participant_count - 1")).Error

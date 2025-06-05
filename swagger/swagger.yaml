@@ -66,6 +66,33 @@ definitions:
       old_password:
         type: string
     type: object
+  orm.Call:
+    properties:
+      created_at:
+        type: string
+      ended_at:
+        type: string
+      id:
+        type: integer
+      participant_count:
+        type: integer
+      peak_participant_count:
+        type: integer
+      room_id:
+        type: integer
+      status:
+        $ref: '#/definitions/orm.CallsStatus'
+    type: object
+  orm.CallsStatus:
+    enum:
+    - active
+    - completed
+    - rejected
+    type: string
+    x-enum-varnames:
+    - CallsStatusActive
+    - CallsStatusCompleted
+    - CallsStatusRejected
   orm.User:
     properties:
       avatar_url:
@@ -90,6 +117,97 @@ info:
   title: RaptorChat API
   version: "1.0"
 paths:
+  /rooms/{id}/calls:
+    get:
+      consumes:
+      - application/json
+      description: Returns all calls associated with the specified room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of calls for the room
+          schema:
+            items:
+              $ref: '#/definitions/orm.Call'
+            type: array
+        "400":
+          description: Bad request - invalid room ID
+          schema:
+            type: string
+      summary: Get calls for a specific room
+      tags:
+      - calls
+  /rooms/{id}/calls/join:
+    post:
+      consumes:
+      - application/json
+      description: Joins an existing active call in the room or creates a new one
+        if none exists
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully joined or created call
+          schema:
+            $ref: '#/definitions/orm.Call'
+        "400":
+          description: Bad request - invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Join or create a call in a room
+      tags:
+      - calls
+  /rooms/{id}/calls/leave:
+    post:
+      consumes:
+      - application/json
+      description: User leaves the active call in the room; call is ended if this
+        is the last participant
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully left the call
+          schema:
+            type: string
+        "400":
+          description: Bad request - invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Leave or end a call in a room
+      tags:
+      - calls
   /users:
     get:
       description: Returns a list of all users in the system except the authenticated
