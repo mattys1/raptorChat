@@ -28,16 +28,22 @@ const CallMessage = ({call}: {call: Call}) => {
 		return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
 	};
 
-	const message = {
-		[CallStatus.Active]: "There is an active call in the room.",
-		[CallStatus.Completed]: `There was a call in this room on ${formatDate(call.created_at)}, lasting ${formatDuration(new Date(call.ended_at!).getTime() - new Date(call.created_at!).getTime())}.`,
-	}	
+	const getMessageContent = () => {
+		if (call.status === CallStatus.Active) {
+			return "There is an active call in the room.";
+		} else {
+			return (
+				<>
+					There was a call in this room on <span className="font-bold">{formatDate(call.created_at)}</span>, 
+					lasting <span className="text-gray-300">{formatDuration(new Date(call.ended_at!).getTime() - new Date(call.created_at!).getTime())}</span>.
+				</>
+			);
+		}
+	};
 
 	return (
-		<div>
-			{
-				message[call.status]
-			}
+		<div className="py-2 my-2 text-white text-center border-t border-b border-gray-600 rounded px-3 bg-gray-800 bg-opacity-30">
+			{getMessageContent()}
 		</div>
 	)
 }
