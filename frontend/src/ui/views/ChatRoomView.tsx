@@ -9,6 +9,7 @@ import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
 import CallMessage from "../components/CallMessage";
 import ChatMessage from "../components/ChatMessage";
+import MessageTimeline from "../components/MessageTimeline";
 
 const API_URL = "http://localhost:8080";
 
@@ -112,19 +113,16 @@ const ChatRoomView: React.FC = () => {
 			</div>
 
 			<div className="flex-1 flex flex-col overflow-y-auto space-y-3 px-[2%] py-4">
-				{props.messageList.map((m) => {
-					return (
-						<ChatMessage message={m} myId={myId} nameMap={nameMap} avatarMap={avatarMap} isOwner={isOwner} isModerator={isModerator} deleteMessage={deleteMessage}/>
-										
-					)
-				})}
-				<div ref={bottomRef} />
-
-				{
-					props.calls.map((call) => {
-						return CallMessage(call)
-					})
-				}
+				<MessageTimeline 
+					messages={props.messageList || []} 
+					calls={props.calls || []}
+					myId={myId}
+					nameMap={nameMap}
+					avatarMap={avatarMap}
+					isOwner={isOwner}
+					isModerator={isModerator}
+					deleteMessage={deleteMessage}
+				/>
 			</div>
 
 

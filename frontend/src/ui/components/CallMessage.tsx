@@ -1,6 +1,8 @@
 import { Call, CallStatus } from "../../structs/models/Models";
 
-const CallMessage = (call: Call) => {
+const CallMessage = ({call}: {call: Call}) => {
+	console.log("CallMessage call:", call);
+
 	const formatDate = (dateString: string): string => {
 		const date = new Date(dateString);
 		const day = date.getDate();
