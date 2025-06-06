@@ -1,28 +1,16 @@
-// frontend/src/ui/views/ChatRoomView.tsx
-
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import { useRoomRoles } from "../hooks/useRoomRoles";
 import { useResourceFetcher } from "../hooks/useResourceFetcher";
 import { MessageEvents } from "../../structs/MessageNames";
-import { Message, RoomsType, User, Call } from "../../structs/models/Models";
+import { Message, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
-import sound from "../assets/sound/callsound.mp3";
 
 import { useCallRequestHook } from "../hooks/views/useCallRequestHook";
-import { useCallRejectRequestHook } from "../hooks/views/useCallRejectRequestHook";
-import { useEventListener } from "../hooks/useEventListener";
 
 const API_URL = "http://localhost:8080";
-
-interface CallRequestPayload {
-  caller_id: number;
-}
-interface RejectPayload {
-  message: string;
-}
 
 const ChatRoomView: React.FC = () => {
   const chatId = Number(useParams().chatId);
@@ -44,75 +32,14 @@ const ChatRoomView: React.FC = () => {
   const myId = Number(localStorage.getItem("uID") ?? 0);
 
   const [isCalling, setIsCalling] = useState(false);
-  const [incomingCall, setIncomingCall] = useState<CallRequestPayload | null>(null);
-  const [callRejected, setCallRejected] = useState<string | null>(null);
 
   const [, , sendCallRequest] = useCallRequestHook(chatId);
-  const [, , sendCallRejectRequest] = useCallRejectRequestHook(chatId);
-
-  const [callEvent] = useEventListener<
-    CallRequestPayload | RejectPayload | Call
-  >(`room:${chatId}`, ["call_request", "call_rejected", "call_created"]);
-
-  useEffect(() => {
-    if (callEvent.event === "call_request" && callEvent.item) {
-      const payload = callEvent.item as CallRequestPayload;
-      if (payload.caller_id !== myId) {
-        setIncomingCall(payload);
-      }
-    } else if (callEvent.event === "call_rejected" && callEvent.item) {
-      const payload = callEvent.item as RejectPayload;
-      setCallRejected(payload.message);
-      setIsCalling(false);
-    } else if (callEvent.event === "call_created" && callEvent.item) {
-      const callObj = callEvent.item as Call;
-      if (callObj.room_id === chatId && callObj.status === "active") {
-        navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
-      }
-    }
-  }, [callEvent, myId, chatId, navigate]);
-
-  const ringAudioRef = useRef<HTMLAudioElement | null>(null);
-  useEffect(() => {
-    if (incomingCall) {
-      if (!ringAudioRef.current) {
-        ringAudioRef.current = new Audio(sound);
-      }
-      ringAudioRef.current.currentTime = 0;
-      ringAudioRef.current.play().catch((e) => {
-        console.warn("Could not play ring sound:", e);
-      });
-    } else {
-      if (ringAudioRef.current) {
-        ringAudioRef.current.pause();
-        ringAudioRef.current.currentTime = 0;
-      }
-    }
-  }, [incomingCall]);
-
-  const handleAccept = () => {
-    navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
-    props.notifyOnCallJoin(null);
-    setIncomingCall(null);
-  };
-
-  const handleReject = () => {
-    sendCallRejectRequest(null);
-    setIncomingCall(null);
-  };
 
   const onClickCall = () => {
     setIsCalling(true);
-    sendCallRequest(null); // POST /api/rooms/{chatId}/calls/request
-+   navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
+    sendCallRequest(null);
+    navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
   };
-
-  useEffect(() => {
-    if (callRejected) {
-      const t = setTimeout(() => setCallRejected(null), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [callRejected]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -205,7 +132,7 @@ const ChatRoomView: React.FC = () => {
                 w-4/5 rounded-lg
                 ${bubbleBg}
                 py-[0.45rem] pb-[0.6rem] px-[2%]
-                `}
+              `}
             >
               <div className="flex items-center mb-1">
                 <img
@@ -244,9 +171,8 @@ const ChatRoomView: React.FC = () => {
         className="flex items-center space-x-2 bg-[#374151] py-[0.65rem] px-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const input = e.currentTarget.elements.namedItem(
-            "messageBox"
-          ) as HTMLInputElement;
+          const input = e.currentTarget
+            .elements.namedItem("messageBox") as HTMLInputElement;
           const text = input.value.trim();
           if (text) send(text);
           e.currentTarget.reset();
@@ -265,37 +191,6 @@ const ChatRoomView: React.FC = () => {
           send
         </button>
       </form>
-
-      {incomingCall && (
-        <div className="fixed top-4 right-4 z-50">
-        <div className="bg-gray-900 text-white p-4 rounded-lg shadow-lg w-72">
-        <p className="mb-3 text-center">
-        <strong>{nameMap[incomingCall.caller_id]}</strong> is calling…
-        </p>
-        <div className="flex justify-between">
-        <button
-          className="px-3 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors"
-          onClick={handleAccept}
-        >
-          Accept
-        </button>
-        <button
-          className="px-3 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors"
-          onClick={handleReject}
-        >
-          Reject
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-      {callRejected && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded z-40">
-          {callRejected}
-        </div>
-      )}
     </div>
   );
 };
