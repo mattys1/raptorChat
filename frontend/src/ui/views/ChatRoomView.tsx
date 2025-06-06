@@ -113,6 +113,7 @@ const ChatRoomView: React.FC = () => {
   const onClickCall = () => {
     setIsCalling(true);
     sendCallRequest(null); // POST /api/rooms/{chatId}/calls/request
++   navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
   };
 
   // ─── If call was rejected, clear banner after 3s ─────────────────
