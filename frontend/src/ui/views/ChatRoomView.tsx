@@ -9,6 +9,7 @@ import { MessageEvents } from "../../structs/MessageNames";
 import { Message, RoomsType, User, Call } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
+import sound from "../assets/sound/callsound.mp3";
 
 // New imports for call‐popup feature:
 import { useCallRequestHook } from "../hooks/views/useCallRequestHook";
@@ -81,7 +82,7 @@ const ChatRoomView: React.FC = () => {
   useEffect(() => {
     if (incomingCall) {
       if (!ringAudioRef.current) {
-        ringAudioRef.current = new Audio("/sounds/ring.mp3");
+        ringAudioRef.current = new Audio(sound);
       }
       ringAudioRef.current.currentTime = 0;
       ringAudioRef.current.play().catch((e) => {
