@@ -29,7 +29,7 @@ const ChatMessage = ({ message, myId, nameMap, avatarMap, isOwner, isModerator, 
 		>
 			<div className="flex items-center mb-1">
 				<img
-					src={ // NAPRAW DAWID KURWA
+					src={ //NAPRAW 
 						avatarMap[message.sender_id]
 							? `http://localhost:8080${avatarMap[message.sender_id]}`
 							: "/default-avatar.png"

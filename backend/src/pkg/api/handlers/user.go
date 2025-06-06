@@ -532,3 +532,50 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(activity)
 }
+
+
+// GetDMWithSenderHandler godoc
+// @Summary Get direct message conversation with another user
+// @Description Retrieves the direct message conversation between the authenticated user and specified recipient
+// @Tags direct-messages
+// @Accept json
+// @Produce json
+// @Param id path int true "Recipient ID"
+// @Success 200 {object} db.DM "Direct message object"
+// @Failure 400 {string} string "Bad Request - Invalid recipient ID or User ID not found in context"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /dm/{id} [get]
+// @Security ApiKeyAuth
+func GetDMWithSenderHandler(w http.ResponseWriter, r *http.Request) {
+	dao := db.GetDao()
+	
+	ownId, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusBadRequest)
+		return
+	}
+
+	recipientId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid recipient ID", http.StatusBadRequest)
+		return
+	}
+
+	dm, err := dao.GetDMByUsers(r.Context(), db.GetDMByUsersParams{
+		UserID: ownId,
+		UserID_2: uint64(recipientId),
+	})
+	if err != nil {
+		slog.Error("Error fetching DM", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	payload, err := json.Marshal(dm)
+	if err != nil {
+		slog.Error("Error marshalling DM data", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(payload)
+}

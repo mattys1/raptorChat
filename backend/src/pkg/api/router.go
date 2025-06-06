@@ -52,6 +52,7 @@ func Router() *chi.Mux {
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/invites", handlers.GetInvitesOfUserHandler)
 				r.Get("/friends", handlers.GetFriendsOfUserHandler)
+				r.Get("/dm", handlers.GetDMWithSenderHandler)
 				r.Get("/", handlers.GetUserHandler)
 			})
 		})

@@ -9,6 +9,11 @@ WHERE ur.user_id = ?;
 -- name: GetRoomById :one
 SELECT * FROM rooms WHERE id = ?;
 
+-- name: GetDMByUsers :one
+SELECT r.* FROM rooms r JOIN users_rooms ur ON ur.room_id = r.id 
+WHERE type = 'direct' AND ur.user_id IN (?, ?)
+GROUP BY r.id;
+
 -- name: CreateRoom :execresult
 INSERT INTO rooms (name, owner_id, type) VALUES (?, ?, ?);
 

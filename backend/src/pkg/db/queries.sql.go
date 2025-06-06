@@ -190,6 +190,30 @@ func (q *Queries) GetCountOfRoom(ctx context.Context, id uint64) (*int32, error)
 	return member_count, err
 }
 
+const getDMByUsers = `-- name: GetDMByUsers :one
+SELECT r.id, r.name, r.owner_id, r.type, r.member_count FROM rooms r JOIN users_rooms ur ON ur.room_id = r.id 
+WHERE type = 'direct' AND ur.user_id IN (?, ?)
+GROUP BY r.id
+`
+
+type GetDMByUsersParams struct {
+	UserID   uint64 `json:"user_id"`
+	UserID_2 uint64 `json:"user_id_2"`
+}
+
+func (q *Queries) GetDMByUsers(ctx context.Context, arg GetDMByUsersParams) (Room, error) {
+	row := q.db.QueryRowContext(ctx, getDMByUsers, arg.UserID, arg.UserID_2)
+	var i Room
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.OwnerID,
+		&i.Type,
+		&i.MemberCount,
+	)
+	return i, err
+}
+
 const getFriendsOfUser = `-- name: GetFriendsOfUser :many
 SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u 
 NATURAL JOIN friendships f

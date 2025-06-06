@@ -36,8 +36,6 @@ services:
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY}
       CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_HTTP_API_KEY}
     depends_on:
-      swagger-gen:
-        condition: service_completed_successfully
       mysql: 
         condition: service_started
       db-migrate:
