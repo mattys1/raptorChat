@@ -99,12 +99,14 @@ const ChatRoomView: React.FC = () => {
 
 			<div className="flex items-center justify-between px-4 py-2">
 				<div className="w-24" />
-				<div className="text-center flex-1">
+				<span className="text-center flex-1">
 					{props.room?.type === RoomsType.Group && (
-						<strong className="font-bold">Group Chat:</strong>
-					)}{" "}
-					{props.room?.name}
-				</div>
+						<div>
+							<strong className="font-bold">Group Chat:</strong>
+							<span>{props.room?.name}</span>
+						</div>
+					)}
+				</span>
 				<div className="w-24 text-right">
 					{props.room?.type === RoomsType.Group
 						? `${props.memberCount} members`
