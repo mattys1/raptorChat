@@ -11,7 +11,6 @@ import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
 import sound from "../assets/sound/callsound.mp3";
 
-// New imports for call‐popup feature:
 import { useCallRequestHook } from "../hooks/views/useCallRequestHook";
 import { useCallRejectRequestHook } from "../hooks/views/useCallRejectRequestHook";
 import { useEventListener } from "../hooks/useEventListener";
@@ -44,21 +43,17 @@ const ChatRoomView: React.FC = () => {
 
   const myId = Number(localStorage.getItem("uID") ?? 0);
 
-  // ─── NEW: State for call‐popup feature ────────────────────────────
   const [isCalling, setIsCalling] = useState(false);
   const [incomingCall, setIncomingCall] = useState<CallRequestPayload | null>(null);
   const [callRejected, setCallRejected] = useState<string | null>(null);
 
-  // Hooks to send call request or reject:
   const [, , sendCallRequest] = useCallRequestHook(chatId);
   const [, , sendCallRejectRequest] = useCallRejectRequestHook(chatId);
 
-  // Subscribe to Centrifugo for call_request, call_rejected, call_created
   const [callEvent] = useEventListener<
     CallRequestPayload | RejectPayload | Call
   >(`room:${chatId}`, ["call_request", "call_rejected", "call_created"]);
 
-  // ─── Handle incoming events ───────────────────────────────────────
   useEffect(() => {
     if (callEvent.event === "call_request" && callEvent.item) {
       const payload = callEvent.item as CallRequestPayload;
@@ -77,7 +72,6 @@ const ChatRoomView: React.FC = () => {
     }
   }, [callEvent, myId, chatId, navigate]);
 
-  // ─── Play ring on incomingCall, stop when closed ──────────────────
   const ringAudioRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     if (incomingCall) {
@@ -96,28 +90,23 @@ const ChatRoomView: React.FC = () => {
     }
   }, [incomingCall]);
 
-  // ─── Handlers for Accept / Reject ─────────────────────────────────
   const handleAccept = () => {
-    // Navigate first so user2 enters call immediately
     navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
-    // Then notify backend to join/create the call
-    props.notifyOnCallJoin(null); // POST /api/rooms/{chatId}/calls/joined
+    props.notifyOnCallJoin(null);
     setIncomingCall(null);
   };
 
   const handleReject = () => {
-    sendCallRejectRequest(null); // POST /api/rooms/{chatId}/calls/reject_request
+    sendCallRejectRequest(null);
     setIncomingCall(null);
   };
 
-  // ─── Caller clicks “Call” ────────────────────────────────────────
   const onClickCall = () => {
     setIsCalling(true);
     sendCallRequest(null); // POST /api/rooms/{chatId}/calls/request
 +   navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
   };
 
-  // ─── If call was rejected, clear banner after 3s ─────────────────
   useEffect(() => {
     if (callRejected) {
       const t = setTimeout(() => setCallRejected(null), 3000);
@@ -277,32 +266,31 @@ const ChatRoomView: React.FC = () => {
         </button>
       </form>
 
-      {/* ─── Incoming Call Modal ─────────────────────────────────────────── */}
       {incomingCall && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-gray-900 text-white p-6 rounded-lg w-80 text-center">
-            <p className="mb-4">
-              <strong>{nameMap[incomingCall.caller_id]}</strong> is calling…
-            </p>
-            <div className="flex justify-around">
-              <button
-                className="px-4 py-2 bg-green-600 rounded hover:bg-green-700"
-                onClick={handleAccept}
-              >
-                Accept
-              </button>
-              <button
-                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
-                onClick={handleReject}
-              >
-                Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <div className="fixed top-4 right-4 z-50">
+        <div className="bg-gray-900 text-white p-4 rounded-lg shadow-lg w-72">
+        <p className="mb-3 text-center">
+        <strong>{nameMap[incomingCall.caller_id]}</strong> is calling…
+        </p>
+        <div className="flex justify-between">
+        <button
+          className="px-3 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors"
+          onClick={handleAccept}
+        >
+          Accept
+        </button>
+        <button
+          className="px-3 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors"
+          onClick={handleReject}
+        >
+          Reject
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-      {/* ─── Call Rejected Banner ────────────────────────────────────────── */}
+
       {callRejected && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded z-40">
           {callRejected}

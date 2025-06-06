@@ -14,23 +14,19 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
 
-// RequestCallHandler now both publishes "call_request" AND creates the Call record (status=Active, caller only).
 func RequestCallHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse room ID from URL
 	roomIDStr := chi.URLParam(r, "id")
 	roomID, err := strconv.Atoi(roomIDStr)
 	if err != nil {
 		http.Error(w, "Invalid room ID", http.StatusBadRequest)
 		return
 	}
-	// Get caller's user ID from JWT context
 	userID, ok := middleware.RetrieveUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
-	// 1) Publish the "call_request" Centrifugo event
 	type callRequestPayload struct {
 		CallerID uint64 `json:"caller_id"`
 	}
@@ -52,8 +48,6 @@ func RequestCallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2) Immediately create a new Call record (status = Active) with only the caller as participant.
-	//    We do NOT publish "call_created" here—only the "call_request" event.
 	_, err = orm.CreateCall(r.Context(), &orm.Call{
 		RoomID: uint64(roomID),
 		Status: orm.CallsStatusActive,
@@ -63,14 +57,11 @@ func RequestCallHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		slog.Error("Error creating call record on request", "error", err)
-		// We still return 200 OK for the HTTP request, because the frontend should still see the popup
-		// and can retry if needed. But log the DB error.
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-// RejectCallRequestHandler is unchanged: it publishes "call_rejected".
 func RejectCallRequestHandler(w http.ResponseWriter, r *http.Request) {
 	roomIDStr := chi.URLParam(r, "id")
 	roomID, err := strconv.Atoi(roomIDStr)
@@ -120,8 +111,6 @@ func GetCallsOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	SendResource(calls, w)
 }
 
-// JoinOrCreateCallHandler now ASSUMES that RequestCallHandler already created one active Call.
-// We simply add the user to that existing Call and then publish "call_created".
 func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -134,7 +123,6 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch all calls for this room
 	calls, err := orm.GetCallsByRoomID(r.Context(), uint64(roomID))
 	if err != nil {
 		slog.Error("Error fetching calls for room", "error", err)
@@ -143,7 +131,6 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("Calls for room", "roomID", roomID, "calls", calls, "callsCount", len(calls))
 
-	// Filter only Active calls
 	activeCalls := slices.DeleteFunc(calls, func(call orm.Call) bool {
 		return call.Status != orm.CallsStatusActive
 	})
@@ -157,7 +144,6 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ─── Add this user to the existing Call ────────────────────────────────────
 	err = orm.AddUserToCall(r.Context(), activeCalls[0].ID, uint64(userID))
 	if err != nil {
 		slog.Error("Error adding user to call", "error", err)
@@ -165,7 +151,6 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ─── Re-fetch the updated Call (now with both participants) ────────────────
 	updatedCalls, err := orm.GetCallsByRoomID(r.Context(), uint64(roomID))
 	if err != nil {
 		slog.Error("Error re-fetching calls for room", "error", err)
@@ -181,7 +166,6 @@ func JoinOrCreateCallHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	updatedCall := updatedActive[0]
 
-	// ─── Publish "call_created" so that both User 1 and User 2 navigate into /call ─────
 	updatedCallJson, err := json.Marshal(updatedCall)
 	if err != nil {
 		slog.Error("Error marshalling updated call", "error", err)
