@@ -2,6 +2,9 @@ import React from "react";
 import { useSidebarHook } from "../hooks/views/useSidebarHook";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
+import FriendButton from "../components/FriendButton";
+import RoomClickable from "../components/RoomClickable";
+import { Room } from "livekit-client";
 
 interface SidebarProps {
   onSettingsClick: () => void;
@@ -24,15 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
         <ul className="space-y-1">
           {props.rooms?.map((room) =>
             room?.type === "direct" ? (
-              <li
-                key={room.id}
-                className="cursor-pointer px-2 py-1 rounded hover:bg-gray-700"
-                onClick={() =>
-                  navigate(`${ROUTES.CHATROOM}/${room.id}`)
-                }
-              >
-                {room.name}
-              </li>
+				<RoomClickable roomID={room?.id} ownId={parseInt(localStorage.getItem("uID") || '0')}/>
             ) : null
           )}
         </ul>
