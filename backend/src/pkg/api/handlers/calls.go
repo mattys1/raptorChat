@@ -14,6 +14,84 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
 
+func RequestCallHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse room ID from URL
+	roomIDStr := chi.URLParam(r, "id")
+	roomID, err := strconv.Atoi(roomIDStr)
+	if err != nil {
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
+		return
+	}
+	// Get caller's user ID from JWT context
+	userID, ok := middleware.RetrieveUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	// Build a small payload struct for the event:
+	type callRequestPayload struct {
+		CallerID uint64 `json:"caller_id"`
+	}
+	payload := callRequestPayload{CallerID: userID}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		http.Error(w, "Failed to serialize payload", http.StatusInternalServerError)
+		return
+	}
+
+	// Assemble the EventResource that CentrifugoService expects:
+	eventResource := &messaging.EventResource{
+		Channel:   "room:" + strconv.Itoa(roomID),
+		Method:    "POST",
+		EventName: "call_request",
+		Contents:  payloadBytes,
+	}
+	// Publish it:
+	err = messaging.GetCentrifugoService().Publish(r.Context(), eventResource)
+	if err != nil {
+		http.Error(w, "Failed to publish call_request", http.StatusInternalServerError)
+		return
+	}
+	// 200 OK, no body needed
+	w.WriteHeader(http.StatusOK)
+}
+
+// RejectCallRequestHandler publishes a "call_rejected" event to the given room's Centrifugo channel.
+// This is called if the callee rejects before actually accepting/joining.
+func RejectCallRequestHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse room ID from URL
+	roomIDStr := chi.URLParam(r, "id")
+	roomID, err := strconv.Atoi(roomIDStr)
+	if err != nil {
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
+		return
+	}
+	// Optionally, we could record who rejected, but for now the caller just needs the notification.
+	type rejectPayload struct {
+		Message string `json:"message"`
+	}
+	payload := rejectPayload{Message: "User rejected the call."}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		http.Error(w, "Failed to serialize payload", http.StatusInternalServerError)
+		return
+	}
+
+	eventResource := &messaging.EventResource{
+		Channel:   "room:" + strconv.Itoa(roomID),
+		Method:    "POST",
+		EventName: "call_rejected",
+		Contents:  payloadBytes,
+	}
+	err = messaging.GetCentrifugoService().Publish(r.Context(), eventResource)
+	if err != nil {
+		http.Error(w, "Failed to publish call_rejected", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func GetCallsOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
