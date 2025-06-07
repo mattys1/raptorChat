@@ -24,7 +24,7 @@ const RecentActivity = () => {
 		setItems([])
 		setItems((prev) => [
 			...prev,
-			...activity.messages.map(m => {
+			...(activity.messages || []).map(m => {
 				return {
 					type: "message",
 					created_at: new Date(m.created_at),
@@ -35,7 +35,7 @@ const RecentActivity = () => {
 
 		setItems((prev) => [
 			...prev,
-			...activity.calls.map(c => {
+			...(activity.calls || []).map(c => {
 				return {
 					type: "call",
 					created_at: new Date(c.created_at),
