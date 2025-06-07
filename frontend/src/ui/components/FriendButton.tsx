@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useUserInfo } from "../hooks/useUserInfo";
 import { ROUTES } from "../routes";
 import { Room, User } from "../../structs/models/Models";
 

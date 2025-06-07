@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Call, Message, Room, User } from "../../structs/models/Models";
+import { Call, Message } from "../../structs/models/Models";
 import { useResourceFetcher } from "../hooks/useResourceFetcher"
 import RoomClickable from "./RoomClickable";
 

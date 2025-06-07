@@ -7,11 +7,7 @@ import { MessageEvents } from "../../structs/MessageNames";
 import { Message, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
-import CallMessage from "../components/CallMessage";
-import ChatMessage from "../components/ChatMessage";
 import MessageTimeline from "../components/MessageTimeline";
-
-const API_URL = "http://localhost:8080";
 
 const ChatRoomView: React.FC = () => {
 	const chatId = Number(useParams().chatId);

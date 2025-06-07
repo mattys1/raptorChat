@@ -2,9 +2,7 @@ import React from "react";
 import { useSidebarHook } from "../hooks/views/useSidebarHook";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
-import FriendButton from "../components/FriendButton";
 import RoomClickable from "../components/RoomClickable";
-import { Room } from "livekit-client";
 
 interface SidebarProps {
   onSettingsClick: () => void;
