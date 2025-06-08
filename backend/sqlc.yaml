@@ -14,6 +14,16 @@ sql:
             go_type:
               type: "string"
               pointer: true
+          - db_type: "tinyint"
+            nullable: true
+            go_type:
+              type: "bool"
+              pointer: true
+          - db_type: "timestamp"
+            nullable: true
+            go_type:
+              type: "time.Time"
+              pointer: true
           - db_type: "varchar"
             nullable: true
             go_type:
