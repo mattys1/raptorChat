@@ -88,7 +88,7 @@ export const useVideoChatHook = (chatId: Number) => {
 		if(cam) {
 			(async () => {
 				await room.switchActiveDevice('videoinput', cam)
-				console.log("Active device now:", room.getActiveDevice('audioinput'));
+				console.log("Active device now:", room.getActiveDevice('videoinput'));
 			})()
 		}
 	}, [room, mic])

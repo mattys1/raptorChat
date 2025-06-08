@@ -18,6 +18,7 @@ func Router() *chi.Mux {
 	r.Use(middleware.LogRequest)
 
 	r.Handle("/avatars/*", http.StripPrefix("/avatars/", http.FileServer(http.Dir("avatars"))))
+	r.Handle("/defaultavatar/*", http.StripPrefix("/defaultavatar/", http.FileServer(http.Dir("defaultavatar"))))
 
 	r.Post("/login", auth.LoginHandler)
 	r.Post("/register", auth.RegisterHandler)
@@ -72,6 +73,8 @@ func Router() *chi.Mux {
 
 					r.Post("/joined", handlers.JoinOrCreateCallHandler)
 					r.Post("/leave", handlers.LeaveOrEndCallHandler)
+					r.Post("/request", handlers.RequestCallHandler)
+					r.Post("/reject_request", handlers.RejectCallRequestHandler)
 				})
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
