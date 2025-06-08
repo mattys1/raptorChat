@@ -33,6 +33,23 @@ definitions:
     x-enum-varnames:
     - InvitesTypeDirect
     - InvitesTypeGroup
+  db.Message:
+    properties:
+      contents:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      is_deleted:
+        type: boolean
+      room_id:
+        type: integer
+      sender_id:
+        type: integer
+    type: object
   db.Room:
     properties:
       id:
@@ -54,6 +71,19 @@ definitions:
     x-enum-varnames:
     - RoomsTypeDirect
     - RoomsTypeGroup
+  db.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
   handlers.ErrorResponse:
     properties:
       message:
@@ -65,6 +95,8 @@ definitions:
         type: string
       old_password:
         type: string
+    type: object
+  messaging.EventResource:
     type: object
   orm.Call:
     properties:
@@ -117,11 +149,150 @@ info:
   title: RaptorChat API
   version: "1.0"
 paths:
-  /rooms/{id}/calls:
+  /dm/{id}:
     get:
       consumes:
       - application/json
-      description: Returns all calls associated with the specified room
+      description: Retrieves the direct message conversation between the authenticated
+        user and specified recipient
+      parameters:
+      - description: Recipient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room object
+          schema:
+            $ref: '#/definitions/db.Room'
+        "400":
+          description: Bad Request - Invalid recipient ID or User ID not found in
+            context
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get direct message conversation with another user
+      tags:
+      - direct-messages
+  /rooms:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new chat room and assigns the creator as owner with appropriate
+        permissions
+      parameters:
+      - description: Room event resource
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created room
+          schema:
+            $ref: '#/definitions/messaging.EventResource'
+        "400":
+          description: Error unmarshalling request body
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a new room
+      tags:
+      - rooms
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing room's details (only group rooms can be updated)
+      parameters:
+      - description: Room event resource with updated details
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Error unmarshalling request body or non-group room
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a room
+      tags:
+      - rooms
+  /rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a room if the requester is the owner
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room event resource
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Invalid room ID or bad request body
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - only the owner may delete the room
+          schema:
+            type: string
+        "404":
+          description: Room not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a room
+      tags:
+      - rooms
+    get:
+      consumes:
+      - application/json
+      description: Retrieves details of a specific room by ID
       parameters:
       - description: Room ID
         in: path
@@ -132,18 +303,20 @@ paths:
       - application/json
       responses:
         "200":
-          description: List of calls for the room
+          description: Room details
           schema:
-            items:
-              $ref: '#/definitions/orm.Call'
-            type: array
+            $ref: '#/definitions/db.Room'
         "400":
-          description: Bad request - invalid room ID
+          description: Invalid room ID
           schema:
             type: string
-      summary: Get calls for a specific room
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a specific room
       tags:
-      - calls
+      - rooms
   /rooms/{id}/calls/join:
     post:
       consumes:
@@ -208,6 +381,132 @@ paths:
       summary: Leave or end a call in a room
       tags:
       - calls
+  /rooms/{id}/count:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the count of messages in the specified room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message count
+          schema:
+            type: integer
+        "400":
+          description: Invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get count of messages in a room
+      tags:
+      - rooms
+      - messages
+  /rooms/{id}/messages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all non-deleted messages from a specified room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of messages
+          schema:
+            items:
+              $ref: '#/definitions/db.Message'
+            type: array
+        "400":
+          description: Invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get messages from a specific room
+      tags:
+      - rooms
+      - messages
+  /rooms/{id}/users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all users that are members of the specified room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            items:
+              $ref: '#/definitions/db.User'
+            type: array
+        "400":
+          description: Invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get users in a room
+      tags:
+      - rooms
+      - users
+  /rooms/messages:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new message in the specified room and publishes it via
+        Centrifugo
+      parameters:
+      - description: Message event resource
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Error unmarshalling request body
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Send a message to a room
+      tags:
+      - rooms
+      - messages
   /users:
     get:
       description: Returns a list of all users in the system except the authenticated

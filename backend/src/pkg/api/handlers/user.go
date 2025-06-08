@@ -541,7 +541,7 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Recipient ID"
-// @Success 200 {object} db.DM "Direct message object"
+// @Success 200 {object} db.Room "Room object"
 // @Failure 400 {string} string "Bad Request - Invalid recipient ID or User ID not found in context"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /dm/{id} [get]
