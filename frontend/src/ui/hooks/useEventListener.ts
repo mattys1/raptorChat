@@ -28,6 +28,7 @@ export const useEventListener = <T>(
 				if(events.includes(incoming.event_name)) {
 					console.log("Published", ctx)
 					// callback(setState, ctx.data.data)
+					// console.log("Setting state with event", incoming.event_name, "and contents", incoming.contents)
 					setState({
 						event: incoming.event_name,
 						item: incoming.contents as T

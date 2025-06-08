@@ -46,6 +46,7 @@ func (cs *CentrifugoService) Publish(
 	}
 
 	slog.Info("Publishing message", "channel", resource.Channel, "data", string(data))
+	slog.Info("Published resource ", "resource", resource)
 	err = cs.client.Publish(ctx, resource.Channel, data)
 	if err != nil {
 		return err

@@ -24,7 +24,7 @@ export const useChatRoomHook = (key: number) => {
 	const navigate = useNavigate()
 	const chatId = key
 	console.log("ChatRoomHook key:", chatId)
-	const [room, setRoom] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`) // TODO: merge this with useFetchAndListen
+	const [room, setRoom] = useResourceFetcher<Room | null>(null, `/api/rooms/${chatId}`) // DODO: merge this with useFetchAndListen
 	const [, , notifyOnCallJoin] = useSendResource<null>(`/api/rooms/${chatId}/calls/joined`, HttpMethods.POST)
 
 	const [calls] = useFetchAndListen<Call[], Call>(

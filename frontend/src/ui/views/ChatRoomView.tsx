@@ -36,6 +36,7 @@ const ChatRoomView: React.FC = () => {
 	const onClickCall = () => {
 		setIsCalling(true);
 		sendCallRequest(null);
+		// props.notifyOnCallJoin(null)
 		navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
 	};
 
