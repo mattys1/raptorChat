@@ -544,7 +544,7 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} db.Room "Room object"
 // @Failure 400 {string} string "Bad Request - Invalid recipient ID or User ID not found in context"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /dm/{id} [get]
+// @Router /user/{id}/dm [get]
 // @Security ApiKeyAuth
 func GetDMWithSenderHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()

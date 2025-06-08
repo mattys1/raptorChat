@@ -149,39 +149,6 @@ info:
   title: RaptorChat API
   version: "1.0"
 paths:
-  /dm/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves the direct message conversation between the authenticated
-        user and specified recipient
-      parameters:
-      - description: Recipient ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Room object
-          schema:
-            $ref: '#/definitions/db.Room'
-        "400":
-          description: Bad Request - Invalid recipient ID or User ID not found in
-            context
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Get direct message conversation with another user
-      tags:
-      - direct-messages
   /rooms:
     post:
       consumes:
@@ -507,6 +474,39 @@ paths:
       tags:
       - rooms
       - messages
+  /user/{id}/dm:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the direct message conversation between the authenticated
+        user and specified recipient
+      parameters:
+      - description: Recipient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room object
+          schema:
+            $ref: '#/definitions/db.Room'
+        "400":
+          description: Bad Request - Invalid recipient ID or User ID not found in
+            context
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get direct message conversation with another user
+      tags:
+      - direct-messages
   /users:
     get:
       description: Returns a list of all users in the system except the authenticated

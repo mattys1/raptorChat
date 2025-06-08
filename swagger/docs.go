@@ -20,55 +20,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/dm/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieves the direct message conversation between the authenticated user and specified recipient",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "direct-messages"
-                ],
-                "summary": "Get direct message conversation with another user",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Recipient ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Room object",
-                        "schema": {
-                            "$ref": "#/definitions/db.Room"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request - Invalid recipient ID or User ID not found in context",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/rooms": {
             "put": {
                 "description": "Updates an existing room's details (only group rooms can be updated)",
@@ -545,6 +496,55 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid room ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/dm": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves the direct message conversation between the authenticated user and specified recipient",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "direct-messages"
+                ],
+                "summary": "Get direct message conversation with another user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Recipient ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room object",
+                        "schema": {
+                            "$ref": "#/definitions/db.Room"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid recipient ID or User ID not found in context",
                         "schema": {
                             "type": "string"
                         }
