@@ -142,9 +142,17 @@ const ChatRoomView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex-1 min-w-0 px-2 leading-relaxed whitespace-pre-wrap break-words">
+              <div className="flex-1 min-w-0 px-2 leading-relaxed whitespace-pre-wrap">
+              <div
+                className={"text-xs text-gray-400 mb-1 " + (isMine ? "text-right" : "text-left")}
+              >
+                {new Date(m.created_at).toLocaleString()}
+              </div>
+              <div className="break-words">
                 {m.contents}
               </div>
+            </div>
+              
 
               {(isMine || isOwner || isModerator) && (
                 <button
