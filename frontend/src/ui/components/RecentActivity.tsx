@@ -52,7 +52,7 @@ const RecentActivity = () => {
 	return (
 		<div>
 			Recent Activity:
-			<div className="flex flex-col gap-2">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 				{items.map((item, index) => (
 					<div key={index} className="py-2 my-2 text-white border-t border-b border-gray-600 rounded px-3 bg-gray-800 bg-opacity-30 max-w-md w-full mx-auto">
 						{item.type === "message" ? (
