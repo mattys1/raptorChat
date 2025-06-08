@@ -108,13 +108,13 @@ export const useChatRoomHook = (key: number) => {
 		} 
 	}, [latest])
 
-	const [,, modifyRoom] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
+	const [,, createRoomEvent] = useSendEventMessage<Room>(`/api/rooms/${chatId}`)
 
 	return {
 		messageList,
 		sentMessageStatus,
 		sendChatMessageAction,
-		modifyRoom,
+		createRoomEvent,
 		room,
 		memberCount,
 		calls,

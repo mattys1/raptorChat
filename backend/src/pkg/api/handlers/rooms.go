@@ -180,6 +180,8 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	dao := db.GetDao()
 
+	slog.Info("DeleteRoomHandler called", "roomID", chi.URLParam(r, "id"))
+
 	callerID, ok := middleware.RetrieveUserIDFromContext(ctx)
 	if !ok {
 		http.Error(w, "unauthorised", http.StatusUnauthorized)
@@ -197,8 +199,9 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "room not found", http.StatusNotFound)
 		return
 	}
-	if room.OwnerID == nil || *room.OwnerID != callerID {
+	if room.OwnerID != nil && *room.OwnerID != callerID {
 		http.Error(w, "forbidden – only the owner may delete the room", http.StatusForbidden)
+		slog.Warn("User attempted to delete room they do not own", "roomID", roomID, "callerID", callerID, "ownerID", room.OwnerID)
 		return
 	}
 

@@ -4,7 +4,7 @@ import { useChatRoomHook } from "../hooks/views/useChatRoomHook";
 import { useRoomRoles } from "../hooks/useRoomRoles";
 import { useResourceFetcher } from "../hooks/useResourceFetcher";
 import { MessageEvents } from "../../structs/MessageNames";
-import { Message, RoomsType, User } from "../../structs/models/Models";
+import { Message, Room, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
 import MessageTimeline from "../components/MessageTimeline";
@@ -73,6 +73,21 @@ const ChatRoomView: React.FC = () => {
 					>
 						Invite user to chatroom
 					</button>
+				)}
+
+				{props.room?.type === RoomsType.Direct && (
+					<button
+						className="px-2 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+						onClick={() => props.createRoomEvent({
+							channel: `room:${chatId}`,
+							method: "DELETE",
+							event_name: "room_deleted",
+							contents: props?.room
+						} as EventResource<Room>)}
+					>
+						Unfriend user
+					</button>
+					
 				)}
 				{(isOwner || isModerator) && (
 					<button
