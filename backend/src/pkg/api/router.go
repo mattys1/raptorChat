@@ -90,6 +90,7 @@ func Router() *chi.Mux {
 			r.Get("/users", admin.ListUsersHandler)
 			r.Post("/users", admin.CreateUserHandler)
 			r.Delete("/users/{userID}", admin.DeleteUserHandler)
+			r.Put("/users/{userID}/admin", admin.AssignAdminHandler)
 		})
 	})
 

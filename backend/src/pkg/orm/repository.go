@@ -166,3 +166,13 @@ func CompleteCall(ctx context.Context, callID uint64) (*Call, error) {
 	err := db.Preload("Participants").First(&call, callID).Error
 	return &call, err
 }
+
+func AssignRoleToUser(ctx context.Context, userID uint64, roleName string) error {
+    db := GetORM().WithContext(ctx)
+    var role Role
+    if err := db.First(&role, "name = ?", roleName).Error; err != nil {
+        return err
+    }
+    ur := UsersRole{UserID: userID, RoleID: role.ID}
+    return db.FirstOrCreate(&ur, ur).Error
+}
