@@ -120,9 +120,11 @@ isCalling
 				<div className="w-24" />
 				<div className="text-center flex-1">
 					{props.room?.type === RoomsType.Group && (
-						<strong className="font-bold">Group Chat:</strong>
-					)}{" "}
-					{props.room?.name}
+						<>
+							<strong className="font-bold">Group Chat:</strong>
+							{" "} {props.room?.name}
+						</>
+					)}
 				</div>
 				<div className="w-24 text-right">
 					{props.room?.type === RoomsType.Group
