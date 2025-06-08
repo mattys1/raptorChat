@@ -12,7 +12,7 @@ backend-1  | 2025/05/28 10:22:46 Starting server on :8080...
 
 Skryptowi można przekazać flagę `-d`, aby działał w tle.
 
-Warto dodać, że jeżeli aplikacja uruchamiana jest na WSLu, skrypty `.sh` mogą mieć zepsute permisje oraz encoding. Jeżeli pojawi się jakiś błąd przy wykonaniu skryptu, można spróbować uruchomić komendy:
+Warto dodać, że jeżeli aplikacja uruchamiana jest na WSLu (jednak nie jest to zalecane, ze względu na niekompatybilności z serwerem Livekit), skrypty `.sh` mogą mieć zepsute permisje oraz encoding. Jeżeli pojawi się jakiś błąd przy wykonaniu skryptu, można spróbować uruchomić komendy:
 ```
 chmod +x ./deploy_backend.sh &&
 dos2unix ./deploy_backend.sh
@@ -25,3 +25,7 @@ frontend/dist/frontend-0.0.0.AppImage
 ```
 
 Uruchomi to AppImage z frontendem aplikacji. AppImage można potem wykorzystywać z dowolnego katalogu, pod warunkiem, że serwer działa.
+
+## Dostęp do admina
+
+Powinien istnieć domyślnie stworzony użytkownik o emailu `admin@admin.pl` i haśle `admin123`.
