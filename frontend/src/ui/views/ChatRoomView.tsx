@@ -7,6 +7,7 @@ import { MessageEvents } from "../../structs/MessageNames";
 import { Message, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
+import defaultavatar from "../assets/defaultavatar/defaultavatar.jpg";
 
 import { useCallRequestHook } from "../hooks/views/useCallRequestHook";
 
@@ -32,7 +33,6 @@ const ChatRoomView: React.FC = () => {
   const myId = Number(localStorage.getItem("uID") ?? 0);
 
   const [isCalling, setIsCalling] = useState(false);
-
   const [, , sendCallRequest] = useCallRequestHook(chatId);
 
   const onClickCall = () => {
@@ -106,8 +106,7 @@ const ChatRoomView: React.FC = () => {
         <div className="text-center flex-1">
           {props.room?.type === RoomsType.Group && (
             <strong className="font-bold">Group Chat:</strong>
-          )}{" "}
-          {props.room?.name}
+          )} {props.room?.name}
         </div>
         <div className="w-24 text-right">
           {props.room?.type === RoomsType.Group
@@ -119,7 +118,6 @@ const ChatRoomView: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-y-auto space-y-3 px-[2%] py-4">
         {props.messageList.map((m) => {
           const isMine = m.sender_id === myId;
-
           const bubbleBg = isMine
             ? "bg-[#0d1117] text-[#e5e9f0] self-start"
             : "bg-[#1e293b] text-[#e5e9f0] self-end";
@@ -127,29 +125,24 @@ const ChatRoomView: React.FC = () => {
           return (
             <div
               key={m.id}
-              className={`
-                group relative
-                w-4/5 rounded-lg
-                ${bubbleBg}
-                py-[0.45rem] pb-[0.6rem] px-[2%]
-              `}
+              className={`group relative w-4/5 flex rounded-lg ${bubbleBg} py-[0.45rem] pb-[0.6rem] ${isMine ? '' : 'flex-row-reverse'}`}
             >
-              <div className="flex items-center mb-1">
+              <div className={`flex flex-col items-center px-4 border-gray-600 ${isMine ? 'border-r' : 'border-l'}`}>
                 <img
                   src={
                     avatarMap[m.sender_id]
                       ? `${API_URL}${avatarMap[m.sender_id]}`
-                      : "/default-avatar.png"
+                      : defaultavatar
                   }
                   alt="avatar"
-                  className="h-8 w-8 rounded-full object-cover mr-2"
+                  className="h-8 w-8 rounded-full object-cover mb-1"
                 />
                 <span className="text-xs font-semibold text-[#cbd5e1]">
                   {nameMap[m.sender_id] ?? `user${m.sender_id}`}
                 </span>
               </div>
 
-              <div className="leading-relaxed whitespace-pre-wrap break-words">
+              <div className="flex-1 min-w-0 px-2 leading-relaxed whitespace-pre-wrap break-words">
                 {m.contents}
               </div>
 
@@ -171,8 +164,7 @@ const ChatRoomView: React.FC = () => {
         className="flex items-center space-x-2 bg-[#374151] py-[0.65rem] px-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const input = e.currentTarget
-            .elements.namedItem("messageBox") as HTMLInputElement;
+          const input = e.currentTarget.elements.namedItem("messageBox") as HTMLInputElement;
           const text = input.value.trim();
           if (text) send(text);
           e.currentTarget.reset();
