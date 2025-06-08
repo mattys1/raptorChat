@@ -1,4 +1,5 @@
 import { Message } from "../../structs/models/Models";
+import defaultawatar from "../assets/defaultavatar/defaultavatar.jpg"
 
 interface ChatMessageProps {
 	message: Message;
@@ -32,7 +33,7 @@ const ChatMessage = ({ message, myId, nameMap, avatarMap, isOwner, isModerator, 
 					src={ //NAPRAW 
 						avatarMap[message.sender_id]
 							? `http://localhost:8080${avatarMap[message.sender_id]}`
-							: "/default-avatar.png"
+							: defaultawatar
 					}
 					alt="avatar"
 					className="h-8 w-8 rounded-full object-cover mr-2"
