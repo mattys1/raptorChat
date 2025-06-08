@@ -91,30 +91,46 @@ func ListUsersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodOptions {
-		return
-	}
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+    if r.Method == http.MethodOptions {
+        return
+    }
+    if r.Method != http.MethodDelete {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
 
-	idStr := chi.URLParam(r, "userID")
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
+    idStr := chi.URLParam(r, "userID")
+    id, err := strconv.ParseUint(idStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
 
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
 
-	if err := orm.DeleteUser(ctx, id); err != nil {
-		http.Error(w, "Error deleting user", http.StatusInternalServerError)
-		return
-	}
+    var userWithRoles orm.User
+    if err := orm.GetORM().
+        WithContext(ctx).
+        Preload("Roles").
+        Preload("Roles.Role").
+        First(&userWithRoles, id).Error; err != nil {
+        http.Error(w, "Error checking user role: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    for _, ur := range userWithRoles.Roles {
+        if ur.Role.Name == "admin" {
+            http.Error(w, "Cannot delete user: user is an admin", http.StatusBadRequest)
+            return
+        }
+    }
 
-	w.WriteHeader(http.StatusNoContent)
+    if err := orm.DeleteUser(ctx, id); err != nil {
+        http.Error(w, "Error deleting user", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
 }
 
 func AssignAdminHandler(w http.ResponseWriter, r *http.Request) {

@@ -30,15 +30,22 @@ export const AdminPanelView: React.FC = () => {
   }, [token]);
 
   const deleteUser = (id: number) => {
-    fetch(`${SERVER_URL}/api/admin/users/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+  fetch(`${SERVER_URL}/api/admin/users/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => {
-        if (res.ok) setUsers((prev) => prev.filter((u) => u.id !== id));
-        else console.error("Failed to delete user");
-      })
-      .catch((err) => console.error(err));
+    .then(async (res) => {
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== id))
+      } else {
+        const msg = await res.text()
+        alert(msg)
+      }
+    })
+    .catch((err) => {
+      console.error(err)
+      alert("Network error deleting user")
+    })
   };
 
   const assignAdmin = (id: number) => {
