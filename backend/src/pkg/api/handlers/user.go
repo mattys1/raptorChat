@@ -492,7 +492,7 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 
 	messages, err := dao.GetRecentMessagesByUserLimited(r.Context(), db.GetRecentMessagesByUserLimitedParams{
 		SenderID: ownId,
-		Limit: 5,
+		Limit: 9,
 	})
 	if err != nil {
 		slog.Error("Error fetching messages", "error", err)
@@ -512,8 +512,8 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	slog.Info("calls", "calls", calls)
 
-	if len(calls) > 5 {
-		calls = calls[:5]
+	if len(calls) > 9 {
+		calls = calls[:9]
 	}
 
 
