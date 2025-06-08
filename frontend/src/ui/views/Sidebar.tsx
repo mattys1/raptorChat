@@ -36,6 +36,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
 
   const ringAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const [callerName, setCallerName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!incomingCall) {
+      setCallerName(null);
+      return;
+    }
+    fetch(`${API_URL}/api/users/${incomingCall.caller_id}`, {
+      headers: { "Content-Type": "application/json" }
+    })
+      .then((res) => res.json())
+      .then((u: { username: string }) => setCallerName(u.username))
+      .catch(() => setCallerName(`user${incomingCall.caller_id}`));
+  }, [incomingCall]);
+
   useEffect(() => {
     props.rooms?.forEach((room) => {
       if (!room) return;
@@ -83,7 +97,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
       }
 
       const audio = new Audio(sound);
-
       const onEnded = () => {
         if (incomingCall && ringAudioRef.current) {
           ringAudioRef.current.currentTime = 0;
@@ -93,12 +106,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
         }
       };
       audio.addEventListener("ended", onEnded);
-
       audio.currentTime = 0;
-      audio
-        .play()
-        .catch((e) => console.warn("Could not play ring sound:", e));
-
+      audio.play().catch((e) =>
+        console.warn("Could not play ring sound:", e)
+      );
       ringAudioRef.current = audio;
     } else {
       if (ringAudioRef.current) {
@@ -109,8 +120,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
         ringAudioRef.current = null;
       }
     }
-
-
     return () => {
       if (ringAudioRef.current) {
         ringAudioRef.current.pause();
@@ -240,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSettingsClick }) => {
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-gray-900 text-white p-4 rounded-lg shadow-lg w-72">
             <p className="mb-3 text-center">
-              <strong>User {incomingCall.caller_id}</strong> is calling…
+              <strong> {callerName ?? `user${incomingCall.caller_id}`} </strong>{" "} is calling…
             </p>
             <div className="flex justify-between">
               <button
