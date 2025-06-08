@@ -116,3 +116,22 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func AssignAdminHandler(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "userID")
+    id, err := strconv.ParseUint(idStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    if err := orm.AssignRoleToUser(ctx, id, "admin"); err != nil {
+        http.Error(w, "Error assigning admin role", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
+}
