@@ -309,7 +309,6 @@ func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusNoContent)
 }
 
-//
 // UpdateUsernameHandler godoc
 // @Summary     Update current user's username
 // @Description Updates the authenticated user's username and publishes an event via Centrifugo
@@ -383,7 +382,6 @@ func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-//
 // UploadAvatarHandler godoc
 // @Summary     Upload or update user's avatar
 // @Description Accepts a multipart/form-data file upload for the authenticated user's avatar, stores it, and updates the user's record
@@ -540,6 +538,17 @@ type ErrorResponse struct {
     Message string `json:"message"`
 }
 
+
+// @Summary Get current user's recent activity
+// @Description Retrieves the authenticated user's 5 most recent messages and calls
+// @Tags users,activity
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} object{messages=[]db.Message,calls=[]orm.Call} "User's recent activity"
+// @Failure 400 {object} ErrorResponse "User ID not found in context"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /users/me/activity [get]
 func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 
@@ -603,7 +612,7 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} db.Room "Direct message object"
 // @Failure 400 {string} string "Bad Request - Invalid recipient ID or User ID not found in context"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /dm/{id} [get]
+// @Router /user/{id}/dm [get]
 // @Security ApiKeyAuth
 func GetDMWithSenderHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()

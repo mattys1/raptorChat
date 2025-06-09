@@ -33,6 +33,23 @@ definitions:
     x-enum-varnames:
     - InvitesTypeDirect
     - InvitesTypeGroup
+  db.Message:
+    properties:
+      contents:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      is_deleted:
+        type: boolean
+      room_id:
+        type: integer
+      sender_id:
+        type: integer
+    type: object
   db.Room:
     properties:
       id:
@@ -362,40 +379,38 @@ paths:
       summary: Get user count in a room
       tags:
       - rooms
-  /dm/{id}:
-    get:
+  /messages/{id}:
+    delete:
       consumes:
       - application/json
-      description: Retrieves the direct message conversation between the authenticated
-        user and specified recipient
+      description: Deletes a message by ID and notifies all subscribers through Centrifugo
       parameters:
-      - description: Recipient ID
-        in: path
-        name: id
+      - description: Message resource with ID to delete
+        in: body
+        name: resource
         required: true
-        type: integer
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
       produces:
       - application/json
       responses:
         "200":
-          description: Direct message object
+          description: Message deleted successfully
           schema:
-            $ref: '#/definitions/db.Room'
+            type: string
         "400":
-          description: Bad Request - Invalid recipient ID or User ID not found in
-            context
+          description: Error unmarshalling request body
           schema:
-            type: string
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Error deleting message
           schema:
-            type: string
+            $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Get direct message conversation with another user
+      summary: Delete a message
       tags:
-      - users
-      - rooms
+      - messages
   /rooms/{id}/calls:
     get:
       consumes:
@@ -487,6 +502,152 @@ paths:
       summary: Leave or end a call in a room
       tags:
       - calls
+  /rooms/{id}/messages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all non-deleted messages from a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of messages in the room
+          schema:
+            items:
+              $ref: '#/definitions/db.Message'
+            type: array
+        "400":
+          description: Invalid room ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get room messages
+      tags:
+      - rooms
+      - messages
+  /rooms/{id}/moderators/{userID}:
+    post:
+      consumes:
+      - application/json
+      description: Assigns the moderator role to a user in a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID to designate as moderator
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Returns {\"status\": \"moderator added\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - only room owner can designate moderators
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Designate user as a room moderator
+      tags:
+      - rooms
+      - roles
+      - users
+  /rooms/{id}/roles:
+    get:
+      consumes:
+      - application/json
+      description: Returns all roles the authenticated user has in a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of role names
+          schema:
+            items:
+              type: string
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user's roles in a room
+      tags:
+      - rooms
+      - roles
+  /user/{id}/dm:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the direct message conversation between the authenticated
+        user and specified recipient
+      parameters:
+      - description: Recipient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Direct message object
+          schema:
+            $ref: '#/definitions/db.Room'
+        "400":
+          description: Bad Request - Invalid recipient ID or User ID not found in
+            context
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get direct message conversation with another user
+      tags:
+      - users
+      - rooms
   /users:
     get:
       description: Returns a list of all users in the system except the authenticated
@@ -601,6 +762,41 @@ paths:
       summary: Get authenticated user's ID
       tags:
       - users
+  /users/me/activity:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the authenticated user's 5 most recent messages and calls
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User's recent activity
+          schema:
+            properties:
+              calls:
+                items:
+                  $ref: '#/definitions/orm.Call'
+                type: array
+              messages:
+                items:
+                  $ref: '#/definitions/db.Message'
+                type: array
+            type: object
+        "400":
+          description: User ID not found in context
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user's recent activity
+      tags:
+      - users
+      - activity
   /users/me/avatar:
     delete:
       description: Deletes the authenticated user's avatar file and clears the URL

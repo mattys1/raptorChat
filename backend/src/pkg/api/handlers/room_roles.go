@@ -10,6 +10,19 @@ import (
 	appmw "github.com/mattys1/raptorChat/src/pkg/middleware"
 )
 
+// @Summary Designate user as a room moderator
+// @Description Assigns the moderator role to a user in a specific room
+// @Tags rooms,roles,users
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Room ID"
+// @Param userID path int true "User ID to designate as moderator"
+// @Success 200 {object} map[string]string "Returns {\"status\": \"moderator added\"}"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 403 {string} string "Forbidden - only room owner can designate moderators"
+// @Failure 500 {string} string "Internal server error"
+// @Router /rooms/{id}/moderators/{userID} [post]
 func DesignateModeratorHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	dao := db.GetDao()
@@ -48,6 +61,17 @@ func DesignateModeratorHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "moderator added"})
 }
 
+// @Summary Get current user's roles in a room
+// @Description Returns all roles the authenticated user has in a specific room
+// @Tags rooms,roles
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Room ID"
+// @Success 200 {array} string "List of role names"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /rooms/{id}/roles [get]
 func GetMyRolesHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	dao := db.GetDao()

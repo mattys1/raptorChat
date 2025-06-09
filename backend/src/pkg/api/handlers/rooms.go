@@ -15,6 +15,17 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/middleware"
 )
 
+// @Summary Get room messages
+// @Description Retrieves all non-deleted messages from a specific room
+// @Tags rooms,messages
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Room ID"
+// @Success 200 {array} db.Message "List of messages in the room"
+// @Failure 400 {object} ErrorResponse "Invalid room ID"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /rooms/{id}/messages [get]
 func GetMessagesOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
