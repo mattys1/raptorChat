@@ -102,10 +102,14 @@ const ChatRoomView: React.FC = () => {
 				)}
 				<button
 					className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700"
-					onClick={() => {
+					onClick={async () => {
 						if (props.room?.type === RoomsType.Direct) {
 						const peer = users.find(u => u.id !== myId);
-						if (peer) requestDirectCall(chatId, peer.id);
+						if (peer) {
+							await requestDirectCall(chatId, peer.id); // ring peer
+							await props.notifyOnCallJoin(null);       // join yourself
+							navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
+						}
 						} else {
 						// unchanged behaviour for group calls
 						navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
