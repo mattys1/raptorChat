@@ -18,10 +18,28 @@ chmod +x ./deploy_backend.sh &&
 dos2unix ./deploy_backend.sh
 ```
 
-Do uruchomienia frontendu, należy, z poziomu głównego katalogu repozytorium, uruchomić komendy:
+Do uruchomienia frontendu, należy, z poziomu głównego katalogu repozytorium uruchomić komendy:
 ```
 docker compose up --build frontend-build &&
 frontend/dist/frontend-0.0.0.AppImage
 ```
 
 Uruchomi to AppImage z frontendem aplikacji. AppImage można potem wykorzystywać z dowolnego katalogu, pod warunkiem, że serwer działa.
+
+## Dostęp do admina
+
+Powinien istnieć domyślnie stworzony użytkownik o emailu `admin@gmail.com` i haśle `admin123`.
+
+## Podgląd API
+
+Aby włączyć kontener hostujący swaggera, należy uruchomić:
+```
+docker compose up swagger --build
+```
+i przejść na przeglądarce na adres `localhost:8001`
+
+Do włączenia kontenera hostującego dokumentację AsyncAPI, należy uruchomić komendę:
+```
+docker compse up asyncapi-ui --build
+```
+i przejść do linku, jaki zostanie wypisany w terminalu.
