@@ -176,3 +176,22 @@ func AssignRoleToUser(ctx context.Context, userID uint64, roleName string) error
     ur := UsersRole{UserID: userID, RoleID: role.ID}
     return db.FirstOrCreate(&ur, ur).Error
 }
+
+func GetRoomByID(ctx context.Context, id uint64) (*Room, error) {
+  var room Room
+  err := GetORM().WithContext(ctx).
+    Preload("Users").
+    First(&room, id).
+    Error
+  return &room, err
+}
+
+// New helper: preload Participants on Call
+func GetCallWithParticipants(ctx context.Context, id uint64) (*Call, error) {
+  var call Call
+  err := GetORM().WithContext(ctx).
+    Preload("Participants").
+    First(&call, id).
+    Error
+  return &call, err
+}

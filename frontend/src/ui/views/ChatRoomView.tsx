@@ -8,10 +8,13 @@ import { Message, Room, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
 import MessageTimeline from "../components/MessageTimeline";
+import { useAuth } from '../contexts/AuthContext'
+import { SERVER_URL } from '../../api/routes'
 
 const ChatRoomView: React.FC = () => {
 	const chatId = Number(useParams().chatId);
 	const navigate = useNavigate();
+	const { token } = useAuth()
 
 	const props = useChatRoomHook(chatId);
 	const { isOwner, isModerator } = useRoomRoles(chatId);
@@ -39,6 +42,14 @@ const ChatRoomView: React.FC = () => {
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [props.messageList]);
+
+	const startCall = async () => {
+    	const res = await fetch(
+			`${SERVER_URL}/api/rooms/${chatId}/calls/request`,
+      		{ method: 'POST', headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` } }
+    	)
+    	if (!res.ok) console.error('Call request failed:', await res.text())
+	}
 
 	const send = (text: string) => {
 		props.sendChatMessageAction({
@@ -99,10 +110,7 @@ const ChatRoomView: React.FC = () => {
 				)}
 				<button
 					className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
-					onClick={() => {
-						navigate(`${ROUTES.CHATROOM}/${chatId}/call`)
-						props.notifyOnCallJoin(null)
-					}}
+					onClick={startCall}
 				>
 					Call
 				</button>

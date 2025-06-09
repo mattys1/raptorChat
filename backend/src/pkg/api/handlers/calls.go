@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"fmt"
 	"slices"
 	"strconv"
 
@@ -180,4 +181,120 @@ func LeaveOrEndCallHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		)
 	}
+}
+
+func RequestCallHandler(w http.ResponseWriter, r *http.Request) {
+  idStr := chi.URLParam(r, "id")
+  roomID, err := strconv.Atoi(idStr)
+  if err != nil {
+    http.Error(w, "Invalid room ID", http.StatusBadRequest)
+    return
+  }
+
+  callerID, ok := middleware.RetrieveUserIDFromContext(r.Context())
+  if !ok {
+    http.Error(w, "Unauthorized", http.StatusUnauthorized)
+    return
+  }
+
+  // create call in pending state
+  call := &orm.Call{RoomID: uint64(roomID), Status: orm.CallsStatusPending}  // modified
+  created, err := orm.CreateCall(r.Context(), call)
+  if err != nil {
+    http.Error(w, "Could not create call", http.StatusInternalServerError)
+    return
+  }
+  _ = orm.AddUserToCall(r.Context(), created.ID, callerID)  // added
+
+  // find other user in DM room
+  room, err := orm.GetRoomByID(r.Context(), uint64(roomID))  // added
+  if err != nil {
+    http.Error(w, "Room not found", http.StatusNotFound)
+    return
+  }
+  var calleeID uint64
+  for _, u := range room.Users {
+    if u.UserID != callerID {
+      calleeID = u.UserID
+      break
+    }
+  }
+
+  // notify callee only
+  payload := map[string]any{"id": created.ID, "room_id": created.RoomID, "issuer_id": callerID}
+  data, _ := json.Marshal(payload)
+  messaging.GetCentrifugoService().Publish(r.Context(), &messaging.EventResource{
+    Channel:   fmt.Sprintf("user:%d", calleeID),  // modified
+    Method:    "POST",
+    EventName: "call_requested",
+    Contents:  data,
+  })
+
+  w.Header().Set("Content-Type", "application/json")
+  w.Write(data)
+}
+
+// AcceptCallHandler transitions a call from pending to active
+func AcceptCallHandler(w http.ResponseWriter, r *http.Request) {
+  roomID, _ := strconv.Atoi(chi.URLParam(r, "id"))
+  callID, _ := strconv.Atoi(chi.URLParam(r, "callID"))
+
+  calleeID, ok := middleware.RetrieveUserIDFromContext(r.Context())
+  if !ok {
+    http.Error(w, "Unauthorized", http.StatusUnauthorized)
+    return
+  }
+
+  _ = orm.AddUserToCall(r.Context(), uint64(callID), calleeID)  // added
+  orm.GetORM().WithContext(r.Context()).Model(&orm.Call{}).
+    Where("id = ?", callID).
+    Update("status", orm.CallsStatusActive)  // modified
+
+  // broadcast start to room channel
+  payload := map[string]any{"id": callID, "room_id": roomID, "issuer_id": calleeID}
+  data, _ := json.Marshal(payload)
+  messaging.GetCentrifugoService().Publish(r.Context(), &messaging.EventResource{
+    Channel:   fmt.Sprintf("room:%d", roomID),  // modified
+    Method:    "POST",
+    EventName: "call_started",
+    Contents:  data,
+  })
+
+  w.Header().Set("Content-Type", "application/json")
+  w.Write(data)
+}
+
+// RejectCallHandler rejects a pending call and notifies caller
+func RejectCallHandler(w http.ResponseWriter, r *http.Request) {
+  roomID, _ := strconv.Atoi(chi.URLParam(r, "id"))
+  callID, _ := strconv.Atoi(chi.URLParam(r, "callID"))
+
+  calleeID, ok := middleware.RetrieveUserIDFromContext(r.Context())
+  if !ok {
+    http.Error(w, "Unauthorized", http.StatusUnauthorized)
+    return
+  }
+
+  orm.GetORM().WithContext(r.Context()).Model(&orm.Call{}).
+    Where("id = ?", callID).
+    Update("status", orm.CallsStatusRejected)  // modified
+
+  call, err := orm.GetCallWithParticipants(r.Context(), uint64(callID))  // added
+  if err != nil || len(call.Participants) == 0 {
+    http.Error(w, "Call not found", http.StatusNotFound)
+    return
+  }
+  callerID := call.Participants[0].UserID
+
+  payload := map[string]any{"id": callID, "room_id": roomID, "issuer_id": calleeID}
+  data, _ := json.Marshal(payload)
+  messaging.GetCentrifugoService().Publish(r.Context(), &messaging.EventResource{
+    Channel:   fmt.Sprintf("user:%d", callerID),  // modified
+    Method:    "POST",
+    EventName: "call_rejected",
+    Contents:  data,
+  })
+
+  w.Header().Set("Content-Type", "application/json")
+  w.Write(data)
 }

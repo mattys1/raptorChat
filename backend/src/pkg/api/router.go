@@ -72,6 +72,9 @@ func Router() *chi.Mux {
 
 					r.Post("/joined", handlers.JoinOrCreateCallHandler)
 					r.Post("/leave", handlers.LeaveOrEndCallHandler)
+					r.Post("/request", handlers.RequestCallHandler)
+					r.Post("/{callID}/accept", handlers.AcceptCallHandler)
+					r.Post("/{callID}/reject", handlers.RejectCallHandler)
 				})
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)

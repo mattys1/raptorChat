@@ -8,6 +8,7 @@ import (
 type CallsStatus string
 
 const (
+	CallsStatusPending   CallsStatus = "pending"
 	CallsStatusActive    CallsStatus = "active"
 	CallsStatusCompleted CallsStatus = "completed"
 	CallsStatusRejected  CallsStatus = "rejected"

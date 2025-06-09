@@ -2,11 +2,14 @@ import React from "react";
 import Sidebar from "./views/Sidebar";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ROUTES } from "./routes";
+import CallPopup from './components/CallPopup'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
 
   return (
+    <>
+    <CallPopup />
     <div className="flex h-screen w-full font-sans overflow-hidden">
       <aside className="w-64 bg-gray-800 text-gray-100 p-4 overflow-y-auto">
         <Sidebar
@@ -21,6 +24,7 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
     </div>
+    </>
   );
 };
 

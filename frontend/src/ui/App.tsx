@@ -21,11 +21,13 @@ import VideoChat from "./views/VideoChatView";
 import ManageRoomView     from "./views/ManageRoomView";
 import ChangePasswordView from "./views/ChangePasswordView";
 import ChangeUsernameView from "./views/ChangeUsernameView";
+import { CallProvider } from './contexts/CallContext'
 
 const App: React.FC = () => {
 	// const navigate = useNavigate()
 
 	return (
+		<CallProvider>
 		<Routes>
 			<Route path={ROUTES.ROOT} element={<LoginView />}/>
 			<Route path={ROUTES.LOGIN} element={<LoginView />}/>
@@ -47,6 +49,7 @@ const App: React.FC = () => {
 				<Route path={`${ROUTES.CHATROOM}/:chatId/call`} element={<VideoChat />}></Route>
 			</Route>
 		</Routes>
+		</CallProvider>
 	);
 };
 
