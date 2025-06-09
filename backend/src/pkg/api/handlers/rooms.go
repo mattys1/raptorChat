@@ -34,6 +34,17 @@ func GetMessagesOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Send a message to a room
+// @Description Creates a new message in a room and broadcasts it via Centrifugo
+// @Tags rooms,messages
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Param message body messaging.EventResource true "Message event resource"
+// @Success 201 "Message created successfully"
+// @Failure 400 {object} string "Error unmarshalling request body"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms/{id}/messages [post]
 func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 
@@ -95,6 +106,16 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// @Summary Get users in a room
+// @Description Returns all users who are members of a specific room
+// @Tags rooms,users
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Success 200 {array} db.User
+// @Failure 400 {object} string "Invalid room ID"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms/{id}/user [get]
 func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -115,6 +136,16 @@ func GetUsersOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// @Summary Create a new room
+// @Description Creates a new room with the current user as the owner
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param room body messaging.EventResource true "Room event resource"
+// @Success 201 {object} messaging.EventResource
+// @Failure 400 {object} string "Error unmarshalling request"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms [post]
 func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 
@@ -176,6 +207,20 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	_ = SendResource(newResource, w)
 }
 
+// @Summary Delete a room
+// @Description Deletes a room (only the owner can delete)
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Param room body messaging.EventResource true "Room event resource"
+// @Success 204 "Room deleted successfully"
+// @Failure 400 {object} string "Invalid room ID or bad request"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 403 {object} string "Forbidden - only owner can delete"
+// @Failure 404 {object} string "Room not found"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms/{id} [delete]
 func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	dao := db.GetDao()
@@ -241,6 +286,16 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Summary Get a room by ID
+// @Description Returns details for a specific room
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Success 200 {object} db.Room
+// @Failure 400 {object} string "Invalid room ID"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms/{id} [get]
 func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -260,6 +315,17 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Update a room
+// @Description Updates a room's details (only group rooms can be updated)
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Param room body messaging.EventResource true "Room event resource"
+// @Success 204 "Room updated successfully"
+// @Failure 400 {object} string "Invalid request body or not a group room"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms/{id} [put]
 func UpdateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	dao := db.GetDao()
 	eventResource, err := messaging.GetEventResourceFromRequest(r)
@@ -331,6 +397,16 @@ func publishToRoomMembers(resource messaging.EventResource, dao *db.Queries, ctx
 	return nil
 }
 
+// @Summary Get user count in a room
+// @Description Returns the number of users in a specific room
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param id path int true "Room ID"
+// @Success 200 {object} int
+// @Failure 400 {object} string "Invalid room ID"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /api/rooms/{id}/user/count [get]
 func GetCountOfRoomHandler(w http.ResponseWriter, r *http.Request) {
 	roomid, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {

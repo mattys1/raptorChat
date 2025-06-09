@@ -537,11 +537,11 @@ func GetOwnActivityHandler(w http.ResponseWriter, r *http.Request) {
 // GetDMWithSenderHandler godoc
 // @Summary Get direct message conversation with another user
 // @Description Retrieves the direct message conversation between the authenticated user and specified recipient
-// @Tags direct-messages
+// @Tags users, rooms
 // @Accept json
 // @Produce json
 // @Param id path int true "Recipient ID"
-// @Success 200 {object} db.DM "Direct message object"
+// @Success 200 {object} db.Room "Direct message object"
 // @Failure 400 {string} string "Bad Request - Invalid recipient ID or User ID not found in context"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /dm/{id} [get]
