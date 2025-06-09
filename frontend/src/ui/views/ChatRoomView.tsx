@@ -8,6 +8,7 @@ import { Message, Room, RoomsType, User } from "../../structs/models/Models";
 import { EventResource } from "../../structs/Message";
 import { ROUTES } from "../routes";
 import MessageTimeline from "../components/MessageTimeline";
+import { useCallContext } from "../contexts/CallContext";
 
 const ChatRoomView: React.FC = () => {
 	const chatId = Number(useParams().chatId);
@@ -63,6 +64,8 @@ const ChatRoomView: React.FC = () => {
 		} as EventResource<Message>);
 	};
 
+	const { requestDirectCall } = useCallContext();
+
 	return (
 		<div className="flex flex-col h-full w-full min-w-0">
 			<div className="px-4 py-2 flex space-x-2">
@@ -98,12 +101,18 @@ const ChatRoomView: React.FC = () => {
 					</button>
 				)}
 				<button
-					className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+					className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700"
 					onClick={() => {
-						navigate(`${ROUTES.CHATROOM}/${chatId}/call`)
-						props.notifyOnCallJoin(null)
+						if (props.room?.type === RoomsType.Direct) {
+						const peer = users.find(u => u.id !== myId);
+						if (peer) requestDirectCall(chatId, peer.id);
+						} else {
+						// unchanged behaviour for group calls
+						navigate(`${ROUTES.CHATROOM}/${chatId}/call`);
+						props.notifyOnCallJoin(null);
+						}
 					}}
-				>
+					>
 					Call
 				</button>
 			</div>

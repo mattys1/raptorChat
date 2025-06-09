@@ -5,13 +5,16 @@ import App from './App.tsx'
 import React from 'react';
 import { HashRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import { CallProvider } from './contexts/CallContext.tsx';
 
 createRoot(document.getElementById('root')!).render(
 	<React.StrictMode>
 	  <AuthProvider>
-		<HashRouter>
-		  <App />
-		</HashRouter>
+		  <HashRouter>
+			<CallProvider>
+				<App />
+			</CallProvider>
+		  </HashRouter>
 	  </AuthProvider>
 	</React.StrictMode>
   );

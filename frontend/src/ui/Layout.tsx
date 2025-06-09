@@ -2,6 +2,7 @@ import React from "react";
 import Sidebar from "./views/Sidebar";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ROUTES } from "./routes";
+import IncomingCallPopup from "./components/IncomingCallPopup";
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const Layout: React.FC = () => {
       <main className="flex-1 bg-[#394A59] min-h-screen overflow-auto">
         <Outlet />
       </main>
+
+      <IncomingCallPopup />
     </div>
   );
 };
