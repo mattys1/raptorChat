@@ -35,7 +35,7 @@ const CallMessage = ({call}: {call: Call}) => {
 			return (
 				<>
 					There was a call in this room on <span className="font-bold">{formatDate(call.created_at)}</span>, 
-					lasting <span className="text-gray-300">{formatDuration(new Date(call.ended_at!).getTime() - new Date(call.created_at!).getTime())}</span>.
+					lasting <span className="text-gray-300">{formatDuration(new Date(call.ended_at!).getTime() - new Date(call.created_at!).getTime())}</span> with {call.peak_participant_count} members.
 				</>
 			);
 		}

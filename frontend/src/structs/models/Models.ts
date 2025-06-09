@@ -71,5 +71,6 @@ export interface Call {
 	status: CallStatus;
 	created_at: string;
 	participant_count: number;
+	peak_participant_count: number;
 	ended_at: string | null;
 }
