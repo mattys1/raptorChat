@@ -16,7 +16,7 @@ const ChangeUsernameView: React.FC = () => {
             props.changeUsername({
               channel: `user:${props.userId}`,
               method: "PATCH",
-              event_name: "username_changed",
+              event_name: "update_user",
               contents: e.currentTarget.newUsername.value,
             } as EventResource<string>);
           }}

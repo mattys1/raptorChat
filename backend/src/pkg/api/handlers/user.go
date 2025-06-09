@@ -360,6 +360,24 @@ func UpdateUsernameHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+	user.Username = *newUsername
+
+	recsourceContents, err := json.Marshal(user)
+	if err != nil {
+		slog.Error("Error marshalling user data", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	newResource := messaging.EventResource{
+		Channel: fmt.Sprintf("user:%d", uid),
+		Method: http.MethodPost,
+		EventName: "update_user",
+		Contents: recsourceContents,
+	}
+
+	messaging.GetCentrifugoService().Publish(ctx, &newResource)
+
     messaging.GetCentrifugoService().Publish(ctx, resource)
     w.WriteHeader(http.StatusNoContent)
 }
@@ -428,6 +446,29 @@ func UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+	user, err := orm.GetUserByID(ctx, uid)
+	if err != nil {
+		slog.Error("Error fetching user after avatar update", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	recsourceContents, err := json.Marshal(user)
+	if err != nil {
+		slog.Error("Error marshalling user data", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	resource := messaging.EventResource{
+		Channel: fmt.Sprintf("user:%d", uid),
+		Method: http.MethodPost,
+		EventName: "update_user",
+		Contents: recsourceContents,
+	}
+
+	messaging.GetCentrifugoService().Publish(ctx, &resource)
+
     SendResource(map[string]string{"avatar_url": avatarURL}, w)
 }
 
@@ -475,6 +516,24 @@ func DeleteAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Content-Type", "application/json")
     w.Write([]byte(`{"avatar_url":""}`))
+
+	*user.AvatarUrl = ""
+
+	recsourceContents, err := json.Marshal(user)
+	if err != nil {
+		slog.Error("Error marshalling user data", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	resource := messaging.EventResource{
+		Channel: fmt.Sprintf("user:%d", uid),
+		Method: http.MethodPost,
+		EventName: "update_user",
+		Contents: recsourceContents,
+	}
+
+	messaging.GetCentrifugoService().Publish(ctx, &resource)
 }
 
 type ErrorResponse struct {

@@ -1,5 +1,6 @@
 import { Message } from "../../structs/models/Models";
 import defaultawatar from "../assets/defaultavatar/defaultavatar.jpg"
+import { useUserInfo } from "../hooks/useUserInfo";
 
 interface ChatMessageProps {
 	message: Message;
@@ -13,6 +14,7 @@ interface ChatMessageProps {
 
 const ChatMessage = ({ message, myId, nameMap, avatarMap, isOwner, isModerator, deleteMessage }: ChatMessageProps) => {
 	const isMine = message.sender_id === myId;
+	const [senderInfo] = useUserInfo(message.sender_id) 
 
 	const bubbleBg = isMine
 		? "bg-[#0d1117] text-[#e5e9f0] self-start"
@@ -31,7 +33,7 @@ const ChatMessage = ({ message, myId, nameMap, avatarMap, isOwner, isModerator, 
 			<div className="flex items-center mb-1">
 				<img
 					src={ //NAPRAW 
-						avatarMap[message.sender_id]
+						senderInfo?.avatar_url
 							? `http://localhost:8080${avatarMap[message.sender_id]}`
 							: defaultawatar
 					}
@@ -39,7 +41,7 @@ const ChatMessage = ({ message, myId, nameMap, avatarMap, isOwner, isModerator, 
 					className="h-8 w-8 rounded-full object-cover mr-2"
 				/>
 				<span className="text-xs font-semibold text-[#cbd5e1]">
-					{nameMap[message.sender_id] ?? `user${message.sender_id}`}
+					{senderInfo.username ?? `user${message.sender_id}`}
 				</span>
 			</div>
 

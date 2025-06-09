@@ -23,7 +23,7 @@ const RoomClickable = ({roomID, ownId}: {roomID: number, ownId: number}) => {
         (() => {
             const other = roomMembers.find(m => m.id !== ownId)!;
 
-            return <FriendButton user={other} room={room}></FriendButton>
+            return <FriendButton userId={other?.id} room={room}></FriendButton>
         })()
 	)
 }
