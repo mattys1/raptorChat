@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Call, Message } from "../../structs/models/Models";
 import CallMessage from "./CallMessage";
 import ChatMessage from "./ChatMessage";
@@ -42,24 +43,34 @@ const MessageTimeline = ({messages, calls, myId, nameMap, avatarMap, isOwner, is
 
 	console.log("MessageTimeline items:", items);
 
+	const itemsEndRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		itemsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [items])
+
 	return (
-		items.map(item => {
-			return (
-				item.type === "message" ? 
-					<ChatMessage 
-						message={item.contents as Message} 
-						myId={myId}
-						nameMap={nameMap} 
-						avatarMap={avatarMap}
-						isOwner={isOwner}
-						isModerator={isModerator}
-						deleteMessage={deleteMessage}
-					/> : 
-					<CallMessage 
-						call={item.contents as Call}
-					/>
-			)
-		})
+		<>
+			{items.map((item, index) => (
+				<div key={index}>
+					{item.type === "message" ? 
+						<ChatMessage 
+							message={item.contents as Message} 
+							myId={myId}
+							nameMap={nameMap} 
+							avatarMap={avatarMap}
+							isOwner={isOwner}
+							isModerator={isModerator}
+							deleteMessage={deleteMessage}
+						/> : 
+						<CallMessage 
+							call={item.contents as Call}
+						/>
+					}
+				</div>
+			))}
+			<div ref={itemsEndRef} />
+		</>
 	)
 }
 
