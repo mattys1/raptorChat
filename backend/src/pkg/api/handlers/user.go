@@ -195,6 +195,8 @@ func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+	slog.Info("Fetched friends", "friends", friends)
+
     if err := SendResource(friends, w); err != nil {
         slog.Error("Error sending friends", "error", err)
     }

@@ -26,6 +26,8 @@ export const useInviteFriendsHook = (uID: number) => {
 
 	return {
 		nonFriends: allUsers.filter(u => {
+			console.log("Friends:", friends)
+			console.log("non friends", !friends.some(f => f?.id === u?.id))
 			return !friends.some(f => f?.id === u?.id)
 		})
 	}

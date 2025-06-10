@@ -216,8 +216,7 @@ func (q *Queries) GetDMByUsers(ctx context.Context, arg GetDMByUsersParams) (Roo
 
 const getFriendsOfUser = `-- name: GetFriendsOfUser :many
 SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u 
-NATURAL JOIN friendships f
-WHERE ? OR f.second_id = ?
+JOIN friendships f ON f.first_id = ? OR f.second_id = ?
 `
 
 type GetFriendsOfUserParams struct {

@@ -15,6 +15,8 @@ import (
 )
 
 func CreateInviteHandler(w http.ResponseWriter, r *http.Request) {
+	// dao := db.GetDao()
+
     resource, err := messaging.GetEventResourceFromRequest(r)
     if err != nil {
         http.Error(w, "Error unmarshalling request body into messaging.EventResource", http.StatusBadRequest)
@@ -34,6 +36,20 @@ func CreateInviteHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+	// roomMembers, err := dao.GetUsersByRoom(r.Context(), *invite.RoomID)
+	// assert.That(roomMembers != nil, "asdfadfsdfasasdf", nil)
+	// if err != nil {
+	// 	http.Error(w, "Error retrieving room members", http.StatusInternalServerError)
+	// 	return
+	// }
+	//
+	// for _, member := range roomMembers {
+	// 	if member.ID == invite.ReceiverID {
+	// 		http.Error(w, "User is already a member of the room or in frineds list", http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
+	//
     ormInv := &orm.Invite{
         Type:       orm.InvitesType(invite.Type),
         State:      orm.InvitesState(invite.State),
@@ -117,7 +133,7 @@ func UpdateInviteHandler(w http.ResponseWriter, r *http.Request) {
                 Type:    db.RoomsTypeDirect,
             })
             if err != nil {
-                http.Error(w, "Error creating DM room", http.StatusInternalServerError)
+                http.Error(w, "Error creating DM room, users are already friends", http.StatusInternalServerError)
                 return
             }
 
