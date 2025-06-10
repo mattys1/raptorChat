@@ -67,7 +67,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
 
 				case "call_rejected":
 					if (outgoingCall && contents.room_id === outgoingCall.room_id) {
-						alert("Call rejected");
 						setOutgoing(null);
 					}
 					break;

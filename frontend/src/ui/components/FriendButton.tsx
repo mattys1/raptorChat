@@ -21,7 +21,7 @@ const FriendButton = ({ userId, room }: { userId: number; room: Room }) => {
 				src={avatarSrc}
 				alt={userInfo?.username || "User avatar"}
 			/>
-			<span className="truncate">{userInfo?.username}</span>
+			<span className="truncate">{userInfo.username || "<DELETED_USER>"}</span>
 		</div>
 	);
 };

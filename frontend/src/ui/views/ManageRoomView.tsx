@@ -3,12 +3,15 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useManageRoomHook } from "../hooks/views/useManageRoomHook";
 import { useRoomRoles } from "../hooks/useRoomRoles";
+import { useResourceFetcher } from "../hooks/useResourceFetcher";
+import { Room } from "../../structs/models/Models";
 
 const ManageRoomView: React.FC = () => {
   const roomId = Number(useParams().chatId);
   const navigate = useNavigate();
 
   const { isOwner } = useRoomRoles(roomId);
+  const [roomInfo] = useResourceFetcher<Room | null>(null ,`/api/rooms/${roomId}`)
 
   const { users, designateMod, deleteRoom } = useManageRoomHook(
     roomId,
@@ -19,7 +22,7 @@ const ManageRoomView: React.FC = () => {
     <div className="flex-1 bg-[#394A59] min-h-screen p-4">
       <div className="max-w-3xl mx-auto bg-[#1E2B3A] text-white rounded-lg shadow p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Manage room #{roomId}</h2>
+          <h2 className="text-2xl font-bold">Manage room {roomInfo?.name}</h2>
           <button
             onClick={() => navigate(-1)}
             className="px-3 py-1 bg-gray-600 rounded hover:bg-gray-500 transition"
