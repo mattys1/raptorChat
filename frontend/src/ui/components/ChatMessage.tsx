@@ -12,7 +12,7 @@ interface ChatMessageProps {
 	deleteMessage: (message: Message) => void;
 }
 
-const ChatMessage = ({ message, myId, nameMap, avatarMap, isOwner, isModerator, deleteMessage }: ChatMessageProps) => {
+const ChatMessage = ({ message, myId, avatarMap, isOwner, isModerator, deleteMessage }: ChatMessageProps) => {
 	const isMine = message.sender_id === myId;
 	const [senderInfo] = useUserInfo(message.sender_id) 
 

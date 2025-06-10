@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes";
-import { Room, User } from "../../structs/models/Models";
+import { Room } from "../../structs/models/Models";
 import defaultavatar from "../assets/defaultavatar/defaultavatar.jpg";
 import { useUserInfo } from "../hooks/useUserInfo";
 
