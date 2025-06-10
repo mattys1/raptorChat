@@ -25,6 +25,7 @@ export interface User {
 	username: string;
 	email: string;
 	created_at: Date;
+	avatar_url?: string;
 }
 
 export interface UsersRoom {
@@ -54,4 +55,22 @@ export interface Invite {
 	room_id: number | null;
 	issuer_id: number;
 	receiver_id: number;
+}
+
+export const CallStatus = {
+	Active: "active",
+	Completed: "completed",
+	Rejected: "rejected",
+}
+
+export type CallStatus = typeof CallStatus[keyof typeof CallStatus];
+
+export interface Call {
+	id: number;
+	room_id: number;
+	status: CallStatus;
+	created_at: string;
+	participant_count: number;
+	peak_participant_count: number;
+	ended_at: string | null;
 }

@@ -1,36 +1,24 @@
+// frontend/src/ui/views/MainView.tsx
 import React from "react";
-import "./Start.css";
-import { useMainHook } from "../hooks/views/useStartHook";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "../routes";
+import RecentActivity from "../components/RecentActivity";
 
 const MainView: React.FC = () => {
-	const props = useMainHook()
-	const navigate = useNavigate()
-	// const users = props.users
 
-	// return (
-	// 	<div>
-	// 		{users.map((user) => {
-	// 			return(
-	// 				<li key={user.id}>
-	// 					{user.username}
-	// 					{user.email}
-	// 					{user.created_at.toString()}
-	// 				</li>
-	// 			)
-	// 		})}
-	// 		<h1>Welcome to raptorChat!</h1>
-	// 		<button className="add-friend-btn">
-	// 			<span className="icon">+</span> Add Friend
-	// 		</button>
-	// 	</div>
-	// );
+	return (
+		<div>
+			<div
+				className="
+				flex flex-col items-center justify-center
+				bg-[#394A59] text-white
+				p-4
+				"
+			>
+				<h1 className="text-3xl font-semibold mb-6">Welcome to raptorChat!</h1>
 
-	return <>
-		test <br/>
-		<button onClick={() => navigate(`${ROUTES.MAIN}/invites`)}>See invites</button>
-	</>
+			</div>
+			<RecentActivity />
+		</div>
+	);
 };
 
 export default MainView;

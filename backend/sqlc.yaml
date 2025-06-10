@@ -1,7 +1,7 @@
 version: "2"
 sql:
   - engine: "mysql"
-    schema: "./db/migrations"
+    schema: "./db/migrations/schema"
     queries: "./db/queries"
     gen:
       go:
@@ -14,6 +14,16 @@ sql:
             go_type:
               type: "string"
               pointer: true
+          - db_type: "tinyint"
+            nullable: true
+            go_type:
+              type: "bool"
+              pointer: true
+          - db_type: "timestamp"
+            nullable: true
+            go_type:
+              type: "time.Time"
+              pointer: true
           - db_type: "varchar"
             nullable: true
             go_type:
@@ -25,4 +35,12 @@ sql:
             go_type:
               type: "uint64"
               pointer: true
+          - db_type: "int"
+            nullable: true
+            go_type:
+              type: "int32"
+              pointer: true
+          - column: users.password # prevent exporting the struct tag
+            go_struct_tag: json:"-" 
+
 

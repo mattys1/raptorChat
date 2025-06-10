@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { EventResource } from "../../structs/Message";
 import { SERVER_URL } from "../../api/routes";
 
@@ -32,7 +32,7 @@ export const useSendEventMessage = <T>(
 				throw new Error(`Error sending message: ${res.statusText}`);
 			}
 
-			const data = await res.json() as EventResource<T>;
+			const data = String(res.body) ? null : await res.json() as EventResource<T>;
 			setState(ResponseStates.SUCCESS);
 			return data;
 		} catch (err) {

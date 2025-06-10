@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavigateFunction } from "react-router-dom";
-import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
+import { useLoginHook } from "./useLoginHook";
 
 export function useRegistrationHook(navigate: NavigateFunction) {
 	const [email, setEmail] = useState("");
@@ -9,8 +9,9 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 	const [password, setPassword] = useState("");
 	const [repeatPassword, setRepeatPassword] = useState("");
 	const [loading, setLoading] = useState(false);
+	const loginData = useLoginHook(navigate)
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
 		if (password !== repeatPassword) {
@@ -24,16 +25,25 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 			const response = await fetch(SERVER_URL + "/register", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ email, username, password }),
+				body: JSON.stringify({ email , username, password }),
 			});
 
 			if (response.ok) {
+				// navigate(ROUTES.MAIN);
+				if(email === "" || username === "" || password === "") {
+					console.log("Email, username or password is empty. Registration aborted.");
+					return
+				}
+				loginData.setEmail(email)
+				loginData.setPassword(password)
+
+				await loginData.handleSubmit(email, password, e)
 				alert("Registration successful!");
-				navigate(ROUTES.MAIN);
 			} else {
 				setLoading(false);
 				alert("Registration failed. Server responded with an error.");
 			}
+
 		} catch (error) {
 			setLoading(false);
 			console.error("Registration request failed:", error);
@@ -53,7 +63,7 @@ export function useRegistrationHook(navigate: NavigateFunction) {
 		setUsername,
 		setPassword,
 		setRepeatPassword,
-		handleSubmit
+		handleSubmit: handleRegister
 	}
 
 }

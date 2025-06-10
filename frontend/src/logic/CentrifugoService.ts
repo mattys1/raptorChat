@@ -1,5 +1,4 @@
 import { Centrifuge, Subscription } from "centrifuge";
-import { createSessionStorage } from "react-router-dom";
 
 export class CentrifugoService {
 	private static instance: Centrifuge | null = null

@@ -1,12 +1,3 @@
--- name: GetAllUsers :many
-SELECT * FROM users;
-
--- name: GetUserById :one
-SELECT * FROM users WHERE id = ?;
-
--- name: GetUserByEmail :one
-SELECT * FROM users WHERE email = ? LIMIT 1;
-
 -- name: GetAllRooms :many
 SELECT * FROM rooms;
 
@@ -18,6 +9,11 @@ WHERE ur.user_id = ?;
 -- name: GetRoomById :one
 SELECT * FROM rooms WHERE id = ?;
 
+-- name: GetDMByUsers :one
+SELECT r.* FROM rooms r JOIN users_rooms ur ON ur.room_id = r.id 
+WHERE type = 'direct' AND ur.user_id IN (?, ?)
+GROUP BY r.id;
+
 -- name: CreateRoom :execresult
 INSERT INTO rooms (name, owner_id, type) VALUES (?, ?, ?);
 
@@ -27,17 +23,20 @@ DELETE FROM rooms WHERE id = ?;
 -- name: UpdateRoom :exec
 UPDATE rooms SET name = ?, type = ?, owner_id = ? WHERE id = ?;
 
--- name: CreateUser :exec
-INSERT INTO users (username, email, password, created_at)
-VALUES (?, ?, ?, NOW());
-
 -- name: GetMessagesByRoom :many
 SELECT * FROM messages WHERE room_id = ?;
+
+-- name: GetRecentMessagesByUserLimited :many
+SELECT * FROM messages
+WHERE sender_id = ? AND is_deleted = FALSE ORDER BY created_at DESC LIMIT ?;
 
 -- name: GetUsersByRoom :many
 SELECT u.* FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?;
+
+-- name: GetCountOfRoom :one
+SELECT member_count FROM rooms WHERE id = ?;
 
 -- name: AddUserToRoom :exec
 INSERT INTO users_rooms (user_id, room_id) VALUES (?, ?);
@@ -48,19 +47,8 @@ SELECT * FROM messages WHERE id = ?;
 -- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?);
 
--- name: GetInviteById :one
-SELECT * FROM invites WHERE id = ?;
-
--- name: CreateInvite :execresult
-INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?);
-
--- name: UpdateInvite :exec
-UPDATE invites SET state = ? WHERE id = ?;
-
--- name: GetInvitesToUser :many
-SELECT * FROM invites i WHERE i.receiver_id = ?;
--- name: GetRoles :many
-SELECT id, name FROM roles;
+-- name: DeleteMessage :exec
+UPDATE messages SET is_deleted = TRUE WHERE id = ?;
 
 -- name: GetPermissions :many
 SELECT id, name FROM permissions;
@@ -106,9 +94,10 @@ INSERT INTO friendships (first_id, second_id, dm_id) VALUES (?, ?, ?);
 DELETE FROM friendships WHERE id = ?;
 
 -- name: GetFriendsOfUser :many
-SELECT DISTINCT u.* FROM users u 
-NATURAL JOIN friendships f
-WHERE sqlc.arg(user_id) OR f.second_id = sqlc.arg(user_id);
+SELECT u.* FROM users u
+JOIN friendships f ON (f.first_id = u.id OR f.second_id = u.id)
+WHERE (f.first_id = sqlc.arg(user_id) OR f.second_id = sqlc.arg(user_id))
+AND u.id != sqlc.arg(user_id);
 
 -- name: GetRoleByName :one
 SELECT id, name FROM roles WHERE name = ? LIMIT 1;

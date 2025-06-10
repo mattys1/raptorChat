@@ -14,5 +14,7 @@ RUN npm install
 COPY . .
 RUN --mount=type=cache,target=/root/.cache npm run dist:linux
 
-FROM scratch AS export
-COPY --from=build /app/dist/frontend-*.AppImage /dist/
+FROM alpine:latest AS export
+
+RUN mkdir -p /temp_dist
+COPY --from=build /app/dist/frontend-*.AppImage /temp_dist

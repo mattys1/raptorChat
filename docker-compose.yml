@@ -1,7 +1,21 @@
 services:
+  swagger-gen:
+    image: golang:1.24-alpine
+    working_dir: /backend
+    volumes:
+      - ./backend:/backend
+      - ./swagger:/swagger
+    entrypoint: 
+      sh -c "
+      apk add --no-cache git &&
+      go install github.com/swaggo/swag/cmd/swag@latest &&
+      swag init -g src/main.go -o /swagger
+      "
+    restart: "no"
   backend:
     build:
       context: ./backend
+    working_dir: /app
     command: ./backend
     ports:
       - "8080:8080"
@@ -18,6 +32,9 @@ services:
       IS_DOCKER: 1
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      USE_ORM: true
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY}
+      CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_HTTP_API_KEY}
     depends_on:
       mysql: 
         condition: service_started
@@ -29,6 +46,8 @@ services:
         condition: service_started
       # asyncapi-ui:
       #   condition: service_started
+    volumes:
+      - ./backend/avatars:/app/avatars
 
   mysql:
     image: mariadb:lts
@@ -57,24 +76,36 @@ services:
     command: ["generate"]
 
   db-migrate:
-    image: gomicro/goose
-    networks:
-      - app-network
-    depends_on: 
-      mysql:
-        condition: service_healthy
-    environment:
-      GOOSE_DRIVER: mysql
-      GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3306)/${DB_NAME}
-    volumes:
-      - ./backend/db/migrations:/migrations
-    command: ["sh", "-c", "goose ${MIGRATION_DIRECTION:-up} --dir /migrations ${MIGRATION_VERSION:-}"]
+      image: gomicro/goose
+      networks:
+        - app-network
+      depends_on: 
+        mysql:
+          condition: service_healthy
+      environment:
+        GOOSE_DRIVER: mysql
+        GOOSE_DBSTRING: root:${DB_ROOT_PASSWORD}@tcp(mysql:3306)/${DB_NAME}
+      volumes:
+        - ./backend/db/migrations/schema:/migrations/schema
+        - ./backend/db/migrations/behaviour:/migrations/behaviour
+      command: >
+        sh -c "
+          mkdir -p /migrations/merged_migrations &&
+          cp -r /migrations/schema/* /migrations/merged_migrations/ &&
+          cp -r /migrations/behaviour/* /migrations/merged_migrations/ &&          
+          goose --dir /migrations/merged_migrations ${MIGRATION_DIRECTION:-up} ${MIGRATION_VERSION}
+        "
 
   centrifugo:
+    environment:
+      - CENTRIFUGO_ADMIN_PASSWORD=${CENTRIFUGO_ADMIN_PASSWORD}
+      - CENTRIFUGO_ADMIN_SECRET=${CENTRIFUGO_ADMIN_SECRET}
+      - CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY=${JWT_SIGNING_KEY}
+      - CENTRIFUGO_HTTP_API_KEY=${CENTRIFUGO_HTTP_API_KEY}
     container_name: centrifugo
     image: centrifugo/centrifugo:v6
     volumes:
-      - ./backend/centrifugo/config.json:/centrifugo/config.json
+      - ./backend/centrifugo:/centrifugo
     command: centrifugo -c config.json
     ports:
       - 8000:8000
@@ -97,20 +128,30 @@ services:
       - ./backend/livekit/config.yaml:/etc/livekit/config.yaml:ro
     networks:
       - app-network
+    depends_on: 
+      mysql:
+        condition: service_healthy
 
   frontend-build:
-    build: 
+    build:
       context: ./frontend
-      target: export
+      dockerfile: dockerfile
+    volumes:
+      - ./frontend/dist:/dist
+    command: ["sh", "-c", "cp /temp_dist/* /dist"]
 
   swagger:
-    image: swaggerapi/swagger-ui
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    depends_on:
+      swagger-gen:
+        condition: service_completed_successfully
     environment:
-      - SWAGGER_JSON=/swagger/swagger.yaml
-    ports:
-      - "8081:8080"
+      SWAGGER_JSON: /swagger/swagger.yaml
     volumes:
-      - ./swagger:/swagger
+      - ./swagger:/swagger:ro
+    ports:
+      - "8001:8080"
     networks:
       - app-network
 

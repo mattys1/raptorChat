@@ -9,6 +9,7 @@ import (
 	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 	msg "github.com/mattys1/raptorChat/src/pkg/messaging"
+	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
 
 type Hub struct {
@@ -30,49 +31,51 @@ func newHub(router *msg.MessageRouter) *Hub {
 }
 
 func (hub *Hub) Run() {
-	for {
-		// FIXME: ideally, clients should be prepared elsewhere and registered here, not connections.
-		select {
-		case conn := <-hub.Register:
-			// FIXME: AAAAAAA
-			assert.That(len(hub.Clients) + 1 <= 2, "Too many clients", nil)
+    for {
+        select {
+        case conn := <-hub.Register:
+            assert.That(len(hub.Clients)+1 <= 2, "Too many clients", nil)
 
-			user, err := db.GetDao().GetUserById(hub.ctx, uint64(len(hub.Clients) + 1))
-			if err != nil {
-				log.Println("Error getting user", err)
-				break
-			}
+            id := uint64(len(hub.Clients) + 1)
+            ormUser, err := orm.GetUserByID(hub.ctx, id)
+            if err != nil {
+                log.Println("Error fetching user via ORM:", err)
+                break
+            }
 
-			hub.Clients[&user] = conn
-			// client.User = &user
+            dbUser := db.User{
+                ID:        ormUser.ID,
+                Username:  ormUser.Username,
+                Email:     ormUser.Email,
+                CreatedAt: ormUser.CreatedAt,
+            }
 
-			log.Println("Client registered", user, conn)
-			go msg.ListenForMessages(conn, hub.router, hub.Unregister, func() map[*db.User]*websocket.Conn { return hub.Clients })
+            hub.Clients[&dbUser] = conn
+            go msg.ListenForMessages(conn, hub.router, hub.Unregister, func() map[*db.User]*websocket.Conn {
+                return hub.Clients
+            })
 
-		case conn := <-hub.Unregister:
-			assert.That(conn != nil, "Unregistering nil connection", nil)
-			hub.router.UnsubscribeAll(conn)
+        case conn := <-hub.Unregister:
+            assert.That(conn != nil, "Unregistering nil connection", nil)
+            hub.router.UnsubscribeAll(conn)
 
-			for user, c := range hub.Clients {
-				if c == conn {
-					delete(hub.Clients, user)
-					log.Println("Client unregistered", user, c)
-					conn.Close(websocket.StatusNormalClosure, "Connection closing")
-					break
-				}
-			}
-		}
-	}
+            for user, c := range hub.Clients {
+                if c == conn {
+                    delete(hub.Clients, user)
+                    conn.Close(websocket.StatusNormalClosure, "Connection closing")
+                    break
+                }
+            }
+        }
+    }
 }
 
 var instance *Hub
 var once sync.Once
 
 func GetHub() *Hub {
-	once.Do(func() {
-		router := msg.NewMessageRouter()
-		instance = newHub(router)
-	})
-
-	return instance
+    once.Do(func() {
+        instance = newHub(msg.NewMessageRouter())
+    })
+    return instance
 }

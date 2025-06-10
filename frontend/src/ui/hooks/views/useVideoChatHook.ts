@@ -1,22 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from "react"
-import { useFetchAndListen } from "../useFetchAndListen"
-import { usePresence } from "../usePresence"
-import { useSelectedMicrophone } from "../useSelectedMicrophone"
-import { useConnectionState } from "@livekit/components-react"
+import { useEffect, useState } from "react"
 import { SERVER_URL } from "../../../api/routes"
 import { Room } from "livekit-client"
+import { useSendResource } from "../useSendResource"
 
 export const useVideoChatHook = (chatId: Number) => {
-	// const [presence] = usePresence(`room:${chatId}:video`)
-	const audio = useRef<HTMLAudioElement | null>(null)
-	const stream = useSelectedMicrophone(localStorage.getItem("selectedMicrophone") ?? "").stream
-	// const connectionState = useConnectionState();
+	const mic = localStorage.getItem("selectedMicrophone") ?? ""
+	const cam = localStorage.getItem("selectedCamera") ?? ""
 	const [livekitToken, setLivekitToken] = useState<string | null>(null)
 	const [room] = useState(() => new Room({
-		adaptiveStream: true,
 		dynacast: true,
+		videoCaptureDefaults: {
+			resolution: {
+				width: 1920,
+				height: 1080,
+				frameRate: 30
+			},
+		},
+		publishDefaults: {
+			videoEncoding: {
+				maxBitrate: 2_700_000,
+				maxFramerate: 30,
+			},
+		},
 	}));
 
+	const [, , leaveRoom] = useSendResource<null>(`/api/rooms/${chatId}/calls/leave`, "POST");
 
 	useEffect(() => {
 		let isValid = true;
@@ -44,7 +52,7 @@ export const useVideoChatHook = (chatId: Number) => {
 
 		return () => {
 			isValid = false;
-			setLivekitToken(null); // Reset on unmount
+			setLivekitToken(null);
 		};
 	}, [chatId]);
 
@@ -55,9 +63,8 @@ export const useVideoChatHook = (chatId: Number) => {
 
 		const connect = async () => {
 			if(mounted) {
-				await room.connect("ws://localhost:7880", livekitToken!).catch((err) => {
-					console.error("Error connecting to LiveKit room", err);
-				});
+				await room.connect("ws://localhost:7880", livekitToken!).catch((err) => { console.error("Error connecting to LiveKit room", err) })
+				console.log("Active device now:", room.getActiveDevice('audioinput'));
 			}
 		};
 		connect();
@@ -65,27 +72,27 @@ export const useVideoChatHook = (chatId: Number) => {
 		return () => {
 			mounted = false;
 			room.disconnect();
+
+			leaveRoom(null)
 		};
 	}, [room, livekitToken]);
-	
+
 	useEffect(() => {
-		if(!audio.current || !stream) return
+		if(mic) {
+			(async () => {
+				await room.switchActiveDevice('audioinput', mic)
+				console.log("Active device now:", room.getActiveDevice('audioinput'));
+			})()
+		}
 
-		audio.current.srcObject = stream
-
-		audio.current.play().catch(err => {
-			console.log("Cant autoplay", err)
-		})
-	}, [stream, audio])
-
-	const listen = useCallback(() => {
-		if(!audio.current) return
-		if(!stream) return
-
-		audio.current.srcObject = stream
-		audio.current.play()
-	}, [chatId])
-
+		if(cam) {
+			(async () => {
+				await room.switchActiveDevice('videoinput', cam)
+				console.log("Active device now:", room.getActiveDevice('audioinput'));
+			})()
+		}
+	}, [room, mic])
+	
 	useEffect(() => {
 		if(import.meta.env.DEV) {
 			console.log("Debugging enabled")
@@ -94,9 +101,6 @@ export const useVideoChatHook = (chatId: Number) => {
 	}, [])
 
 	return {
-		stream,
-		audio,
-		listen,
 		room,
 	}
 }

@@ -82,28 +82,6 @@ func (q *Queries) CreateFriendship(ctx context.Context, arg CreateFriendshipPara
 	return q.db.ExecContext(ctx, createFriendship, arg.FirstID, arg.SecondID, arg.DmID)
 }
 
-const createInvite = `-- name: CreateInvite :execresult
-INSERT INTO invites (issuer_id, receiver_id, room_id, type, state) VALUES (?, ?, ?, ?, ?)
-`
-
-type CreateInviteParams struct {
-	IssuerID   uint64       `json:"issuer_id"`
-	ReceiverID uint64       `json:"receiver_id"`
-	RoomID     *uint64      `json:"room_id"`
-	Type       InvitesType  `json:"type"`
-	State      InvitesState `json:"state"`
-}
-
-func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createInvite,
-		arg.IssuerID,
-		arg.ReceiverID,
-		arg.RoomID,
-		arg.Type,
-		arg.State,
-	)
-}
-
 const createMessage = `-- name: CreateMessage :execresult
 INSERT INTO messages (room_id, sender_id, contents) VALUES (?, ?, ?)
 `
@@ -132,28 +110,21 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (sql.Res
 	return q.db.ExecContext(ctx, createRoom, arg.Name, arg.OwnerID, arg.Type)
 }
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (username, email, password, created_at)
-VALUES (?, ?, ?, NOW())
-`
-
-type CreateUserParams struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser, arg.Username, arg.Email, arg.Password)
-	return err
-}
-
 const deleteFriendship = `-- name: DeleteFriendship :exec
 DELETE FROM friendships WHERE id = ?
 `
 
 func (q *Queries) DeleteFriendship(ctx context.Context, id uint64) error {
 	_, err := q.db.ExecContext(ctx, deleteFriendship, id)
+	return err
+}
+
+const deleteMessage = `-- name: DeleteMessage :exec
+UPDATE messages SET is_deleted = TRUE WHERE id = ?
+`
+
+func (q *Queries) DeleteMessage(ctx context.Context, id uint64) error {
+	_, err := q.db.ExecContext(ctx, deleteMessage, id)
 	return err
 }
 
@@ -176,7 +147,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uint64) error {
 }
 
 const getAllRooms = `-- name: GetAllRooms :many
-SELECT id, name, owner_id, type FROM rooms
+SELECT id, name, owner_id, type, member_count FROM rooms
 `
 
 func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
@@ -193,6 +164,7 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 			&i.Name,
 			&i.OwnerID,
 			&i.Type,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}
@@ -207,43 +179,46 @@ func (q *Queries) GetAllRooms(ctx context.Context) ([]Room, error) {
 	return items, nil
 }
 
-const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, created_at, password FROM users
+const getCountOfRoom = `-- name: GetCountOfRoom :one
+SELECT member_count FROM rooms WHERE id = ?
 `
 
-func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getAllUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Username,
-			&i.Email,
-			&i.CreatedAt,
-			&i.Password,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetCountOfRoom(ctx context.Context, id uint64) (*int32, error) {
+	row := q.db.QueryRowContext(ctx, getCountOfRoom, id)
+	var member_count *int32
+	err := row.Scan(&member_count)
+	return member_count, err
+}
+
+const getDMByUsers = `-- name: GetDMByUsers :one
+SELECT r.id, r.name, r.owner_id, r.type, r.member_count FROM rooms r JOIN users_rooms ur ON ur.room_id = r.id 
+WHERE type = 'direct' AND ur.user_id IN (?, ?)
+GROUP BY r.id
+`
+
+type GetDMByUsersParams struct {
+	UserID   uint64 `json:"user_id"`
+	UserID_2 uint64 `json:"user_id_2"`
+}
+
+func (q *Queries) GetDMByUsers(ctx context.Context, arg GetDMByUsersParams) (Room, error) {
+	row := q.db.QueryRowContext(ctx, getDMByUsers, arg.UserID, arg.UserID_2)
+	var i Room
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.OwnerID,
+		&i.Type,
+		&i.MemberCount,
+	)
+	return i, err
 }
 
 const getFriendsOfUser = `-- name: GetFriendsOfUser :many
-SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password FROM users u 
-NATURAL JOIN friendships f
-WHERE ? OR f.second_id = ?
+SELECT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u
+JOIN friendships f ON (f.first_id = u.id OR f.second_id = u.id)
+WHERE (f.first_id = ? OR f.second_id = ?)
+AND u.id != ?
 `
 
 type GetFriendsOfUserParams struct {
@@ -251,7 +226,7 @@ type GetFriendsOfUserParams struct {
 }
 
 func (q *Queries) GetFriendsOfUser(ctx context.Context, arg GetFriendsOfUserParams) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getFriendsOfUser, arg.UserID, arg.UserID)
+	rows, err := q.db.QueryContext(ctx, getFriendsOfUser, arg.UserID, arg.UserID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -265,58 +240,7 @@ func (q *Queries) GetFriendsOfUser(ctx context.Context, arg GetFriendsOfUserPara
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getInviteById = `-- name: GetInviteById :one
-SELECT id, type, state, room_id, issuer_id, receiver_id FROM invites WHERE id = ?
-`
-
-func (q *Queries) GetInviteById(ctx context.Context, id uint64) (Invite, error) {
-	row := q.db.QueryRowContext(ctx, getInviteById, id)
-	var i Invite
-	err := row.Scan(
-		&i.ID,
-		&i.Type,
-		&i.State,
-		&i.RoomID,
-		&i.IssuerID,
-		&i.ReceiverID,
-	)
-	return i, err
-}
-
-const getInvitesToUser = `-- name: GetInvitesToUser :many
-SELECT id, type, state, room_id, issuer_id, receiver_id FROM invites i WHERE i.receiver_id = ?
-`
-
-func (q *Queries) GetInvitesToUser(ctx context.Context, receiverID uint64) ([]Invite, error) {
-	rows, err := q.db.QueryContext(ctx, getInvitesToUser, receiverID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Invite
-	for rows.Next() {
-		var i Invite
-		if err := rows.Scan(
-			&i.ID,
-			&i.Type,
-			&i.State,
-			&i.RoomID,
-			&i.IssuerID,
-			&i.ReceiverID,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -332,7 +256,7 @@ func (q *Queries) GetInvitesToUser(ctx context.Context, receiverID uint64) ([]In
 }
 
 const getMessageById = `-- name: GetMessageById :one
-SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE id = ?
+SELECT id, sender_id, room_id, contents, created_at, is_deleted, deleted_at FROM messages WHERE id = ?
 `
 
 func (q *Queries) GetMessageById(ctx context.Context, id uint64) (Message, error) {
@@ -344,12 +268,14 @@ func (q *Queries) GetMessageById(ctx context.Context, id uint64) (Message, error
 		&i.RoomID,
 		&i.Contents,
 		&i.CreatedAt,
+		&i.IsDeleted,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getMessagesByRoom = `-- name: GetMessagesByRoom :many
-SELECT id, sender_id, room_id, contents, created_at FROM messages WHERE room_id = ?
+SELECT id, sender_id, room_id, contents, created_at, is_deleted, deleted_at FROM messages WHERE room_id = ?
 `
 
 func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Message, error) {
@@ -367,6 +293,8 @@ func (q *Queries) GetMessagesByRoom(ctx context.Context, roomID uint64) ([]Messa
 			&i.RoomID,
 			&i.Contents,
 			&i.CreatedAt,
+			&i.IsDeleted,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -469,31 +397,34 @@ func (q *Queries) GetPermissionsByUser(ctx context.Context, userID uint64) ([]Pe
 	return items, nil
 }
 
-const getRoleByName = `-- name: GetRoleByName :one
-SELECT id, name FROM roles WHERE name = ? LIMIT 1
+const getRecentMessagesByUserLimited = `-- name: GetRecentMessagesByUserLimited :many
+SELECT id, sender_id, room_id, contents, created_at, is_deleted, deleted_at FROM messages
+WHERE sender_id = ? AND is_deleted = FALSE ORDER BY created_at DESC LIMIT ?
 `
 
-func (q *Queries) GetRoleByName(ctx context.Context, name string) (Role, error) {
-	row := q.db.QueryRowContext(ctx, getRoleByName, name)
-	var i Role
-	err := row.Scan(&i.ID, &i.Name)
-	return i, err
+type GetRecentMessagesByUserLimitedParams struct {
+	SenderID uint64 `json:"sender_id"`
+	Limit    int32  `json:"limit"`
 }
 
-const getRoles = `-- name: GetRoles :many
-SELECT id, name FROM roles
-`
-
-func (q *Queries) GetRoles(ctx context.Context) ([]Role, error) {
-	rows, err := q.db.QueryContext(ctx, getRoles)
+func (q *Queries) GetRecentMessagesByUserLimited(ctx context.Context, arg GetRecentMessagesByUserLimitedParams) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getRecentMessagesByUserLimited, arg.SenderID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Role
+	var items []Message
 	for rows.Next() {
-		var i Role
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.SenderID,
+			&i.RoomID,
+			&i.Contents,
+			&i.CreatedAt,
+			&i.IsDeleted,
+			&i.DeletedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -505,6 +436,17 @@ func (q *Queries) GetRoles(ctx context.Context) ([]Role, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getRoleByName = `-- name: GetRoleByName :one
+SELECT id, name FROM roles WHERE name = ? LIMIT 1
+`
+
+func (q *Queries) GetRoleByName(ctx context.Context, name string) (Role, error) {
+	row := q.db.QueryRowContext(ctx, getRoleByName, name)
+	var i Role
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
 }
 
 const getRolesByUser = `-- name: GetRolesByUser :many
@@ -573,7 +515,7 @@ func (q *Queries) GetRolesByUserInRoom(ctx context.Context, arg GetRolesByUserIn
 }
 
 const getRoomById = `-- name: GetRoomById :one
-SELECT id, name, owner_id, type FROM rooms WHERE id = ?
+SELECT id, name, owner_id, type, member_count FROM rooms WHERE id = ?
 `
 
 func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
@@ -584,12 +526,13 @@ func (q *Queries) GetRoomById(ctx context.Context, id uint64) (Room, error) {
 		&i.Name,
 		&i.OwnerID,
 		&i.Type,
+		&i.MemberCount,
 	)
 	return i, err
 }
 
 const getRoomsByUser = `-- name: GetRoomsByUser :many
-SELECT r.id, r.name, r.owner_id, r.type FROM rooms r
+SELECT r.id, r.name, r.owner_id, r.type, r.member_count FROM rooms r
 JOIN users_rooms ur ON ur.room_id = r.id
 WHERE ur.user_id = ?
 `
@@ -608,6 +551,7 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 			&i.Name,
 			&i.OwnerID,
 			&i.Type,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}
@@ -622,42 +566,8 @@ func (q *Queries) GetRoomsByUser(ctx context.Context, userID uint64) ([]Room, er
 	return items, nil
 }
 
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, created_at, password FROM users WHERE email = ? LIMIT 1
-`
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.Password,
-	)
-	return i, err
-}
-
-const getUserById = `-- name: GetUserById :one
-SELECT id, username, email, created_at, password FROM users WHERE id = ?
-`
-
-func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserById, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.Password,
-	)
-	return i, err
-}
-
 const getUsersByRoom = `-- name: GetUsersByRoom :many
-SELECT u.id, u.username, u.email, u.created_at, u.password FROM users u
+SELECT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u
 JOIN users_rooms ur ON ur.user_id = u.id
 WHERE ur.room_id = ?
 `
@@ -677,6 +587,7 @@ func (q *Queries) GetUsersByRoom(ctx context.Context, roomID uint64) ([]User, er
 			&i.Email,
 			&i.CreatedAt,
 			&i.Password,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -732,20 +643,6 @@ type RemoveRoleFromUserInRoomParams struct {
 
 func (q *Queries) RemoveRoleFromUserInRoom(ctx context.Context, arg RemoveRoleFromUserInRoomParams) error {
 	_, err := q.db.ExecContext(ctx, removeRoleFromUserInRoom, arg.RoomID, arg.UserID, arg.RoleID)
-	return err
-}
-
-const updateInvite = `-- name: UpdateInvite :exec
-UPDATE invites SET state = ? WHERE id = ?
-`
-
-type UpdateInviteParams struct {
-	State InvitesState `json:"state"`
-	ID    uint64       `json:"id"`
-}
-
-func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) error {
-	_, err := q.db.ExecContext(ctx, updateInvite, arg.State, arg.ID)
 	return err
 }
 

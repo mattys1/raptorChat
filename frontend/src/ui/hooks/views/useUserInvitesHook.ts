@@ -1,8 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { Invite } from "../../../structs/models/Models"
 import { useFetchAndListen } from "../useFetchAndListen"
-import { useResourceFetcher } from "../useResourceFetcher"
-import { useEventListener } from "../useEventListener";
 
 type InviteUpdateCallback = (
 	setState: React.Dispatch<React.SetStateAction<Invite[]>>, 
@@ -25,7 +23,7 @@ export const useUserInvitesHook = () => {
 				break;
 		}
 	}, [])
-	const [invites, setInvites] = useFetchAndListen<Invite[], Invite>(
+	const [invites] = useFetchAndListen<Invite[], Invite>(
 		[],
 		`/api/user/${uid}/invites`,
 		`user:${uid}:invites`,

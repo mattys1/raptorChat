@@ -27,7 +27,7 @@ func GetCentrifugoService() *CentrifugoService {
 		}
 		cfg := gocent.Config{
 			Addr: addr,  
-			Key:  "http_secret",                 
+			Key:  os.Getenv("CENTRIFUGO_HTTP_API_KEY"),                 
 		}
 		instance = &CentrifugoService{
 			client: gocent.New(cfg),
@@ -37,7 +37,6 @@ func GetCentrifugoService() *CentrifugoService {
 	return instance
 }
 
-//TODO: there should probably be a way to send an event not tied to a resource
 func (cs *CentrifugoService) Publish(
 	ctx context.Context, resource *EventResource,
 ) error {

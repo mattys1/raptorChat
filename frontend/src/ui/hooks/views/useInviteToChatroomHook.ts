@@ -1,6 +1,5 @@
 import { useResourceFetcher } from "../useResourceFetcher"
-import { Invite, Room, User } from "../../../structs/models/Models"
-import { useSendEventMessage } from "../useSendEventMessage"
+import { User } from "../../../structs/models/Models"
 
 export const useInviteToChatroomHook = (roomId: number) => {
 	const [allUsers] = useResourceFetcher<User[]>([], "/api/user")

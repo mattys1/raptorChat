@@ -1,69 +1,153 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mattys1/raptorChat/src/pkg/db"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/mattys1/raptorChat/src/pkg/orm"
 )
 
-func ListUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := db.GetDao().GetAllUsers(r.Context())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
-}
-
-type createUserReq struct {
+type CreateUserRequest struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req createUserReq
+func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad json", http.StatusBadRequest)
+		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
-	if req.Username == "" || req.Email == "" || req.Password == "" {
-		http.Error(w, "missing fields", http.StatusBadRequest)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Error processing password", http.StatusInternalServerError)
 		return
 	}
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-
-	// dao.CreateUser returns only an error in your generated code
-	err := db.GetDao().CreateUser(r.Context(), db.CreateUserParams{
+	user := orm.User{
 		Username: req.Username,
 		Email:    req.Email,
-		Password: string(hash),
-	})
-	if err != nil {
-		http.Error(w, "db error", http.StatusInternalServerError)
+		Password: string(hashed),
+	}
+
+	if err := orm.CreateUser(ctx, &user); err != nil {
+		if errors.Is(err, orm.ErrAlreadyExists) {
+			http.Error(w, "User with this email already exists", http.StatusBadRequest)
+		} else {
+			http.Error(w, "Error creating user", http.StatusInternalServerError)
+		}
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]any{
+		"id":       user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+	})
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "userID")
-	id, err := strconv.ParseUint(idStr, 10, 64)
+func ListUsersHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	users, err := orm.ListUsers(ctx)
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Error listing users", http.StatusInternalServerError)
 		return
 	}
-	if err := db.GetDao().DeleteUser(r.Context(), id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
+func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodOptions {
+        return
+    }
+    if r.Method != http.MethodDelete {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    idStr := chi.URLParam(r, "userID")
+    id, err := strconv.ParseUint(idStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    var userWithRoles orm.User
+    if err := orm.GetORM().
+        WithContext(ctx).
+        Preload("Roles").
+        Preload("Roles.Role").
+        First(&userWithRoles, id).Error; err != nil {
+        http.Error(w, "Error checking user role: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    for _, ur := range userWithRoles.Roles {
+        if ur.Role.Name == "admin" {
+            http.Error(w, "Cannot delete user: user is an admin", http.StatusBadRequest)
+            return
+        }
+    }
+
+    if err := orm.DeleteUser(ctx, id); err != nil {
+        http.Error(w, "Error deleting user", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
+}
+
+func AssignAdminHandler(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "userID")
+    id, err := strconv.ParseUint(idStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    if err := orm.AssignRoleToUser(ctx, id, "admin"); err != nil {
+        http.Error(w, "Error assigning admin role", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
 }

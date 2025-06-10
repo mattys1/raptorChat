@@ -1,140 +1,992 @@
-basePath: /
+basePath: /api/v1
 definitions:
-  auth.LoginCredentials:
+  db.Invite:
     properties:
+      id:
+        type: integer
+      issuer_id:
+        type: integer
+      receiver_id:
+        type: integer
+      room_id:
+        type: integer
+      state:
+        $ref: '#/definitions/db.InvitesState'
+      type:
+        $ref: '#/definitions/db.InvitesType'
+    type: object
+  db.InvitesState:
+    enum:
+    - pending
+    - accepted
+    - declined
+    type: string
+    x-enum-varnames:
+    - InvitesStatePending
+    - InvitesStateAccepted
+    - InvitesStateDeclined
+  db.InvitesType:
+    enum:
+    - direct
+    - group
+    type: string
+    x-enum-varnames:
+    - InvitesTypeDirect
+    - InvitesTypeGroup
+  db.Message:
+    properties:
+      contents:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      is_deleted:
+        type: boolean
+      room_id:
+        type: integer
+      sender_id:
+        type: integer
+    type: object
+  db.Room:
+    properties:
+      id:
+        type: integer
+      member_count:
+        type: integer
+      name:
+        type: string
+      owner_id:
+        type: integer
+      type:
+        $ref: '#/definitions/db.RoomsType'
+    type: object
+  db.RoomsType:
+    enum:
+    - direct
+    - group
+    type: string
+    x-enum-varnames:
+    - RoomsTypeDirect
+    - RoomsTypeGroup
+  db.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
       email:
         type: string
-      password:
+      id:
+        type: integer
+      username:
         type: string
     type: object
-  auth.RegistrationCredentials:
+  handlers.ErrorResponse:
     properties:
+      message:
+        type: string
+    type: object
+  handlers.UpdatePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  messaging.EventResource:
+    type: object
+  orm.Call:
+    properties:
+      created_at:
+        type: string
+      ended_at:
+        type: string
+      id:
+        type: integer
+      participant_count:
+        type: integer
+      peak_participant_count:
+        type: integer
+      room_id:
+        type: integer
+      status:
+        $ref: '#/definitions/orm.CallsStatus'
+    type: object
+  orm.CallsStatus:
+    enum:
+    - active
+    - completed
+    - rejected
+    type: string
+    x-enum-varnames:
+    - CallsStatusActive
+    - CallsStatusCompleted
+    - CallsStatusRejected
+  orm.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
       email:
         type: string
-      password:
-        type: string
+      id:
+        type: integer
       username:
         type: string
     type: object
 host: localhost:8080
 info:
   contact:
-    email: support@raptorchat.io
+    email: support@raptorchat.example.com
     name: API Support
-  description: This is a sample server for raptorChat.
-  title: raptorChat API
+    url: http://www.swagger.io/support
+  description: This is the API server for RaptorChat.
+  termsOfService: http://swagger.io/terms/
+  title: RaptorChat API
   version: "1.0"
 paths:
-  /login:
+  /api/rooms:
     post:
       consumes:
       - application/json
-      description: Authenticates a user and sets a JWT token cookie upon success.
+      description: Creates a new room with the current user as the owner
       parameters:
-      - description: User credentials
+      - description: Room event resource
         in: body
-        name: credentials
+        name: room
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginCredentials'
+          $ref: '#/definitions/messaging.EventResource'
       produces:
       - application/json
       responses:
-        "200":
-          description: Login successful
+        "201":
+          description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/messaging.EventResource'
         "400":
-          description: Bad request
-          schema:
-            type: string
-        "401":
-          description: Unauthorized
+          description: Error unmarshalling request
           schema:
             type: string
         "500":
           description: Internal Server Error
           schema:
             type: string
-      summary: Log in a user
+      summary: Create a new room
       tags:
-      - auth
-  /protected:
+      - rooms
+  /api/rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a room (only the owner can delete)
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room event resource
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Room deleted successfully
+        "400":
+          description: Invalid room ID or bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - only owner can delete
+          schema:
+            type: string
+        "404":
+          description: Room not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a room
+      tags:
+      - rooms
     get:
-      description: Returns protected data for authenticated users.
+      consumes:
+      - application/json
+      description: Returns details for a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
+            $ref: '#/definitions/db.Room'
+        "400":
+          description: Invalid room ID
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Access protected resource
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a room by ID
       tags:
-      - protected
-  /register:
+      - rooms
+    put:
+      consumes:
+      - application/json
+      description: Updates a room's details (only group rooms can be updated)
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room event resource
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Room updated successfully
+        "400":
+          description: Invalid request body or not a group room
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a room
+      tags:
+      - rooms
+  /api/rooms/{id}/messages:
     post:
       consumes:
       - application/json
-      description: Registers a new user with an email, username, and password.
+      description: Creates a new message in a room and broadcasts it via Centrifugo
       parameters:
-      - description: User registration details
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Message event resource
         in: body
-        name: credentials
+        name: message
         required: true
         schema:
-          $ref: '#/definitions/auth.RegistrationCredentials'
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Message created successfully
+        "400":
+          description: Error unmarshalling request body
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Send a message to a room
+      tags:
+      - rooms
+      - messages
+  /api/rooms/{id}/user:
+    get:
+      consumes:
+      - application/json
+      description: Returns all users who are members of a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Registration successful
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.User'
+            type: array
+        "400":
+          description: Invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get users in a room
+      tags:
+      - rooms
+      - users
+  /api/rooms/{id}/user/count:
+    get:
+      consumes:
+      - application/json
+      description: Returns the number of users in a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get user count in a room
+      tags:
+      - rooms
+  /messages/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a message by ID and notifies all subscribers through Centrifugo
+      parameters:
+      - description: Message resource with ID to delete
+        in: body
+        name: resource
+        required: true
+        schema:
+          $ref: '#/definitions/messaging.EventResource'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message deleted successfully
+          schema:
+            type: string
+        "400":
+          description: Error unmarshalling request body
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Error deleting message
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a message
+      tags:
+      - messages
+  /rooms/{id}/calls:
+    get:
+      consumes:
+      - application/json
+      description: Returns all calls associated with the specified room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of calls for the room
+          schema:
+            items:
+              $ref: '#/definitions/orm.Call'
+            type: array
+        "400":
+          description: Bad request - invalid room ID
+          schema:
+            type: string
+      summary: Get calls for a specific room
+      tags:
+      - calls
+  /rooms/{id}/calls/join:
+    post:
+      consumes:
+      - application/json
+      description: Joins an existing active call in the room or creates a new one
+        if none exists
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully joined or created call
+          schema:
+            $ref: '#/definitions/orm.Call'
+        "400":
+          description: Bad request - invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Join or create a call in a room
+      tags:
+      - calls
+  /rooms/{id}/calls/leave:
+    post:
+      consumes:
+      - application/json
+      description: User leaves the active call in the room; call is ended if this
+        is the last participant
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully left the call
+          schema:
+            type: string
+        "400":
+          description: Bad request - invalid room ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Leave or end a call in a room
+      tags:
+      - calls
+  /rooms/{id}/messages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all non-deleted messages from a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of messages in the room
+          schema:
+            items:
+              $ref: '#/definitions/db.Message'
+            type: array
+        "400":
+          description: Invalid room ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get room messages
+      tags:
+      - rooms
+      - messages
+  /rooms/{id}/moderators/{userID}:
+    post:
+      consumes:
+      - application/json
+      description: Assigns the moderator role to a user in a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID to designate as moderator
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Returns {\"status\": \"moderator added\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - only room owner can designate moderators
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Designate user as a room moderator
+      tags:
+      - rooms
+      - roles
+      - users
+  /rooms/{id}/roles:
+    get:
+      consumes:
+      - application/json
+      description: Returns all roles the authenticated user has in a specific room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of role names
+          schema:
+            items:
+              type: string
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user's roles in a room
+      tags:
+      - rooms
+      - roles
+  /user/{id}/dm:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the direct message conversation between the authenticated
+        user and specified recipient
+      parameters:
+      - description: Recipient ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Direct message object
+          schema:
+            $ref: '#/definitions/db.Room'
+        "400":
+          description: Bad Request - Invalid recipient ID or User ID not found in
+            context
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get direct message conversation with another user
+      tags:
+      - users
+      - rooms
+  /users:
+    get:
+      description: Returns a list of all users in the system except the authenticated
+        user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/orm.User'
+            type: array
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List all users (excluding current user)
+      tags:
+      - users
+  /users/{id}:
+    get:
+      description: Returns the user object for the specified user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orm.User'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+  /users/{id}/invites:
+    get:
+      description: Returns all pending invites sent to the specified user
+      parameters:
+      - description: Target User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Invite'
+            type: array
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get pending invites for a user
+      tags:
+      - users
+      - invites
+  /users/me:
+    get:
+      description: Returns the ID of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User ID
+          schema:
+            type: integer
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get authenticated user's ID
+      tags:
+      - users
+  /users/me/activity:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the authenticated user's 5 most recent messages and calls
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User's recent activity
+          schema:
+            properties:
+              calls:
+                items:
+                  $ref: '#/definitions/orm.Call'
+                type: array
+              messages:
+                items:
+                  $ref: '#/definitions/db.Message'
+                type: array
+            type: object
+        "400":
+          description: User ID not found in context
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user's recent activity
+      tags:
+      - users
+      - activity
+  /users/me/avatar:
+    delete:
+      description: Deletes the authenticated user's avatar file and clears the URL
+        in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Returns {\"avatar_url\": \"\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Server error while deleting avatar
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete user's avatar
+      tags:
+      - users
+      - avatars
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts a multipart/form-data file upload for the authenticated
+        user's avatar, stores it, and updates the user's record
+      parameters:
+      - description: Avatar image file (JPEG/PNG/etc.)
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Returns {\"avatar_url\": \"<url>\"}'
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Bad request
+          description: Bad form data or missing file
           schema:
-            type: string
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Server error while saving avatar
           schema:
-            type: string
-      summary: Register a new user
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Upload or update user's avatar
       tags:
-      - auth
-  /ws:
+      - users
+      - avatars
+  /users/me/friends:
     get:
-      consumes:
-      - application/json
-      description: Upgrades an HTTP connection to a WebSocket connection for real-time
-        communication.
+      description: Returns a list of friends (other users) for the currently authenticated
+        user
       produces:
       - application/json
       responses:
-        "101":
-          description: Switching Protocols
+        "200":
+          description: OK
           schema:
-            type: string
+            items:
+              $ref: '#/definitions/orm.User'
+            type: array
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Upgrade HTTP connection to WebSocket
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get friends of the authenticated user
       tags:
-      - websocket
+      - users
+      - friends
+  /users/me/password:
+    put:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's password, verifying the old password
+        first
+      parameters:
+      - description: Old and new password payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad request or validation failure
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update current user's password
+      tags:
+      - users
+  /users/me/rooms:
+    get:
+      description: Returns all chat rooms belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Room'
+            type: array
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List rooms of the current user
+      tags:
+      - users
+      - rooms
+  /users/me/username:
+    put:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's username and publishes an event
+        via Centrifugo
+      parameters:
+      - description: 'JSON payload: {\'
+        in: body
+        name: new_username
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad request or validation failure
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update current user's username
+      tags:
+      - users
 swagger: "2.0"

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavigateFunction, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { NavigateFunction } from "react-router-dom";
 import { ROUTES } from "../../routes";
 import { SERVER_URL } from "../../../api/routes";
 import { useAuth } from "../../contexts/AuthContext";
@@ -10,21 +10,23 @@ export function useLoginHook(navigate: NavigateFunction) {
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const { login } = useAuth();
-  
-	const handleSubmit = async (e: React.FormEvent) => {
+
+	const handleSubmit = async (email: string, password: string, e: React.FormEvent<HTMLFormElement>) => {
 		try {
 			e.preventDefault();
 			setLoading(true);
 
-			console.log("Submitting login form...");
+			console.log("Submitting login form, email: ", email, "password:", password);
+
+			if (email === "" || password === "") {
+				throw("Email or password is empty. Login aborted.");
+			}
 
 			const response = await fetch(SERVER_URL + "/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email, password }),
 			});
-
-			console.log(response)
 
 			if(response.ok) {
 				// temporarily stroing the token in local storage
@@ -71,15 +73,25 @@ export function useLoginHook(navigate: NavigateFunction) {
 					console.log("Login failed:", response.status);
 					alert("Login failed. Server responded with an error.");
 				}
+			} else {
+				console.log("Login failed:", response.status);
+
+				switch(response.status) {
+					case 401:
+						alert("Login failed. Invalid email or password.");
+						break;
+				}
 			}
 		} catch (error) {
-			console.error("Error during login:", error);
-			console.error(error);
-			alert("Login error");
+			if (error instanceof TypeError && error.message === "Failed to fetch") {
+				alert("Cannot connect to the server. Please check your internet connection or try again later.");
+			} else {
+				alert("Unknown Login error");
+			}
 		} finally {
 			setLoading(false);
-		  }
+		}
 	};
-  
+
 	return { email, password, loading, setEmail, setPassword, handleSubmit };
-  }
+}

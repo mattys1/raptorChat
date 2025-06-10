@@ -5,11 +5,53 @@
 package db
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
 )
+
+type CallsStatus string
+
+const (
+	CallsStatusActive    CallsStatus = "active"
+	CallsStatusCompleted CallsStatus = "completed"
+	CallsStatusRejected  CallsStatus = "rejected"
+)
+
+func (e *CallsStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CallsStatus(s)
+	case string:
+		*e = CallsStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CallsStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCallsStatus struct {
+	CallsStatus CallsStatus `json:"calls_status"`
+	Valid       bool        `json:"valid"` // Valid is true if CallsStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCallsStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CallsStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CallsStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCallsStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CallsStatus), nil
+}
 
 type InvitesState string
 
@@ -138,12 +180,28 @@ func (ns NullRoomsType) Value() (driver.Value, error) {
 	return string(ns.RoomsType), nil
 }
 
+type Call struct {
+	ID                   uint64      `json:"id"`
+	RoomID               uint64      `json:"room_id"`
+	CreatedAt            time.Time   `json:"created_at"`
+	ParticipantCount     uint32      `json:"participant_count"`
+	EndedAt              *time.Time  `json:"ended_at"`
+	PeakParticipantCount uint32      `json:"peak_participant_count"`
+	Status               CallsStatus `json:"status"`
+}
+
+type CallParticipant struct {
+	CallID   uint64    `json:"call_id"`
+	UserID   uint64    `json:"user_id"`
+	JoinedAt time.Time `json:"joined_at"`
+}
+
 type Friendship struct {
-	ID        uint64       `json:"id"`
-	FirstID   uint64       `json:"first_id"`
-	SecondID  uint64       `json:"second_id"`
-	DmID      uint64       `json:"dm_id"`
-	CreatedAt sql.NullTime `json:"created_at"`
+	ID        uint64     `json:"id"`
+	FirstID   uint64     `json:"first_id"`
+	SecondID  uint64     `json:"second_id"`
+	DmID      uint64     `json:"dm_id"`
+	CreatedAt *time.Time `json:"created_at"`
 }
 
 type Invite struct {
@@ -156,11 +214,13 @@ type Invite struct {
 }
 
 type Message struct {
-	ID        uint64    `json:"id"`
-	SenderID  uint64    `json:"sender_id"`
-	RoomID    uint64    `json:"room_id"`
-	Contents  string    `json:"contents"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uint64     `json:"id"`
+	SenderID  uint64     `json:"sender_id"`
+	RoomID    uint64     `json:"room_id"`
+	Contents  string     `json:"contents"`
+	CreatedAt time.Time  `json:"created_at"`
+	IsDeleted *bool      `json:"is_deleted"`
+	DeletedAt *time.Time `json:"deleted_at"`
 }
 
 type Permission struct {
@@ -179,10 +239,11 @@ type RolesPermission struct {
 }
 
 type Room struct {
-	ID      uint64    `json:"id"`
-	Name    *string   `json:"name"`
-	OwnerID *uint64   `json:"owner_id"`
-	Type    RoomsType `json:"type"`
+	ID          uint64    `json:"id"`
+	Name        *string   `json:"name"`
+	OwnerID     *uint64   `json:"owner_id"`
+	Type        RoomsType `json:"type"`
+	MemberCount *int32    `json:"member_count"`
 }
 
 type RoomsUsersRole struct {
@@ -196,7 +257,8 @@ type User struct {
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
-	Password  string    `json:"password"`
+	Password  string    `json:"-"`
+	AvatarUrl string    `json:"avatar_url"`
 }
 
 type UsersRole struct {

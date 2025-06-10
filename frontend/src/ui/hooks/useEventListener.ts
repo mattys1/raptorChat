@@ -21,7 +21,7 @@ export const useEventListener = <T>(
 
 	useEffect(() => {
 		console.log("Attempting to hook into event", events)
-		const sub = CentrifugoService.subscribe(channel).then((sub) => {
+		CentrifugoService.subscribe(channel).then((sub) => {
 			sub.on("publication", (ctx) => {
 				const incoming = ctx.data as EventResource<T>
 				console.log("Received publication", ctx)

@@ -1,0 +1,62 @@
+basePath: /api/v1
+definitions:
+  db.Room:
+    properties:
+      id:
+        type: integer
+      member_count:
+        type: integer
+      name:
+        type: string
+      owner_id:
+        type: integer
+      type:
+        $ref: '#/definitions/db.RoomsType'
+    type: object
+  db.RoomsType:
+    enum:
+    - direct
+    - group
+    type: string
+    x-enum-varnames:
+    - RoomsTypeDirect
+    - RoomsTypeGroup
+  handlers.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@raptorchat.example.com
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the API server for RaptorChat.
+  termsOfService: http://swagger.io/terms/
+  title: RaptorChat API
+  version: "1.0"
+paths:
+  /users/me/rooms:
+    get:
+      description: Returns all chat rooms belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Room'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List rooms of the current user
+      tags:
+      - users
+      - rooms
+swagger: "2.0"

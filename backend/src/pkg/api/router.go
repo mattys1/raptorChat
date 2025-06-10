@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/mattys1/raptorChat/src/pkg/admin"
@@ -14,6 +16,8 @@ func Router() *chi.Mux {
 
 	r.Use(middleware.EnableCors)
 	r.Use(middleware.LogRequest)
+
+	r.Handle("/avatars/*", http.StripPrefix("/avatars/", http.FileServer(http.Dir("avatars"))))
 
 	r.Post("/login", auth.LoginHandler)
 	r.Post("/register", auth.RegisterHandler)
@@ -30,13 +34,25 @@ func Router() *chi.Mux {
 		r.Put("/invites/{id}", handlers.UpdateInviteHandler)
 
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/me/rooms", handlers.GetRoomsOfUserHandler)
-			r.Get("/me", handlers.GetOwnIDHandler)
+			r.Route("/me", func(r chi.Router) {
+				r.Get("/rooms", handlers.GetRoomsOfUserHandler)
+				r.Get("/", handlers.GetOwnIDHandler)
+
+				r.Patch("/password", handlers.UpdatePasswordHandler)
+
+				r.Patch("/username", handlers.UpdateUsernameHandler)
+
+				r.Post("/avatar", handlers.UploadAvatarHandler)
+				r.Delete("/avatar", handlers.DeleteAvatarHandler)
+
+				r.Get("/activity", handlers.GetOwnActivityHandler)
+			})
 			r.Get("/", handlers.GetAllUsersHandler)
 
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/invites", handlers.GetInvitesOfUserHandler)
 				r.Get("/friends", handlers.GetFriendsOfUserHandler)
+				r.Get("/dm", handlers.GetDMWithSenderHandler)
 				r.Get("/", handlers.GetUserHandler)
 			})
 		})
@@ -45,26 +61,36 @@ func Router() *chi.Mux {
 			r.Post("/", handlers.CreateRoomHandler)
 
 			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/messages", handlers.GetMessagesOfRoomHandler)
-				r.Post("/messages", handlers.SendMessageHandler)
+				r.Route("/messages", func(r chi.Router) {
+					r.Get("/", handlers.GetMessagesOfRoomHandler)
+					r.Post("/", handlers.SendMessageHandler)
+					r.Delete("/", handlers.DeleteMessageHandler)
+				})
+
+				r.Route("/calls", func(r chi.Router) {
+					r.Get("/", handlers.GetCallsOfRoomHandler)
+
+					r.Post("/joined", handlers.JoinOrCreateCallHandler)
+					r.Post("/leave", handlers.LeaveOrEndCallHandler)
+				})
 
 				r.Get("/user", handlers.GetUsersOfRoomHandler)
-
+				r.Get("/user/count", handlers.GetCountOfRoomHandler)
 				r.Get("/myroles", handlers.GetMyRolesHandler)
 				r.Post("/moderators/{userID}", handlers.DesignateModeratorHandler)
 
 				r.Get("/", handlers.GetRoomHandler)
-				r.Delete("/", handlers.DeleteRoomHandler)
 				r.Put("/", handlers.UpdateRoomHandler)
+				r.Delete("/", handlers.DeleteRoomHandler)
 			})
 		})
 
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(middleware.RequirePermission("view_admin_panel"))
-
-			r.Get("/users", admin.ListUsers)
-			r.Post("/users", admin.CreateUser)
-			r.Delete("/users/{userID}", admin.DeleteUser)
+			r.Get("/users", admin.ListUsersHandler)
+			r.Post("/users", admin.CreateUserHandler)
+			r.Delete("/users/{userID}", admin.DeleteUserHandler)
+			r.Put("/users/{userID}/admin", admin.AssignAdminHandler)
 		})
 	})
 

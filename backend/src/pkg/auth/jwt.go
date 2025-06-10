@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -14,13 +13,21 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mattys1/raptorChat/src/pkg/assert"
 	"github.com/mattys1/raptorChat/src/pkg/db"
 
 	// lksdk "github.com/livekit/server-sdk-go/v2"
 	lkauth "github.com/livekit/protocol/auth"
 )
 
-var jwtKey = []byte("secret_key")
+func getJwt() []byte {
+	_jwtKey := os.Getenv("JWT_SIGNING_KEY") 
+	assert.That(_jwtKey != "", "jwt key var empty", nil)
+
+	return []byte(_jwtKey)
+}
+
+var jwtKey = getJwt()
 
 type CentrifugoTokenClaims struct {
 	Sub      string         `json:"sub"`
@@ -35,7 +42,7 @@ type Claims struct {
 }
 
 func GenerateCentrifugoToken(userID uint64) (string, error) {
-	userIDStr := fmt.Sprintf("%d", userID)
+	userIDStr := strconv.FormatUint(userID, 10)
 	slog.Info("Generating Centrifugo token", "userID", userIDStr)
 
 	claims := jwt.MapClaims{
@@ -49,7 +56,6 @@ func GenerateCentrifugoToken(userID uint64) (string, error) {
 }
 
 func GenerateToken(userID uint64) (string, error) {
-	// Fetch permissions from DB
 	dao := db.GetDao()
 	perms, err := dao.GetPermissionsByUser(context.Background(), userID)
 	if err != nil {
