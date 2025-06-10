@@ -45,7 +45,8 @@ export function useLoginHook(navigate: NavigateFunction) {
 				if(idResponse.ok) {
 					const idData = await idResponse.json();
 					console.log("User ID:", idData);
-					localStorage.setItem('uID', idData);
+					const myId = typeof idData === "number" ? idData : idData.id;
+					localStorage.setItem("uID", String(myId));
 
 					setLoading(false)
 					login(data.token);
