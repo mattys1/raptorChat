@@ -1,9 +1,7 @@
-/* Tailwind v4 via the Vite plugin */
 @import "tailwindcss";
 
-/* Your existing globals (fonts, variables, etc.) can remain below */
 :root {
-  /* example – adjust or preserve your originals */
+  
   --font-sans: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   --link-color: #3b82f6;
 }
@@ -13,5 +11,5 @@ body {
   padding: 0;
   font-family: var(--font-sans);
   line-height: 1.5;
-  background-color: #f9fafb; /* if you had set a body bg */
+  background-color: #f9fafb; 
 }
