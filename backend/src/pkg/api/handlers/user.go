@@ -187,8 +187,8 @@ func GetFriendsOfUserHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     friends, err := dao.GetFriendsOfUser(ctx, db.GetFriendsOfUserParams{
-        UserID: uint64(uid),
-    })
+		UserID: uid,
+	})
     if err != nil {
         slog.Error("Error fetching friends", "error", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)

@@ -94,9 +94,10 @@ INSERT INTO friendships (first_id, second_id, dm_id) VALUES (?, ?, ?);
 DELETE FROM friendships WHERE id = ?;
 
 -- name: GetFriendsOfUser :many
-SELECT DISTINCT u.* FROM users u 
-NATURAL JOIN friendships f
-WHERE sqlc.arg(user_id) OR f.second_id = sqlc.arg(user_id);
+SELECT u.* FROM users u
+JOIN friendships f ON (f.first_id = u.id OR f.second_id = u.id)
+WHERE (f.first_id = sqlc.arg(user_id) OR f.second_id = sqlc.arg(user_id))
+AND u.id != sqlc.arg(user_id);
 
 -- name: GetRoleByName :one
 SELECT id, name FROM roles WHERE name = ? LIMIT 1;

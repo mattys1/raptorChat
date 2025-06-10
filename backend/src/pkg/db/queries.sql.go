@@ -215,8 +215,10 @@ func (q *Queries) GetDMByUsers(ctx context.Context, arg GetDMByUsersParams) (Roo
 }
 
 const getFriendsOfUser = `-- name: GetFriendsOfUser :many
-SELECT DISTINCT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u 
-JOIN friendships f ON f.first_id = ? OR f.second_id = ?
+SELECT u.id, u.username, u.email, u.created_at, u.password, u.avatar_url FROM users u
+JOIN friendships f ON (f.first_id = u.id OR f.second_id = u.id)
+WHERE (f.first_id = ? OR f.second_id = ?)
+AND u.id != ?
 `
 
 type GetFriendsOfUserParams struct {
@@ -224,7 +226,7 @@ type GetFriendsOfUserParams struct {
 }
 
 func (q *Queries) GetFriendsOfUser(ctx context.Context, arg GetFriendsOfUserParams) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getFriendsOfUser, arg.UserID, arg.UserID)
+	rows, err := q.db.QueryContext(ctx, getFriendsOfUser, arg.UserID, arg.UserID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
