@@ -86,9 +86,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     /* 🔥 clean up on unmount */
     return () => {
       if (sub) {
-        sub.off("publication", handler);
-        /* if Centrifugo client supports unsubscribe, call it */
-        if (typeof sub.unsubscribe === "function") sub.unsubscribe();
+		CentrifugoService.unsubscribe(`user:${uid}:calls`)
       }
     };
   }, [uid, navigate, outgoingCall]);
