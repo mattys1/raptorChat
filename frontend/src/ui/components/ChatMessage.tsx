@@ -16,19 +16,20 @@ const ChatMessage = ({ message, myId, avatarMap, isOwner, isModerator, deleteMes
 	const isMine = message.sender_id === myId;
 	const [senderInfo] = useUserInfo(message.sender_id) 
 
-	const bubbleBg = isMine
-		? "bg-[#0d1117] text-[#e5e9f0] self-start"
-		: "bg-[#1e293b] text-[#e5e9f0] self-end";
+const bubbleBg = isMine
+    ? "bg-[#0d1117] text-[#e5e9f0]"
+    : "bg-[#1e293b] text-[#e5e9f0]";
 
 	return (
-		<div
-			key={message.id}
-			className={`
-				group relative
-				w-4/5 rounded-lg
-				${bubbleBg}
-				py-[0.45rem] pb-[0.6rem] px-[2%]
-			`}
+    <div
+        key={message.id}
+        className={`
+            group relative
+            w-4/5 rounded-lg
+            ${bubbleBg}
+            py-[0.45rem] pb-[0.6rem] px-[2%]
+            ${isMine ? "self-end ml-auto" : "self-start mr-auto"}
+        `}
 		>
 			<div className="flex items-center mb-1">
 				<img
