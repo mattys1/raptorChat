@@ -1,80 +1,160 @@
 import React, {
-  createContext, useContext, useState, useCallback, useEffect,
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { SERVER_URL } from "../../api/routes";
 import { CentrifugoService } from "../../logic/CentrifugoService";
 
-interface Incoming { room_id: number; caller_id: number; caller_username: string }
-interface Outgoing { room_id: number; callee_id: number }
+/* -------------------------------------------------- types */
+interface Incoming {
+  room_id: number;
+  caller_id: number;
+  caller_username: string;
+}
+interface Outgoing {
+  room_id: number;
+  callee_id: number;
+}
 
 interface Ctx {
   incomingCall: Incoming | null;
+  incomingCalls: Incoming[];
   outgoingCall: Outgoing | null;
+
   requestDirectCall: (room: number, callee: number) => Promise<void>;
-  acceptCall: () => Promise<void>;
-  rejectCall: () => Promise<void>;
+  acceptCall: (call?: Incoming) => Promise<void>;
+  rejectCall: (call?: Incoming) => Promise<void>;
 }
 
 const CallContext = createContext<Ctx | undefined>(undefined);
 export const useCallContext = () => useContext(CallContext)!;
 
-export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+/* ================================================= provider */
+export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const uid = Number(localStorage.getItem("uID") || 0);
   const token = localStorage.getItem("token") || "";
   const navigate = useNavigate();
 
-  const [incomingCall, setIncoming] = useState<Incoming | null>(null);
-  const [outgoingCall, setOutgoing]   = useState<Outgoing | null>(null);
+  /* --------------------------- state */
+  const [incomingCalls, setIncomingCalls] = useState<Incoming[]>([]);
+  const [outgoingCall, setOutgoing] = useState<Outgoing | null>(null);
+  const incomingCall = incomingCalls[0] ?? null; // legacy single call
 
-  // ----------------------------------------------------- Centrifugo listener
+  /* ---------------------- centrifugo listener (only once) */
   useEffect(() => {
+    let sub: any;
+
+    const handler = ({ data }: any) => {
+      const { event_name, contents } = data as any;
+      switch (event_name) {
+        case "incoming_call":
+          // ✨ add only if not already queued
+          setIncomingCalls((prev) =>
+            prev.some((c) => c.room_id === contents.room_id)
+              ? prev
+              : [...prev, contents]
+          );
+          break;
+
+        case "call_accepted":
+          if (outgoingCall && contents.room_id === outgoingCall.room_id) {
+            navigate(`/app/chatroom/${contents.room_id}/call`);
+            setOutgoing(null);
+          }
+          break;
+
+        case "call_rejected":
+          if (outgoingCall && contents.room_id === outgoingCall.room_id) {
+            alert("Call rejected");
+            setOutgoing(null);
+          }
+          break;
+      }
+    };
+
     (async () => {
-      const sub = await CentrifugoService.subscribe(`user:${uid}:calls`);
-      sub.on("publication", ({ data }) => {
-        const { event_name, contents } = data as any;
-        switch (event_name) {
-          case "incoming_call":  setIncoming(contents);                 break;
-          case "call_accepted":
-            if (outgoingCall && contents.room_id === outgoingCall.room_id) {
-              navigate(`/app/chatroom/${contents.room_id}/call`);
-              setOutgoing(null);
-            }
-            break;
-          case "call_rejected":
-            if (outgoingCall && contents.room_id === outgoingCall.room_id) {
-              alert("Call rejected");
-              setOutgoing(null);
-            }
-            break;
-        }
-      });
+      sub = await CentrifugoService.subscribe(`user:${uid}:calls`);
+      sub.on("publication", handler);
     })();
-  }, [uid, outgoingCall, navigate]);
 
-  // --------------------------------------------------------------- actions
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+    /* 🔥 clean up on unmount */
+    return () => {
+      if (sub) {
+        sub.off("publication", handler);
+        /* if Centrifugo client supports unsubscribe, call it */
+        if (typeof sub.unsubscribe === "function") sub.unsubscribe();
+      }
+    };
+  }, [uid, navigate, outgoingCall]);
 
-  const requestDirectCall = useCallback(async (room: number, callee: number) => {
-    await fetch(`${SERVER_URL}/api/rooms/${room}/calls/request`, { method: "POST", headers });
-    setOutgoing({ room_id: room, callee_id: callee });
-  }, [headers]);
+  /* -------------------------- actions */
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 
-  const acceptCall = useCallback(async () => {
-    if (!incomingCall) return;
-    await fetch(`${SERVER_URL}/api/rooms/${incomingCall.room_id}/calls/joined`, { method: "POST", headers });
-    navigate(`/app/chatroom/${incomingCall!.room_id}/call`);
-    setIncoming(null);
-  }, [incomingCall, headers, navigate]);
+  const requestDirectCall = useCallback(
+    async (room: number, callee: number) => {
+      await fetch(`${SERVER_URL}/api/rooms/${room}/calls/request`, {
+        method: "POST",
+        headers,
+      });
+      setOutgoing({ room_id: room, callee_id: callee });
+    },
+    [headers]
+  );
 
-  const rejectCall = useCallback(async () => {
-    if (!incomingCall) return;
-    await fetch(`${SERVER_URL}/api/rooms/${incomingCall.room_id}/calls/reject`, { method: "POST", headers });
-    setIncoming(null);
-  }, [incomingCall, headers]);
+  const acceptCall = useCallback(
+    async (call?: Incoming) => {
+      const target = call ?? incomingCalls[0];
+      if (!target) return;
 
+      await fetch(
+        `${SERVER_URL}/api/rooms/${target.room_id}/calls/joined`,
+        { method: "POST", headers }
+      );
+      navigate(`/app/chatroom/${target.room_id}/call`);
+      setIncomingCalls((prev) =>
+        prev.filter((c) => c.room_id !== target.room_id)
+      );
+    },
+    [incomingCalls, headers, navigate]
+  );
+
+  const rejectCall = useCallback(
+    async (call?: Incoming) => {
+      const target = call ?? incomingCalls[0];
+      if (!target) return;
+
+      await fetch(
+        `${SERVER_URL}/api/rooms/${target.room_id}/calls/reject`,
+        { method: "POST", headers }
+      );
+      setIncomingCalls((prev) =>
+        prev.filter((c) => c.room_id !== target.room_id)
+      );
+    },
+    [incomingCalls, headers]
+  );
+
+  /* ------------------------ provider value */
   return (
-    <CallContext.Provider value={{ incomingCall, outgoingCall, requestDirectCall, acceptCall, rejectCall }}>
+    <CallContext.Provider
+      value={{
+        incomingCall,
+        incomingCalls,
+        outgoingCall,
+        requestDirectCall,
+        acceptCall,
+        rejectCall,
+      }}
+    >
       {children}
     </CallContext.Provider>
   );
