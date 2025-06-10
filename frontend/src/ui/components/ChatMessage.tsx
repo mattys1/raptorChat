@@ -15,6 +15,8 @@ interface ChatMessageProps {
 const ChatMessage = ({ message, myId, avatarMap, isOwner, isModerator, deleteMessage }: ChatMessageProps) => {
 	const isMine = message.sender_id === myId;
 	const [senderInfo] = useUserInfo(message.sender_id) 
+    const messageDate = new Date(message.created_at);
+    const formattedDate = messageDate.toLocaleString();
 
 const bubbleBg = isMine
     ? "bg-[#0d1117] text-[#e5e9f0]"
@@ -41,9 +43,12 @@ const bubbleBg = isMine
 					alt="avatar"
 					className="h-8 w-8 rounded-full object-cover mr-2"
 				/>
-				<span className="text-xs font-semibold text-[#cbd5e1]">
-					{senderInfo.username ?? `user${message.sender_id}`}
-				</span>
+				<div>
+					<span className="text-xs font-semibold text-[#cbd5e1]">
+						{senderInfo.username ?? `user${message.sender_id}`}
+					</span>
+					<span className="text-xs text-gray-400 ml-2">{formattedDate}</span>
+				</div>
 			</div>
 
 			<div className="leading-relaxed whitespace-pre-wrap break-words">
